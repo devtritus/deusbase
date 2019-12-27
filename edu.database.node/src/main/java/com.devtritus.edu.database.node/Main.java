@@ -1,9 +1,11 @@
 package com.devtritus.edu.database.node;
 
 public class Main {
-    public static void main(String[] args) {
+    private static final String LOCALHOST = "127.0.0.1";
+    public static void main(String[] args) throws Exception {
         int port = getRandomPort();
-        new Server().start("127.0.0.1", port, () -> successCallback(port));
+        Handler handler = new Handler();
+        new DatabaseServer(handler).start(LOCALHOST, port, () -> successCallback(port));
     }
 
     private final static int MIN_PORT = 7000;
