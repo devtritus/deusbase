@@ -1,12 +1,13 @@
 package com.devtritus.edu.database.terminal;
 
-import com.devtritus.edu.database.core.Command;
+import com.devtritus.edu.database.core.*;
 import org.apache.http.conn.HttpHostConnectException;
 
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,11 +22,13 @@ class Terminal {
     private final InputStream in;
     private final PrintStream out;
     private final TerminalMode mode;
+    private final Client client;
 
-    Terminal(InputStream in, PrintStream out, TerminalMode mode) {
+    Terminal(InputStream in, PrintStream out, TerminalMode mode, Client client) {
         this.in = in;
         this.out = out;
         this.mode = mode;
+        this.client = client;
     }
 
     void run() throws Exception {
@@ -34,43 +37,54 @@ class Terminal {
         }
         print(HELLO);
 
-        InputMessageHandler handler = new InputMessageHandler();
         Scanner scanner = new Scanner(in);
         while(scanner.hasNextLine()) {
             String message = scanner.nextLine();
+            String[] tokens = message.split("\\s+");
+            String commandMessage = tokens[0];
+            String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
-            if(isSame(STOP, message)) {
+            if(isSame(STOP, commandMessage)) {
                 print(FINISH_MESSAGE);
 
-            } else if(isSame(HELP, message)) {
+            } else if(isSame(HELP, commandMessage)) {
                 printAllCommands();
 
-            } else if(isSystemCommand(message)) {
-                handleSystemCommand(message, handler);
+            } else if(isSystemCommand(commandMessage)) {
+                handleSystemCommand(commandMessage, params);
             } else {
-                print(UNKNOWN_COMMAND + ": \"" + message + "\"");
+                print(WRONG_COMMAND + ": \"" + commandMessage + "\"");
             }
         }
     }
 
-    private void handleSystemCommand(String message, InputMessageHandler handler) {
+    private void handleSystemCommand(String message, String[] params) {
         try {
-            handler.handle(message);
+            Command command = Command.getCommand(message);
+
+            CommandParamsValidator.validate(command, params);
+
+            Map<String, String> result = client.request(command, params);
+
+            print(result);
         } catch(HttpHostConnectException e) {
             print(SERVICE_UNAVAILABLE);
-            printStackTrace(e);
+            print(e.getMessage());
+        } catch (WrongArgumentsCountException e) {
+            print(WRONG_ARGS_COUNT);
+            print(e.getMessage());
         } catch (Exception e) {
             print(UNKNOWN_ERROR + ":");
             printStackTrace(e);
         }
     }
 
-    private boolean isSame(String message, String command) {
-        return command.equals(message);
+    private boolean isSystemCommand(String message) {
+        return SYSTEM_COMMANDS.stream().anyMatch(command -> isSame(command, message));
     }
 
-    private boolean isSystemCommand(String message) {
-        return SYSTEM_COMMANDS.stream().anyMatch(message::startsWith);
+    private boolean isSame(String message, String command) {
+        return command.equals(message);
     }
 
     private void printAllCommands() {
@@ -93,6 +107,19 @@ class Terminal {
 
     private void print() {
         print("");
+    }
+
+    private void print(Map<String, String> map) {
+        for(Map.Entry<String, String> entry : map.entrySet()) {
+            printInline(entry.getKey());
+            printInline(": ");
+            printInline(entry.getValue());
+            printInline("\n");
+        }
+    }
+
+    private void printInline(String message) {
+        out.print(message);
     }
 
     private void print(String message) {

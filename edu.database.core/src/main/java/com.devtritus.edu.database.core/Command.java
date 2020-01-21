@@ -1,15 +1,21 @@
 package com.devtritus.edu.database.core;
 
 public enum Command {
-    CREATE("create"),
-    READ("read"),
-    DELETE("delete"),
-    UPDATE("update");
+    CREATE("create", CommandType.READ),
+    READ("read", CommandType.WRITE),
+    DELETE("delete", CommandType.WRITE),
+    UPDATE("update", CommandType.WRITE);
 
     private final String text;
+    private final CommandType type;
 
-    Command(String text) {
+    Command(String text, CommandType type) {
         this.text = text;
+        this.type = type;
+    }
+
+    public CommandType getType() {
+        return type;
     }
 
     public static Command getCommand(String value) {

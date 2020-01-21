@@ -1,8 +1,10 @@
 package com.devtritus.edu.database.core;
 
-public interface CRUDApi<T, K> {
-    K create(T object);
-    T read(K key);
-    K delete(K key);
-    K update(T object, K key);
+import java.util.Map;
+
+public interface CRUDApi<K, V> {
+    Map<K, V> create(K key, V value);
+    Map<K, V> read(K key);
+    Map<K, V> delete(K key);
+    Map<K, V> update(K key, V value);
 }

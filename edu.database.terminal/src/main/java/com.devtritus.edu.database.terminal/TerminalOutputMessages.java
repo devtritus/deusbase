@@ -10,8 +10,9 @@ class TerminalOutputMessages {
     //response
     final static String FINISH_MESSAGE = "TERMINAL IS STOPPED";
     final static String SERVICE_UNAVAILABLE = "SERVICE UNAVAILABLE";
-    final static String UNKNOWN_COMMAND = "UNKNOWN COMMAND";
+    final static String WRONG_COMMAND = "WRONG COMMAND";
     final static String UNKNOWN_ERROR = "UNKNOWN ERROR";
+    final static String WRONG_ARGS_COUNT = "WRONG ARGUMENTS COUNT";
 
     //commands
     final static String STOP = "stop";
