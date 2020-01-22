@@ -38,17 +38,18 @@ public class Client {
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             int status = response.getStatusLine().getStatusCode();
 
+            HttpEntity entity = response.getEntity();
+
+            String entityMessage = entity != null ? EntityUtils.toString(entity) : null;
+
+            if(entityMessage == null) {
+                throw new IllegalStateException("Body is null");
+            }
+
             if (status == 200) {
-                HttpEntity entity = response.getEntity();
-                String entityMessage = entity != null ? EntityUtils.toString(entity) : null;
-
-                if(entityMessage == null) {
-                    throw new IllegalStateException("Body is null");
-                }
-
                 return objectMapper.readValue(entityMessage, new TypeReference<Map<String, String>>() {});
             } else {
-                throw new ClientProtocolException("Unexpected response status: " + status);
+                throw new ClientProtocolException(String.format("Unexpected response status: %s, details: %s", status, entityMessage));
             }
         }
     }

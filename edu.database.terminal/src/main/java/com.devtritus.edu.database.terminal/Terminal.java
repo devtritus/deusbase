@@ -31,7 +31,7 @@ class Terminal {
         this.client = client;
     }
 
-    void run() throws Exception {
+    void run() {
         if(mode == TerminalMode.DEBUG) {
             print(DEBUG_MODE);
         }
@@ -46,6 +46,7 @@ class Terminal {
 
             if(isSame(STOP, commandMessage)) {
                 print(FINISH_MESSAGE);
+                return;
 
             } else if(isSame(HELP, commandMessage)) {
                 printAllCommands();

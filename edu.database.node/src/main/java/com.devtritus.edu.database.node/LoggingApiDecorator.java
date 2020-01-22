@@ -1,0 +1,57 @@
+package com.devtritus.edu.database.node;
+
+import com.devtritus.edu.database.core.Api;
+
+import java.util.Map;
+
+public class LoggingApiDecorator<K, V> implements Api<K, V> {
+    private Api<K, V> api;
+
+    public LoggingApiDecorator(Api<K, V> api) {
+        this.api = api;
+    }
+
+    @Override
+    public Map<K, V> create(K key, V value) {
+        log("create", key, value);
+        Map<K, V> result = api.create(key, value);
+        logSuccess(result);
+        return result;
+    }
+
+    @Override
+    public Map<K, V> read(K key) {
+        log("read", key);
+        Map<K, V> result = api.read(key);
+        logSuccess(result);
+        return result;
+    }
+
+    @Override
+    public Map<K, V> delete(K key) {
+        log("delete", key);
+        Map<K, V> result = api.delete(key);
+        logSuccess(result);
+        return result;
+    }
+
+    @Override
+    public Map<K, V> update(K key, V value) {
+        log("update", key, value);
+        Map<K, V> result = api.update(key, value);
+        logSuccess(result);
+        return result;
+    }
+
+    private static void log(String command, Object... params) {
+        System.out.format("\nExecute command \"%s\"\nargs:\n", command);
+        for(Object param : params) {
+            System.out.println(param);
+        }
+    }
+
+    private static void logSuccess(Object result) {
+        System.out.format("\nresult: %s\n", result);
+        System.out.println("\nSuccess\n");
+    }
+}

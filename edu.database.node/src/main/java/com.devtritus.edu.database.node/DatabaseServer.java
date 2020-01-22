@@ -4,9 +4,9 @@ import org.eclipse.jetty.server.Server;
 import java.net.InetSocketAddress;
 
 class DatabaseServer {
-    private Handler handler;
+    private DatabaseRequestHandler handler;
 
-    public DatabaseServer(Handler handler) {
+    public DatabaseServer(DatabaseRequestHandler handler) {
         this.handler = handler;
     }
 

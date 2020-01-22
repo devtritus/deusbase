@@ -1,11 +1,19 @@
 package com.devtritus.edu.database.node;
 
+import com.devtritus.edu.database.core.RequestBodyHandler;
+
 public class Main {
     private static final String LOCALHOST = "127.0.0.1";
     public static void main(String[] args) throws Exception {
-        int port = getRandomPort();
-        Handler handler = new Handler();
-        new DatabaseServer(handler).start(LOCALHOST, port, () -> successCallback(port));
+        int port = 7599;//getRandomPort();
+
+        MockApi api = new MockApi();
+        LoggingApiDecorator<String, String> loggingApiDecorator = new LoggingApiDecorator<>(api);
+
+        RequestBodyHandler requestBodyHandler = new RequestBodyHandler(loggingApiDecorator);
+        DatabaseRequestHandler databaseRequestHandler = new DatabaseRequestHandler(requestBodyHandler);
+
+        new DatabaseServer(databaseRequestHandler).start(LOCALHOST, port, () -> successCallback(port));
     }
 
     private final static int MIN_PORT = 7000;
