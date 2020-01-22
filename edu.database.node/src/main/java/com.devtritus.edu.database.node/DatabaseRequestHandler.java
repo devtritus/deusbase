@@ -2,6 +2,7 @@ package com.devtritus.edu.database.node;
 
 import com.devtritus.edu.database.core.RequestBody;
 import com.devtritus.edu.database.core.RequestBodyHandler;
+import com.devtritus.edu.database.core.ResponseBody;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -26,8 +27,10 @@ public class DatabaseRequestHandler extends AbstractHandler {
     public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
         String method = request.getMethod();
 
+        httpServletResponse.setContentType("application/json;charset=UTF-8");
+
         if(!method.equals("POST")) {
-            httpServletResponse.setStatus(500);
+            httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             PrintWriter writer = httpServletResponse.getWriter();
             writer.format("Request method type \"%s\" is unsupported", method);
             //TODO: сделать нормальную форму вывода при ошибках
@@ -48,10 +51,16 @@ public class DatabaseRequestHandler extends AbstractHandler {
 
             RequestBody body = objectMapper.readValue(bodyMesssage, RequestBody.class);
 
-            requestBodyHandler.handle(body);
+            ResponseBody responseBody = requestBodyHandler.handle(body);
+
+            String responseBodyJson = objectMapper.writeValueAsString(responseBody);
+
+            httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+            httpServletResponse.getWriter().println(responseBodyJson);
+
+            request.setHandled(true);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 }

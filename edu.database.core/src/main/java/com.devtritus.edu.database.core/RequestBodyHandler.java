@@ -16,12 +16,17 @@ public class RequestBodyHandler {
         CommandParamsValidator.validate(command, args);
 
         Map<String, String> data;
+        ResponseStatus responseStatus = ResponseStatus.OK;
+
         switch (command) {
             case CREATE:
                 data = api.create(args[0], args[1]);
                 break;
             case READ:
                 data = api.read(args[0]);
+                if(data.get(args[0]) == null) {
+                    responseStatus = ResponseStatus.NOT_FOUND;
+                }
                 break;
             case DELETE:
                 data = api.delete(args[0]);
@@ -35,6 +40,7 @@ public class RequestBodyHandler {
 
         ResponseBody responseBody = new ResponseBody();
         responseBody.setData(data);
+        responseBody.setCode(responseStatus.getCode());
 
         return responseBody;
     }

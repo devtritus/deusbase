@@ -44,6 +44,10 @@ class Terminal {
             String commandMessage = tokens[0];
             String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
+            if(commandMessage.trim().isEmpty()) {
+                continue;
+            }
+
             if(isSame(STOP, commandMessage)) {
                 print(FINISH_MESSAGE);
                 return;
@@ -65,9 +69,14 @@ class Terminal {
 
             CommandParamsValidator.validate(command, params);
 
-            Map<String, String> result = client.request(command, params);
+            ResponseBody responseBody = client.request(command, params);
 
-            print(result);
+            ResponseStatus status = ResponseStatus.ofCode(responseBody.getCode());
+            if(status != ResponseStatus.OK) {
+                print(status.getMessage());
+            } else {
+                print(responseBody.getData());
+            }
         } catch(HttpHostConnectException e) {
             print(SERVICE_UNAVAILABLE);
             print(e.getMessage());
@@ -111,9 +120,13 @@ class Terminal {
     }
 
     private void print(Map<String, String> map) {
+        int i = 0;
         for(Map.Entry<String, String> entry : map.entrySet()) {
+            if(map.size() > 1) {
+                printInline(++i + ". ");
+            }
             printInline(entry.getKey());
-            printInline(": ");
+            printInline(" : ");
             printInline(entry.getValue());
             printInline("\n");
         }

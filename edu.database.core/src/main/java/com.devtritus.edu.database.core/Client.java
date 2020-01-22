@@ -1,6 +1,5 @@
 package com.devtritus.edu.database.core;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
@@ -11,7 +10,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import java.util.Map;
 
 public class Client {
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -23,7 +21,7 @@ public class Client {
         this.url = url;
     }
 
-    public Map<String, String> request(Command command, String[] params) throws Exception {
+    public ResponseBody request(Command command, String[] params) throws Exception {
         RequestBody requestBody = new RequestBody();
         requestBody.setCommand(command.toString());
         requestBody.setArgs(params);
@@ -33,13 +31,10 @@ public class Client {
         HttpPost httpPost = new HttpPost(url);
         httpPost.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
 
-        System.out.println("Executing post request " + httpPost.getRequestLine());
-
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             int status = response.getStatusLine().getStatusCode();
 
             HttpEntity entity = response.getEntity();
-
             String entityMessage = entity != null ? EntityUtils.toString(entity) : null;
 
             if(entityMessage == null) {
@@ -47,7 +42,7 @@ public class Client {
             }
 
             if (status == 200) {
-                return objectMapper.readValue(entityMessage, new TypeReference<Map<String, String>>() {});
+                return objectMapper.readValue(entityMessage, ResponseBody.class);
             } else {
                 throw new ClientProtocolException(String.format("Unexpected response status: %s, details: %s", status, entityMessage));
             }
