@@ -11,26 +11,30 @@ public class StringBTree implements BTree<String, Long> {
 
     @Override
     public String add(String key, Long value) {
-        return selectRoot(cursor).add(key, value);
+        return getRoot().add(key, new NodeData(value));
     }
 
     @Override
     public String delete(String key) {
-        return selectRoot(cursor).delete(key);
+        return getRoot().delete(key);
     }
 
     @Override
     public List<Long> search(String key) {
-        return cursor.search(key);
+        return getRoot().search(key);
     }
 
-    private Node selectRoot(Node node) {
+    int getTreeLevel() {
+        return getRoot().level;
+    }
+
+    private Node getRoot() {
         Node nextParent;
-        Node currentNode = node;
-        while((nextParent = currentNode.getParent()) != null) {
+        Node currentNode = cursor;
+        while((nextParent = currentNode.parent) != null) {
             currentNode = nextParent;
             currentNode.print("select as root");
-            this.cursor = currentNode;
+            cursor = currentNode;
         }
 
         return currentNode;
@@ -44,124 +48,136 @@ public class StringBTree implements BTree<String, Long> {
         }
     }
 
-    private static class Node implements BTree<String, Long> {
+    private static class Node {
         private static int counter = 0;
         private final int nodeNumber = ++counter;
 
-        private int m;
-        private int level;
+        private final int m;
+        private final  int level;
+        private final List<String> keys = new ArrayList<>();
+        private final Map<String, NodeData> keyToValueMap = new HashMap<>();
+        private final List<Node> children = new ArrayList<>();
         private Node parent;
-        private ArrayList<String> keys = new ArrayList<>();
-        private Map<String, NodeData> values = new HashMap<>();
-        private ArrayList<Node> children;
 
         Node(int m, int level) {
             this.m = m;
             this.level = level;
         }
 
-        @Override
-        public String add(String key, Long value) {
-            NodeData newNodeData = new NodeData(value);
+        public String add(String key, NodeData nodeData) {
+            if(level == 0) {
+                return doAdd(key, nodeData);
+            } else {
+                int index = Collections.binarySearch(keys, key);
+                if(index > -1) {
+                    throw new IllegalStateException();
+                } else {
 
+                    Node childrenNode = children.get(Math.abs(index) - 1);
+                    return childrenNode.add(key, nodeData);
+                }
+            }
+        }
+
+        public String delete(String key) {
+            return null;
+        }
+
+        public List<Long> search(String key) {
+            int index = Collections.binarySearch(keys, key);
+            if(index > -1) {
+                return Collections.singletonList(keyToValueMap.get(key).data);
+            } else {
+                if(children.isEmpty()) {
+                    return Collections.emptyList();
+                }
+
+                Node childrenNode = children.get(Math.abs(index) - 1);
+                return childrenNode.search(key);
+            }
+        }
+
+        String doAdd(String key, NodeData nodeData) {
             keys.add(key);
             Collections.sort(keys);
-            values.put(key, newNodeData);
+            keyToValueMap.put(key, nodeData);
 
-            if(keys.size() == m) {
-                int middleIndex = keys.size() / 2 + 1;
-                String middleKey = keys.get(middleIndex);
-                NodeData middleNodeData = values.get(middleKey);
+            if (keys.size() == m) {
+                int middleIndex = keys.size() / 2;
 
-                keys.remove(middleIndex);
-                values.remove(middleKey);
-
-                Node rightNode = new Node(m, level);
-
-                rightNode.keys.addAll(keys.subList(middleIndex, keys.size()));
-
-                HashMap<String, NodeData> rightNodeValues = new HashMap<>();
-                for(String rightNodeKey : rightNode.keys) {
-                    rightNodeValues.put(rightNodeKey, values.get(rightNodeKey));
-                }
-
-                rightNode.values = rightNodeValues;
-
-                keys = new ArrayList<>(keys.subList(0, middleIndex));
-
-                HashMap<String, NodeData> leftNodeValues = new HashMap<>();
-                for(String leftNodeKey : keys) {
-                    leftNodeValues.put(leftNodeKey, values.get(leftNodeKey));
-                }
-
-                values = leftNodeValues;
-
+                int insertionIndex;
+                Node nextParent;
                 if(parent == null) {
-                    parent = new Node(m, level + 1);
-                    parent.children = new ArrayList<>();
-                    parent.children.add(this);
+                    nextParent = new Node(m, level + 1);
+                    insertionIndex = 0;
+                } else {
+                    nextParent = parent;
+                    insertionIndex = parent.children.indexOf(this);
+                    parent.children.remove(this);
+                    if(insertionIndex == -1) {
+                        throw new IllegalStateException();
+                    }
                 }
 
-                int rightNodeIndex = parent.children.indexOf(this);
-                insertElement(parent.children, rightNode, rightNodeIndex);
+                Node leftNode = copyNode(0, middleIndex, nextParent);
+                Node rightNode = copyNode(middleIndex + 1, keys.size(), nextParent);
 
-                return parent.add(middleKey, middleNodeData.data);
+                appendNodeToParent(nextParent, leftNode, insertionIndex);
+                appendNodeToParent(nextParent, rightNode, insertionIndex + 1);
+
+                String middleKey = keys.get(middleIndex);
+                NodeData middleNodeData = keyToValueMap.get(middleKey);
+
+                return nextParent.doAdd(middleKey, middleNodeData);
             }
 
             return key;
         }
 
-        static <T> void insertElement(ArrayList<T> list, T element, int insertIndex)  {
-            T currentElement = element;
-            for(int i = insertIndex; i < list.size() - 1; i++) {
-                currentElement = list.set(insertIndex, currentElement);
+        private Node copyNode(int startKey, int end, Node nextParent) {
+            Node node = new Node(m, level);
+            node.keys.addAll(new ArrayList<>(keys.subList(startKey, end)));
+
+            for (String key : node.keys) {
+                node.keyToValueMap.put(key, keyToValueMap.get(key));
             }
 
-            list.add(currentElement);
-        }
-
-        @Override
-        public String delete(String key) {
-            return null;
-        }
-
-        @Override
-        public List<Long> search(String key) {
-            return null;
-           /*
-            for (int i = 0; i < keys.size() - 1; i++) {
-                String nodeKey = keys.get(i);
-
-                if (nodeKey.equals(key)) {
-                    return Collections.singletonList(values.get(i).data);
-                }
+            if(!children.isEmpty()) {
+                node.children.addAll(new ArrayList<>(children.subList(startKey, end + 1)));
             }
 
-            if (children.size() == 0) {
-                return Collections.emptyList();
-            }
+            node.parent = nextParent;
 
-            int largerElementIndex = Collections.binarySearch(keys, key);
-            if (largerElementIndex != -1) {
-                Node childNodeData = values.get(largerElementIndex).left;
-                return childNodeData.search(key);
-            } else {
-                if (keys.size() > 0) {
-                    //Берем последний, если элементов, которые "больше" нет, но список не пустой
-                    Node rightChildNode = values.get(values.size() - 1).right;
-                    return rightChildNode.search(key);
-                } else {
-                    return Collections.emptyList();
-                }
-            } */
+            return node;
         }
 
-        public void print(String message) {
+        private static void appendNodeToParent(Node parent, Node child, int insertionIndex) {
+            insertElement(parent.children, child, insertionIndex);
+        }
+
+        private void print(String message) {
             System.out.format("[node-%s, level-%s] %s\n", nodeNumber, level, message);
         }
 
-        private Node getParent() {
-            return parent;
+        @Override
+        public String toString() {
+            return "[ " + String.join(", ", keys) + " ]";
         }
+    }
+
+    @Override
+    public String toString() {
+        return getRoot().toString();
+    }
+
+    static <T> List<T> insertElement(List<T> list, T element, int insertIndex)  {
+        T currentElement = element;
+        for(int i = insertIndex; i < list.size(); i++) {
+            currentElement = list.set(i, currentElement);
+        }
+
+        list.add(currentElement);
+
+        return list;
     }
 }
