@@ -1,9 +1,10 @@
 package com.devtritus.edu.database.node.tree;
 
 import org.junit.jupiter.api.Test;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,30 +20,61 @@ class StringBTreeTest {
 
     @Test
     void add_and_search_values_test() {
-        addAndSearchValuesTest(2, 4096);
+        addAndSearchValuesTest(3, 20);
+        addAndSearchValuesTest(3, 4096);
         addAndSearchValuesTest(3, 777);
         addAndSearchValuesTest(500, 10000);
         addAndSearchValuesTest(1000, 10000);
     }
 
+    @Test
+    void delete_test() {
+        addAndDeleteValuesTest(3, 15);
+        //addAndDeleteValuesTest(3, 777);
+        //addAndDeleteValuesTest(500, 10000);
+        //addAndDeleteValuesTest(1000, 10000);
+    }
+
+    private void addAndDeleteValuesTest(int m, int count) {
+        StringBTree tree = new StringBTree(m);
+
+        add(tree, count);
+
+        List<Integer> values = getShuffledIntegerStream(count);
+
+        for(Integer value : values) {
+            tree.delete(value.toString());
+        }
+        System.out.println(tree);
+    }
+
     private void addAndSearchValuesTest(int m, int count) {
         StringBTree tree = new StringBTree(m);
-        for(int i = 0; i < count; i++) {
-            tree.add(Integer.toString(i), (long)i);
-        }
 
-        for(int i = 0; i < count; i++) {
-            String key = Integer.toString(i);
-            long value = i;
+        add(tree, count);
 
-            assertThat(tree.search(key))
+        List<Integer> searchValues = getShuffledIntegerStream(count);
+        for(Integer key : searchValues) {
+            long value = key;
+
+            assertThat(tree.search(key.toString()))
                     .as("value " + value + " must be found by key " + key)
                     .containsExactly(value);
         }
     }
 
-    @Test
-    void delete_test() {
+    private void add(StringBTree tree, int count) {
+        for(Integer key : getShuffledIntegerStream(count)) {
+            tree.add(key.toString(), (long)key);
+        }
+    }
+
+    private List<Integer> getShuffledIntegerStream(int count) {
+        List<Integer> integers = IntStream.range(0, count)
+                .boxed()
+                .collect(Collectors.toList());
+        //Collections.shuffle(integers);
+        return integers;
     }
 
     private <T> List<T> listOf(T... values) {
