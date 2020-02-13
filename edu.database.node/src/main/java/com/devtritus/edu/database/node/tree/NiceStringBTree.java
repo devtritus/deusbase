@@ -117,19 +117,19 @@ public class NiceStringBTree implements BTree<String, Long> {
     private void doDelete(String key, PathEntry pathEntry, LinkedList<PathEntry> path) {
         BTreeNode<String, Long> nextNode = pathEntry.key;
         int positionIndex = pathEntry.value;
-        int deletingKeyIndex = nextNode.searchKey(key);
-        nextNode.deleteKeyValue(deletingKeyIndex);
-
-        //LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
+        LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
 
         if(nextNode.isLeaf()) {
-            if(nextNode.getKeysSize() < nextNode.min && !parents.isEmpty()) {
-            }
+            doDelete1(key, nextNode, path, positionIndex);
         } else {
+            doDelete2(key, nextNode, path);
         }
     }
 
-    private void doDelete1(BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, int deletingKeyIndex) {
+    private void doDelete1(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {
+        int deletingKeyIndex = nextNode.searchKey(key);
+        nextNode.deleteKeyValue(deletingKeyIndex);
+
         LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
 
         if(nextNode.getKeysSize() < nextNode.min && !parents.isEmpty()) {
@@ -155,9 +155,7 @@ public class NiceStringBTree implements BTree<String, Long> {
                 parentNode.addChildNode(positionIndex, unionNode);
 
                 path.remove(path.size() - 1);
-                int deletingKeyIndex1 = parentNode:searchKey(parentKeyValue.key);
-                nextNode.deleteKeyValue(deletingKeyIndex);
-                doDelete1(parentNode, path, deletingKeyIndex1);
+                doDelete1(parentKeyValue.key, parentNode, path, parentPathEntry.value);
 
             } else if (leftNode != null) {
                 BTreeNode<String, Long> unionNode = leftNode.union(nextNode);
@@ -171,15 +169,23 @@ public class NiceStringBTree implements BTree<String, Long> {
                 parentNode.addChildNode(positionIndex - 1, unionNode);
 
                 path.remove(path.size() - 1);
-                doDelete1(parentKeyValue.key, parentPathEntry, path);
+                doDelete1(parentKeyValue.key, parentNode, path, parentPathEntry.value);
 
             } else {
                 throw new IllegalStateException();
             }
+
+            if(parents.isEmpty() && nextNode.getKeysSize() == 0 && nextNode.getChildrenSize() == 1) {
+                path.remove(0);
+                path.add(new PathEntry(nextNode.getChildNode(0), -1));
+            }
         }
     }
 
-    private void doDelete2(BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int deletingKeyIndex) {
+    private void doDelete2(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path) {
+        int deletingKeyIndex = nextNode.searchKey(key);
+        nextNode.deleteKeyValue(deletingKeyIndex);
+
         LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
 
         if(parents.isEmpty() && nextNode.getKeysSize() == 0 && nextNode.getChildrenSize() == 1) {
