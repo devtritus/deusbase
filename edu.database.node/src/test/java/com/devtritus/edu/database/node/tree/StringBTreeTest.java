@@ -20,36 +20,80 @@ class StringBTreeTest {
 
     @Test
     void add_and_search_values_test() {
-        addAndSearchValuesTest(3, 20);
         addAndSearchValuesTest(3, 4096);
-        addAndSearchValuesTest(3, 777);
-        addAndSearchValuesTest(500, 10000);
+        addAndSearchValuesTest(7, 777);
+        addAndSearchValuesTest(501, 10000);
         addAndSearchValuesTest(1000, 10000);
+    }
+
+
+    @Test
+    void delete_test1() {
+        NiceStringBTree tree = new NiceStringBTree(3);
+
+        for(Integer key : Arrays.asList(4, 2, 0, 3, 5, 8, 9, 7, 6, 1)) {
+            tree.add(key.toString(), (long)key);
+        }
+
+
+        for (Integer value : Arrays.asList(4, 1, 5, 2, 7, 9, 0, 3, 6, 8)) {
+            printTree(tree);
+            System.out.println("delete " + value);
+            System.out.println();
+            System.out.println("------------------------------------");
+            tree.delete(value.toString());
+        }
     }
 
     @Test
     void delete_test() {
-        addAndDeleteValuesTest(3, 15);
+        //проверить удаление рута
+        //проверить руда без ключей но с 2 детьми
+        //for(int i = 0; i < 100; i++) {
+            addAndDeleteValuesTest(3, 1);
+            addAndDeleteValuesTest(3, 2);
+            addAndDeleteValuesTest(3, 3);
+            addAndDeleteValuesTest(3, 4);
+            addAndDeleteValuesTest(3, 5);
+            addAndDeleteValuesTest(3, 6);
+            addAndDeleteValuesTest(3, 10);
+            addAndDeleteValuesTest(3, 22);
+
+            addAndDeleteValuesTest(4, 1);
+            addAndDeleteValuesTest(4, 2);
+            addAndDeleteValuesTest(4, 3);
+            addAndDeleteValuesTest(4, 4);
+            addAndDeleteValuesTest(4, 5);
+            addAndDeleteValuesTest(4, 6);
+            addAndDeleteValuesTest(4, 10);
+            addAndDeleteValuesTest(4, 22);
+        //}
         //addAndDeleteValuesTest(3, 777);
         //addAndDeleteValuesTest(500, 10000);
         //addAndDeleteValuesTest(1000, 10000);
     }
 
     private void addAndDeleteValuesTest(int m, int count) {
-        StringBTree tree = new StringBTree(m);
+        NiceStringBTree tree = new NiceStringBTree(m);
 
         add(tree, count);
 
         List<Integer> values = getShuffledIntegerStream(count);
 
-        for(Integer value : values) {
-            tree.delete(value.toString());
+        System.out.println("deleted: " + values);
+        try {
+            for (Integer value : values) {
+                tree.delete(value.toString());
+            }
+        } catch (Exception e) {
+            System.out.println(values);
+            throw e;
         }
-        System.out.println(tree);
+        System.out.println();
     }
 
     private void addAndSearchValuesTest(int m, int count) {
-        StringBTree tree = new StringBTree(m);
+        NiceStringBTree tree = new NiceStringBTree(m);
 
         add(tree, count);
 
@@ -63,8 +107,10 @@ class StringBTreeTest {
         }
     }
 
-    private void add(StringBTree tree, int count) {
-        for(Integer key : getShuffledIntegerStream(count)) {
+    private void add(NiceStringBTree tree, int count) {
+        List<Integer> list = getShuffledIntegerStream(count);
+        System.out.println("added: " + list);
+        for(Integer key : list) {
             tree.add(key.toString(), (long)key);
         }
     }
@@ -73,11 +119,31 @@ class StringBTreeTest {
         List<Integer> integers = IntStream.range(0, count)
                 .boxed()
                 .collect(Collectors.toList());
-        //Collections.shuffle(integers);
+        Collections.shuffle(integers);
         return integers;
     }
 
     private <T> List<T> listOf(T... values) {
         return new ArrayList<>(Arrays.asList(values));
+    }
+
+    private void printTree(NiceStringBTree btree) {
+        Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
+        flatTree(btree.root, map);
+        for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
+            for(List<String> value : entry.getValue()) {
+                System.out.print(value + " ");
+            }
+            System.out.print("\n\n");
+        }
+    }
+
+    private void flatTree(BTreeNode<String, Long> node, Map<Integer, List<List<String>>> map) {
+        List<List<String>> parentLevelList = map.computeIfAbsent(node.level, k -> new ArrayList<>());
+        parentLevelList.add(node.getKeys());
+
+        for(BTreeNode<String, Long> childNode : node.getChildren()) {
+            flatTree(childNode, map);
+        }
     }
 }
