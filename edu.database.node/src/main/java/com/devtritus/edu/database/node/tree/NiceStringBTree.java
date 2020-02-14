@@ -117,14 +117,18 @@ public class NiceStringBTree implements BTree<String, Long> {
     private void doDelete(String key, PathEntry pathEntry, LinkedList<PathEntry> path) {
         BTreeNode<String, Long> nextNode = pathEntry.key;
         int positionIndex = pathEntry.value;
-        LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
 
+        doDelete(key, nextNode, path, positionIndex);
+    }
+
+    private void doDelete(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {
         if(nextNode.isLeaf()) {
             doDelete1(key, nextNode, path, positionIndex);
         } else {
             doDelete2(key, nextNode, path);
         }
     }
+
 
     private void doDelete1(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {
         int deletingKeyIndex = nextNode.searchKey(key);
@@ -140,9 +144,23 @@ public class NiceStringBTree implements BTree<String, Long> {
             BTreeNode<String, Long> rightNode = parentNode.getChildNode(positionIndex + 1);
 
             if (rightNode != null && rightNode.getKeysSize() > rightNode.min) {
-                move(nextNode, deletingKeyIndex, parentNode, positionIndex, rightNode, 0);
+
+                Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(positionIndex);
+                nextNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
+                Entry<String, Long> donatingNodeKeyValue = getMinKey(rightNode, path, positionIndex + 1);
+                parentNode.insertKeyValue(positionIndex, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
+
+                delete(donatingNodeKeyValue.key, path.get(path.size() - 1).key, path, path.get(path.size() - 1).value);
+
             } else if (leftNode != null && leftNode.getKeysSize() > leftNode.min) {
-                move(nextNode, deletingKeyIndex, parentNode, positionIndex - 1, leftNode, leftNode.getKeysSize() - 1);
+
+                Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(positionIndex - 1);
+                nextNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
+                Entry<String, Long> donatingNodeKeyValue = getMaxKey(leftNode, path, positionIndex - 1);
+                parentNode.insertKeyValue(positionIndex - 1, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
+
+                delete(donatingNodeKeyValue.key, path.get(path.size() - 1).key, path, path.get(path.size() - 1).value);
+
             } else if (rightNode != null) {
                 BTreeNode<String, Long> unionNode = nextNode.union(rightNode);
 
@@ -174,11 +192,11 @@ public class NiceStringBTree implements BTree<String, Long> {
             } else {
                 throw new IllegalStateException();
             }
+        }
 
-            if(parents.isEmpty() && nextNode.getKeysSize() == 0 && nextNode.getChildrenSize() == 1) {
-                path.remove(0);
-                path.add(new PathEntry(nextNode.getChildNode(0), -1));
-            }
+        if(parents.isEmpty() && nextNode.getKeysSize() == 0 && nextNode.getChildrenSize() == 1) {
+            path.remove(0);
+            path.add(new PathEntry(nextNode.getChildNode(0), -1));
         }
     }
 
@@ -209,15 +227,6 @@ public class NiceStringBTree implements BTree<String, Long> {
                 throw new IllegalStateException();
             }
         }
-    }
-
-    private static void move(BTreeNode<String, Long> currentNode, int deletingKeyIndex, BTreeNode<String, Long> parentNode,
-            int parentKeyIndex, BTreeNode<String, Long> donatingNode,  int donatingKeyIndex) {
-
-        Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(parentKeyIndex);
-        currentNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
-        Entry<String, Long> donatingNodeKeyValue = donatingNode.deleteKeyValue(donatingKeyIndex);
-        parentNode.insertKeyValue(parentKeyIndex, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
     }
 
     private static Entry<String, Long> getMaxKey(BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {

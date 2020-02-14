@@ -116,6 +116,9 @@ class BTreeNode<K extends Comparable<K>, V> {
         unionNode.values.addAll(values);
         unionNode.values.addAll(anotherNode.values);
 
+        unionNode.children.addAll(children);
+        unionNode.children.addAll(anotherNode.children);
+
         return unionNode;
     }
 
