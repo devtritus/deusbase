@@ -64,6 +64,11 @@ class BTreeNode<K extends Comparable<K>, V> {
         return keyValue;
     }
 
+    void replaceKeyValue(int index, K key, V value) {
+        keys.set(index, key);
+        values.set(index, value);
+    }
+
     void replaceValue(int index, V value) {
         if(index < 0) {
             throw new IllegalStateException(String.format("Negative index %s", index));

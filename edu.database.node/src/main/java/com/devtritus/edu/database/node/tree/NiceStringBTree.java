@@ -1,9 +1,10 @@
 package com.devtritus.edu.database.node.tree;
 
-import java.nio.file.Path;
 import java.util.*;
 
 public class NiceStringBTree implements BTree<String, Long> {
+    private static final int ROOT_POSITION = -99999;
+
     BTreeNode<String, Long> root;
 
     public NiceStringBTree(int m) {
@@ -26,7 +27,7 @@ public class NiceStringBTree implements BTree<String, Long> {
     @Override
     public String delete(String key) {
         LinkedList<PathEntry> path = new LinkedList<>();
-        delete(key, root, path, -1);
+        delete(key, root, path, ROOT_POSITION, null);
         root = path.get(0).key;
         return key;
     }
@@ -97,135 +98,146 @@ public class NiceStringBTree implements BTree<String, Long> {
         doAdd(middleKeyValue.key, middleKeyValue.value, nextParent, path);
     }
 
-    private void delete(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {
+    private void delete(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, BTreeNode<String, Long> parent) {
         PathEntry entry = new PathEntry(nextNode, positionIndex);
         path.add(entry);
 
         int index = nextNode.searchKey(key);
 
         if(index > -1) {
-            doDelete(key, entry, path);
+            doDelete(key, index, entry, path, parent);
         } else if(nextNode.isLeaf()) {
             throw new IllegalStateException(String.format("Key %s not found", key));
         } else {
             int childPositionIndex = -index - 1;
             BTreeNode<String, Long> child = nextNode.getChildNode(childPositionIndex);
-            delete(key, child, path, childPositionIndex);
+            delete(key, child, path, childPositionIndex, nextNode);
         }
     }
 
-    private void doDelete(String key, PathEntry pathEntry, LinkedList<PathEntry> path) {
+    private void doDelete(String key, int keyIndex, PathEntry pathEntry, LinkedList<PathEntry> path, BTreeNode<String, Long> parent) {
         BTreeNode<String, Long> nextNode = pathEntry.key;
         int positionIndex = pathEntry.value;
-
-        doDelete(key, nextNode, path, positionIndex);
+        doDelete(key, keyIndex, nextNode, path, positionIndex, parent);
     }
 
-    private void doDelete(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {
-        if(nextNode.isLeaf()) {
-            doDelete1(key, nextNode, path, positionIndex);
+    private void doDelete(String key, int deletingKeyIndex, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, BTreeNode<String, Long> parentNode) {
+        if(path.size() == 1 && nextNode.getChildrenSize() == 0) {
+            nextNode.deleteKeyValue(deletingKeyIndex);
+        } else if(nextNode.isLeaf()) {
+            nextNode.deleteKeyValue(deletingKeyIndex);
+
+            if(nextNode.getKeysSize() < nextNode.min) {
+                balanceAsLeaf(deletingKeyIndex, nextNode, path, positionIndex, parentNode);
+            }
+        } else if(!nextNode.isLeaf()) {
+            balanceAsInnerNode(deletingKeyIndex, nextNode, path, positionIndex, parentNode);
         } else {
-            doDelete2(key, nextNode, path);
+            throw new IllegalStateException();
         }
     }
 
 
-    private void doDelete1(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex) {
-        int deletingKeyIndex = nextNode.searchKey(key);
-        nextNode.deleteKeyValue(deletingKeyIndex);
+    private void balanceAsLeaf(int deletingKeyIndex, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, BTreeNode<String, Long> parentNode) {
+        BTreeNode<String, Long> leftNode = parentNode.getChildNode(positionIndex - 1);
+        BTreeNode<String, Long> rightNode = parentNode.getChildNode(positionIndex + 1);
 
-        LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
+        if (rightNode != null && rightNode.getKeysSize() > rightNode.min) {
 
-        if(nextNode.getKeysSize() < nextNode.min && !parents.isEmpty()) {
-            PathEntry parentPathEntry = parents.get(parents.size() - 1);
-            BTreeNode<String, Long> parentNode = parentPathEntry.key;
+            Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(positionIndex);
+            nextNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
+            Entry<String, Long> donatingNodeKeyValue = rightNode.deleteKeyValue(positionIndex + 1);
+            parentNode.insertKeyValue(positionIndex, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
 
-            BTreeNode<String, Long> leftNode = parentNode.getChildNode(positionIndex - 1);
-            BTreeNode<String, Long> rightNode = parentNode.getChildNode(positionIndex + 1);
+        } else if (leftNode != null && leftNode.getKeysSize() > leftNode.min) {
 
-            if (rightNode != null && rightNode.getKeysSize() > rightNode.min) {
+            Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(positionIndex - 1);
+            nextNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
+            Entry<String, Long> donatingNodeKeyValue = leftNode.deleteKeyValue(positionIndex - 1);
+            parentNode.insertKeyValue(positionIndex - 1, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
 
-                Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(positionIndex);
-                nextNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
-                Entry<String, Long> donatingNodeKeyValue = getMinKey(rightNode, path, positionIndex + 1);
-                parentNode.insertKeyValue(positionIndex, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
+        } else if (rightNode != null) {
+            BTreeNode<String, Long> unionNode = nextNode.union(rightNode);
 
-                delete(donatingNodeKeyValue.key, path.get(path.size() - 1).key, path, path.get(path.size() - 1).value);
+            parentNode.deleteChild(nextNode);
+            parentNode.deleteChild(rightNode);
 
-            } else if (leftNode != null && leftNode.getKeysSize() > leftNode.min) {
+            Entry<String, Long> parentKeyValue = parentNode.getKeyValue(positionIndex);
+            unionNode.insertKeyValue(nextNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
 
-                Entry<String, Long> parentKeyValue = parentNode.deleteKeyValue(positionIndex - 1);
-                nextNode.insertKeyValue(deletingKeyIndex, parentKeyValue.key, parentKeyValue.value);
-                Entry<String, Long> donatingNodeKeyValue = getMaxKey(leftNode, path, positionIndex - 1);
-                parentNode.insertKeyValue(positionIndex - 1, donatingNodeKeyValue.key, donatingNodeKeyValue.value);
+            parentNode.addChildNode(positionIndex, unionNode);
 
-                delete(donatingNodeKeyValue.key, path.get(path.size() - 1).key, path, path.get(path.size() - 1).value);
+            path.remove(path.size() - 1);
+            parentNode.deleteKeyValue(positionIndex + 1);
 
-            } else if (rightNode != null) {
-                BTreeNode<String, Long> unionNode = nextNode.union(rightNode);
-
-                parentNode.deleteChild(nextNode);
-                parentNode.deleteChild(rightNode);
-
-                Entry<String, Long> parentKeyValue = parentNode.getKeyValue(positionIndex);
-                unionNode.insertKeyValue(nextNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
-
-                parentNode.addChildNode(positionIndex, unionNode);
-
-                path.remove(path.size() - 1);
-                doDelete1(parentKeyValue.key, parentNode, path, parentPathEntry.value);
-
-            } else if (leftNode != null) {
-                BTreeNode<String, Long> unionNode = leftNode.union(nextNode);
-
-                parentNode.deleteChild(leftNode);
-                parentNode.deleteChild(nextNode);
-
-                Entry<String, Long> parentKeyValue = parentNode.getKeyValue(positionIndex - 1);
-                unionNode.insertKeyValue(leftNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
-
-                parentNode.addChildNode(positionIndex - 1, unionNode);
-
-                path.remove(path.size() - 1);
-                doDelete1(parentKeyValue.key, parentNode, path, parentPathEntry.value);
-
-            } else {
-                throw new IllegalStateException();
+            if(path.size() == 1 && parentNode.getKeysSize() == 0) {
+                path.remove(0);
+            } else if(parentNode.getKeysSize() < parentNode.m) {
+                int parentPositionIndex = path.get(path.size() - 1).value;
+                balanceAsLeaf(positionIndex + 1, parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
             }
-        }
 
-        if(parents.isEmpty() && nextNode.getKeysSize() == 0 && nextNode.getChildrenSize() == 1) {
-            path.remove(0);
-            path.add(new PathEntry(nextNode.getChildNode(0), -1));
+        } else if(leftNode != null) {
+            BTreeNode<String, Long> unionNode = leftNode.union(nextNode);
+
+            parentNode.deleteChild(leftNode);
+            parentNode.deleteChild(nextNode);
+
+            Entry<String, Long> parentKeyValue = parentNode.getKeyValue(positionIndex - 1);
+            unionNode.insertKeyValue(leftNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
+
+            parentNode.addChildNode(positionIndex - 1, unionNode);
+
+            path.remove(path.size() - 1);
+            parentNode.deleteKeyValue(positionIndex - 1);
+
+            if(path.size() == 1 && parentNode.getKeysSize() == 0) {
+                path.remove(0);
+            } else if(parentNode.getKeysSize() < parentNode.m) {
+                int parentPositionIndex = path.get(path.size() - 1).value;
+                balanceAsLeaf(positionIndex - 1, parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
+            }
         }
     }
 
-    private void doDelete2(String key, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path) {
-        int deletingKeyIndex = nextNode.searchKey(key);
-        nextNode.deleteKeyValue(deletingKeyIndex);
+    private void balanceAsInnerNode(int deletingKeyIndex, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, BTreeNode<String, Long> parentNode) {
+        Entry<String, Long> nextNodeEntry = nextNode.getKeyValue(deletingKeyIndex);
+        BTreeNode<String, Long> rightChildNode = nextNode.getChildNode(deletingKeyIndex + 1);
+        BTreeNode<String, Long> leftChildNode = nextNode.getChildNode(deletingKeyIndex);
+        BTreeNode<String, Long> root = path.get(0).key;
 
-        LinkedList<PathEntry> parents = new LinkedList<>(path.subList(0, path.size() - 1));
+        if (rightChildNode != null) {
+            Entry<String, Long> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
+            PathEntry rightMinNodeEntry = path.get(path.size() - 1);
+            int rightMinKeyIndex = rightMinNodeEntry.key.searchKey(entry.key);
+            rightChildNode.deleteKeyValue(rightMinKeyIndex);
+            balanceAsLeaf(rightMinKeyIndex, rightMinNodeEntry.key, path, rightMinNodeEntry.value, path.get(path.size() - 2).key);
+            replace(nextNodeEntry.key, entry.key, entry.value, root);
 
-        if(parents.isEmpty() && nextNode.getKeysSize() == 0 && nextNode.getChildrenSize() == 1) {
-            path.remove(0);
-            path.add(new PathEntry(nextNode.getChildNode(0), -1));
-        } else if(nextNode.getKeysSize() < nextNode.min || nextNode.getKeysSize() != nextNode.getChildrenSize() - 1) {
-            BTreeNode<String, Long> leftChildNode = nextNode.getChildNode(deletingKeyIndex);
-            BTreeNode<String, Long> rightChildNode = nextNode.getChildNode(deletingKeyIndex + 1);
+        } else if (leftChildNode != null) {
+            Entry<String, Long> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
+            PathEntry leftMinNodeEntry = path.get(path.size() - 1);
+            int leftMinKeyIndex = leftMinNodeEntry.key.searchKey(entry.key);
+            leftChildNode.deleteKeyValue(leftMinKeyIndex);
+            balanceAsLeaf(leftMinKeyIndex, leftMinNodeEntry.key, path, leftMinNodeEntry.value, path.get(path.size() - 2).key);
+            replace(nextNodeEntry.key, entry.key, entry.value, root);
 
-            if (rightChildNode != null) {
-                Entry<String, Long> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
-                nextNode.insertKeyValue(deletingKeyIndex, entry.key, entry.value);
-                doDelete(entry.key, path.get(path.size() - 1), path);
+        } else {
+            throw new IllegalStateException();
+        }
+    }
 
-            } else if (leftChildNode != null) {
-                Entry<String, Long> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
-                nextNode.insertKeyValue(deletingKeyIndex, entry.key, entry.value);
-                doDelete(entry.key, path.get(path.size() - 1), path);
-
-            } else {
-                throw new IllegalStateException();
+    private static void replace(String key, String newKey, long newValue, BTreeNode<String, Long> nextNode) {
+        int index = nextNode.searchKey(key);
+        if(index > -1) {
+            nextNode.replaceKeyValue(index, newKey, newValue);
+        } else {
+            if(nextNode.isLeaf()) {
+                throw new IllegalStateException(String.format("Key %s not found", key));
             }
+
+            BTreeNode<String, Long> child = nextNode.getChildNode(-index - 1);
+            replace(key, newKey, newValue, child);
         }
     }
 
