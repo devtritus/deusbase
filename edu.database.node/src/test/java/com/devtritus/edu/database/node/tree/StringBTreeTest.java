@@ -48,28 +48,28 @@ class StringBTreeTest {
 
     @Test
     void delete_test_random_cases() {
-        addAndDeleteTest(3, 1);
-        addAndDeleteTest(3, 2);
-        addAndDeleteTest(3, 3);
-        addAndDeleteTest(3, 4);
-        addAndDeleteTest(3, 5);
-        addAndDeleteTest(3, 6);
-        addAndDeleteTest(3, 10);
-        addAndDeleteTest(3, 19);
-
-        addAndDeleteTest(4, 1);
-        addAndDeleteTest(4, 2);
-        addAndDeleteTest(4, 3);
-        addAndDeleteTest(4, 4);
-        addAndDeleteTest(4, 5);
-        addAndDeleteTest(4, 6);
-        addAndDeleteTest(4, 10);
-        addAndDeleteTest(4, 42);
-
-        for(int i = 0; i < 200; i++) {
+        for(int i = 0; i < 50; i++) {
+            addAndDeleteTest(3, 1);
+            addAndDeleteTest(3, 2);
+            addAndDeleteTest(3, 3);
+            addAndDeleteTest(3, 4);
+            addAndDeleteTest(3, 5);
+            addAndDeleteTest(3, 6);
+            addAndDeleteTest(3, 10);
+            addAndDeleteTest(3, 19);
             addAndDeleteTest(3, 42);
             addAndDeleteTest(3, 777);
+
+            addAndDeleteTest(4, 1);
+            addAndDeleteTest(4, 2);
+            addAndDeleteTest(4, 3);
+            addAndDeleteTest(4, 4);
+            addAndDeleteTest(4, 5);
+            addAndDeleteTest(4, 6);
+            addAndDeleteTest(4, 10);
+            addAndDeleteTest(4, 42);
             addAndDeleteTest(4, 1103);
+
             addAndDeleteTest(500, 10000);
             addAndDeleteTest(1000, 10000);
         }

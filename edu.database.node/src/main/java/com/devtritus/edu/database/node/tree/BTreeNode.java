@@ -54,8 +54,6 @@ class BTreeNode<K extends Comparable<K>, V> {
             throw new IllegalStateException(String.format("Key by index %s not found", index));
         }
 
-        int keySize = getKeysSize();
-
         Entry<K, V> keyValue = getKeyValue(index);
 
         keys.remove(index);

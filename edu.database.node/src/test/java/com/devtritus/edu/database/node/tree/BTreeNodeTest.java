@@ -139,9 +139,6 @@ class BTreeNodeTest {
         assertThat(entryA).isEqualTo(new Entry<>("a", 0L));
 
         assertThat(node.getValue("a")).isNull();
-
-        int indexB = node.searchKey("b");
-        assertThatThrownBy(() -> node.deleteKeyValue(indexB)).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
