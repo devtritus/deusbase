@@ -131,6 +131,11 @@ class BTreeNode<K extends Comparable<K>, V> {
         insert(children, node, index);
     }
 
+
+    BTreeNode<K, V> deleteChild(int index) {
+        return children.remove(index);
+    }
+
     int deleteChild(BTreeNode<K, V> node) {
         int index = children.indexOf(node);
         if(index == -1) {
@@ -168,10 +173,6 @@ class BTreeNode<K extends Comparable<K>, V> {
         return children.get(index);
     }
 
-    int indexOfChildNode(BTreeNode<K, V> node) {
-        return children.indexOf(node);
-    }
-
     List<K> getKeys() {
         return new ArrayList<>(keys);
     }
@@ -188,7 +189,7 @@ class BTreeNode<K extends Comparable<K>, V> {
         return children.size();
     }
 
-    private static <T> List<T> insert(List<T> list, T element, int insertIndex)  {
+    static <T> List<T> insert(List<T> list, T element, int insertIndex)  {
         T current = element;
         for(int i = insertIndex; i < list.size(); i++) {
             current = list.set(i, current);
@@ -197,19 +198,6 @@ class BTreeNode<K extends Comparable<K>, V> {
         list.add(current);
 
         return list;
-    }
-
-    private BTreeNode<K, V> copy(int start, int end, BTreeNode<K, V> node) {
-        BTreeNode<K, V> newNode = new BTreeNode<>(node.m, node.level);
-
-        newNode.keys.addAll(new ArrayList<>(node.keys.subList(start, end)));
-        newNode.values.addAll(new ArrayList<>(node.values.subList(start, end)));
-
-        if(!node.children.isEmpty()) {
-            newNode.children.addAll(new ArrayList<>(children.subList(start, end + 1)));
-        }
-
-        return newNode;
     }
 
     @Override

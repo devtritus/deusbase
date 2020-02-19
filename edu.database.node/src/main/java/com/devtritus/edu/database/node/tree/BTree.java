@@ -8,4 +8,6 @@ public interface BTree<K, V> {
     K add(K key, V value);
 
     K delete(K key);
+
+    boolean isEmpty();
 }
