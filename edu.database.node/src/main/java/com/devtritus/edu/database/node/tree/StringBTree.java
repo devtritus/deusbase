@@ -133,6 +133,24 @@ public class StringBTree implements BTree<String, Long> {
         }
     }
 
+    private void rebalance(BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, BTreeNode<String, Long> parentNode) {
+        BTreeNode<String, Long> leftNode = parentNode.getChildNode(positionIndex - 1);
+        BTreeNode<String, Long> rightNode = parentNode.getChildNode(positionIndex + 1);
+
+        if(rightNode != null && rightNode.getKeysSize() > rightNode.min) {
+            rotate(nextNode, parentNode, rightNode, nextNode.getKeysSize(), positionIndex, 0, 0, nextNode.getChildrenSize());
+
+        } else if(leftNode != null && leftNode.getKeysSize() > leftNode.min) {
+            rotate(nextNode, parentNode, leftNode, 0, positionIndex - 1, leftNode.getKeysSize() - 1, leftNode.getChildrenSize() - 1, 0);
+
+        } else if(rightNode != null) {
+            union(nextNode, parentNode, rightNode, path, positionIndex);
+
+        } else if(leftNode != null) {
+            union(leftNode, parentNode, nextNode, path, positionIndex - 1);
+        }
+    }
+
     private void rotate(BTreeNode<String, Long> consumerNode,
                         BTreeNode<String, Long> parentNode,
                         BTreeNode<String, Long> sourceNode,
@@ -153,66 +171,34 @@ public class StringBTree implements BTree<String, Long> {
         }
     }
 
-    private void rebalance(BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path, int positionIndex, BTreeNode<String, Long> parentNode) {
-        BTreeNode<String, Long> leftNode = parentNode.getChildNode(positionIndex - 1);
-        BTreeNode<String, Long> rightNode = parentNode.getChildNode(positionIndex + 1);
+    private void union(BTreeNode<String, Long> firstNode,
+                       BTreeNode<String, Long> parentNode,
+                       BTreeNode<String, Long> secondNode,
+                       LinkedList<PathEntry> path,
+                       int parentKeyIndex) {
 
-        if (rightNode != null && rightNode.getKeysSize() > rightNode.min) {
+        BTreeNode<String, Long> unionNode = firstNode.union(secondNode);
 
-            rotate(nextNode, parentNode, rightNode, nextNode.getKeysSize(), positionIndex, 0, 0, nextNode.getChildrenSize());
+        parentNode.deleteChild(firstNode);
+        parentNode.deleteChild(secondNode);
 
-        } else if (leftNode != null && leftNode.getKeysSize() > leftNode.min) {
+        Entry<String, Long> parentKeyValue = parentNode.getKeyValue(parentKeyIndex);
+        unionNode.insertKeyValue(firstNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
 
-            rotate(nextNode, parentNode, leftNode, 0, positionIndex - 1, leftNode.getKeysSize() - 1, leftNode.getChildrenSize() - 1, 0);
+        parentNode.addChildNode(parentKeyIndex, unionNode);
 
-        } else if (rightNode != null) {
-            BTreeNode<String, Long> unionNode = nextNode.union(rightNode);
+        path.remove(path.size() - 1);
 
-            parentNode.deleteChild(nextNode);
-            parentNode.deleteChild(rightNode);
+        parentNode.deleteKeyValue(parentKeyIndex);
 
-            Entry<String, Long> parentKeyValue = parentNode.getKeyValue(positionIndex);
-            unionNode.insertKeyValue(nextNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
-
-            parentNode.addChildNode(positionIndex, unionNode);
-
-            path.remove(path.size() - 1);
-            parentNode.deleteKeyValue(positionIndex);
-
-            if(parentNode == path.get(0).key) {
-                if(parentNode.getChildrenSize() > 0 && parentNode.getKeysSize() == 0) {
-                    path.remove(0);
-                    path.add(new PathEntry(unionNode, 0));
-                }
-            } else if(parentNode.getKeysSize() < parentNode.min) {
-                int parentPositionIndex = path.get(path.size() - 1).value;
-                rebalance(parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
+        if(parentNode == path.get(0).key) {
+            if(parentNode.getChildrenSize() > 0 && parentNode.getKeysSize() == 0) {
+                path.remove(0);
+                path.add(new PathEntry(unionNode, 0));
             }
-
-        } else if(leftNode != null) {
-            BTreeNode<String, Long> unionNode = leftNode.union(nextNode);
-
-            parentNode.deleteChild(leftNode);
-            parentNode.deleteChild(nextNode);
-
-            Entry<String, Long> parentKeyValue = parentNode.getKeyValue(positionIndex - 1);
-            unionNode.insertKeyValue(leftNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
-
-            parentNode.addChildNode(positionIndex - 1, unionNode);
-
-            path.remove(path.size() - 1);
-
-            parentNode.deleteKeyValue(positionIndex - 1);
-
-            if(parentNode == path.get(0).key) {
-                if(parentNode.getChildrenSize() > 0 && parentNode.getKeysSize() == 0) {
-                    path.remove(0);
-                    path.add(new PathEntry(unionNode, 0));
-                }
-            } else if(parentNode.getKeysSize() < parentNode.m) {
-                int parentPositionIndex = path.get(path.size() - 1).value;
-                rebalance(parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
-            }
+        } else if(parentNode.getKeysSize() < parentNode.min) {
+            int parentPositionIndex = path.get(path.size() - 1).value;
+            rebalance(parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
         }
     }
 
@@ -220,7 +206,7 @@ public class StringBTree implements BTree<String, Long> {
         BTreeNode<String, Long> rightChildNode = nextNode.getChildNode(deletingKeyIndex + 1);
         BTreeNode<String, Long> leftChildNode = nextNode.getChildNode(deletingKeyIndex);
 
-        if (rightChildNode != null) {
+        if(rightChildNode != null) {
             Entry<String, Long> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
             PathEntry rightMinNodeEntry = path.get(path.size() - 1);
             rightMinNodeEntry.key.deleteKeyValue(0);
@@ -230,7 +216,7 @@ public class StringBTree implements BTree<String, Long> {
                 rebalance(rightMinNodeEntry.key, path, rightMinNodeEntry.value, path.get(path.size() - 2).key);
             }
 
-        } else if (leftChildNode != null) {
+        } else if(leftChildNode != null) {
             Entry<String, Long> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
             PathEntry leftMaxNodeEntry = path.get(path.size() - 1);
             leftMaxNodeEntry.key.deleteKeyValue(leftMaxNodeEntry.key.getKeysSize() - 1);
