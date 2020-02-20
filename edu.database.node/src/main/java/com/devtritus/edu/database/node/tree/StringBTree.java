@@ -121,8 +121,6 @@ public class StringBTree implements BTree<String, Long> {
                 }
             } else if(!nextNode.isLeaf()) {
                 deleteInternalNode(index, nextNode, path);
-            } else {
-                throw new IllegalStateException();
             }
         } else if(nextNode.isLeaf()) {
             throw new IllegalStateException(String.format("Key %s not found", key));
@@ -130,6 +128,44 @@ public class StringBTree implements BTree<String, Long> {
             int childPositionIndex = -index - 1;
             BTreeNode<String, Long> child = nextNode.getChildNode(childPositionIndex);
             delete(key, child, path, childPositionIndex, nextNode);
+        }
+    }
+
+    private void deleteInternalNode(int deletingKeyIndex, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path) {
+        BTreeNode<String, Long> rightChildNode = nextNode.getChildNode(deletingKeyIndex + 1);
+        BTreeNode<String, Long> leftChildNode = nextNode.getChildNode(deletingKeyIndex);
+
+        if(rightChildNode != null) {
+            Entry<String, Long> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
+            PathEntry rightMinNodeEntry = path.get(path.size() - 1);
+            PathEntry rightMinNodeParentEntry = path.get(path.size() - 2);
+            replace(nextNode, rightMinNodeEntry.key, rightMinNodeParentEntry.key, entry, path, rightMinNodeEntry.value, deletingKeyIndex, 0);
+
+        } else if(leftChildNode != null) {
+            Entry<String, Long> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
+            PathEntry leftMaxNodeEntry = path.get(path.size() - 1);
+            PathEntry leftMaxNodeParentEntry = path.get(path.size() - 1);
+            replace(nextNode, leftMaxNodeEntry.key, leftMaxNodeParentEntry.key, entry, path, leftMaxNodeEntry.value, deletingKeyIndex, leftMaxNodeEntry.key.getKeysSize());
+
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+    private void replace(BTreeNode<String, Long> consumerNode,
+                         BTreeNode<String, Long> sourceNode,
+                         BTreeNode<String, Long> sourceNodeParent,
+                         Entry<String, Long> entryToReplace,
+                         LinkedList<PathEntry> path,
+                         int sourcePositionIndex,
+                         int consumerKeyIndex,
+                         int sourceKeyIndex) {
+
+        sourceNode.deleteKeyValue(sourceKeyIndex);
+        consumerNode.replaceKeyValue(consumerKeyIndex, entryToReplace.key, entryToReplace.value);
+
+        if(sourceNode.getKeysSize() < sourceNode.min) {
+            rebalance(sourceNode, path, sourcePositionIndex, sourceNodeParent);
         }
     }
 
@@ -199,36 +235,6 @@ public class StringBTree implements BTree<String, Long> {
         } else if(parentNode.getKeysSize() < parentNode.min) {
             int parentPositionIndex = path.get(path.size() - 1).value;
             rebalance(parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
-        }
-    }
-
-    private void deleteInternalNode(int deletingKeyIndex, BTreeNode<String, Long> nextNode, LinkedList<PathEntry> path) {
-        BTreeNode<String, Long> rightChildNode = nextNode.getChildNode(deletingKeyIndex + 1);
-        BTreeNode<String, Long> leftChildNode = nextNode.getChildNode(deletingKeyIndex);
-
-        if(rightChildNode != null) {
-            Entry<String, Long> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
-            PathEntry rightMinNodeEntry = path.get(path.size() - 1);
-            rightMinNodeEntry.key.deleteKeyValue(0);
-
-            nextNode.replaceKeyValue(deletingKeyIndex, entry.key, entry.value);
-            if(rightMinNodeEntry.key.getKeysSize() < rightMinNodeEntry.key.min) {
-                rebalance(rightMinNodeEntry.key, path, rightMinNodeEntry.value, path.get(path.size() - 2).key);
-            }
-
-        } else if(leftChildNode != null) {
-            Entry<String, Long> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
-            PathEntry leftMaxNodeEntry = path.get(path.size() - 1);
-            leftMaxNodeEntry.key.deleteKeyValue(leftMaxNodeEntry.key.getKeysSize() - 1);
-
-            nextNode.replaceKeyValue(deletingKeyIndex, entry.key, entry.value);
-
-            if(leftMaxNodeEntry.key.getKeysSize() < leftMaxNodeEntry.key.min) {
-                rebalance(leftMaxNodeEntry.key, path, leftMaxNodeEntry.value, path.get(path.size() - 2).key);
-            }
-
-        } else {
-            throw new IllegalStateException();
         }
     }
 
