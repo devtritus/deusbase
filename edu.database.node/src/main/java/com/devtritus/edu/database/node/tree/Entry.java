@@ -2,7 +2,7 @@ package com.devtritus.edu.database.node.tree;
 
 import java.util.Objects;
 
-public class Entry<T, T1> {
+class Entry<T, T1> {
     final T key;
     final T1 value;
 
