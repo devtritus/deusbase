@@ -1,7 +1,7 @@
 package com.devtritus.edu.database.node.tree;
 
-public class PathEntry extends Entry<BTreeNode<String, Long>, Integer> {
-    PathEntry(BTreeNode<String, Long> key, Integer value) {
+class PathEntry<K extends Comparable<K>, V> extends Entry<BTreeNode<K, V>, Integer> {
+    PathEntry(BTreeNode<K, V> key, Integer value) {
         super(key, value);
     }
 }

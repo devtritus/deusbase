@@ -129,7 +129,6 @@ class BTreeNodeTest {
     void delete_children_test() {
         BTreeNode<String, Long> node = new BTreeNode<>(3);
         node.putKeyValue("a", 0L);
-        node.putKeyValue("b", 1L);
 
         assertThat(node.getValue("a")).isEqualTo(0L);
 
