@@ -11,11 +11,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BTreeTest {
 
     @Test
-    void add_and_search_values_test() {
-        addThenSearchTest(3, 4096);
-        addThenSearchTest(7, 777);
-        addThenSearchTest(501, 10000);
-        addThenSearchTest(1000, 10000);
+    void add_then_search_by_keys_test() {
+        addThenSearchByKeyTest(3, 4096);
+        addThenSearchByKeyTest(7, 777);
+        addThenSearchByKeyTest(501, 10000);
+        addThenSearchByKeyTest(1000, 10000);
+    }
+
+    @Test
+    void search_list_test() {
+        StringIntegerBTree tree = new StringIntegerBTree(3);
+
+        List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab", "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba");
+
+        for(int i = 0; i < keys.size() - 1; i++) {
+            tree.add(keys.get(i), i);
+        }
+
+        printTree(tree);
     }
 
     @Test
@@ -75,8 +88,18 @@ class BTreeTest {
         }
     }
 
-    private void addThenSearchTest(int m, int count) {
-        StringLongBTree tree = new StringLongBTree(m);
+    @Test
+    void delete_result_test() {
+        StringIntegerBTree tree = new StringIntegerBTree(3);
+
+        add(tree, Arrays.asList(1, 2, 3, 4, 5));
+
+        assertThat(tree.delete("5")).isTrue();
+        assertThat(tree.delete("5")).isFalse();
+    }
+
+    private void addThenSearchByKeyTest(int m, int count) {
+        StringIntegerBTree tree = new StringIntegerBTree(m);
 
         List<Integer> toAdd = getShuffledIntegerStream(count);
         List<Integer> toSearch = getShuffledIntegerStream(count);
@@ -89,11 +112,11 @@ class BTreeTest {
         }
 
         for(Integer key : toSearch) {
-            long value = key;
+            int value = key;
 
-            assertThat(tree.search(key.toString()))
+            assertThat(tree.searchByKey(key.toString()))
                     .as("value " + value + " must be found by key " + key)
-                    .containsExactly(value);
+                    .isEqualTo(value);
         }
     }
 
@@ -106,7 +129,7 @@ class BTreeTest {
     }
 
     void addThenDeleteTest(int m, List<Integer> toAdd, List<Integer> toDelete) {
-        StringLongBTree tree = new StringLongBTree(m);
+        StringIntegerBTree tree = new StringIntegerBTree(m);
 
         try {
             add(tree, toAdd);
@@ -122,19 +145,20 @@ class BTreeTest {
         //System.out.println("END\n-------------------------------------------------\n");
     }
 
-    private void add(StringLongBTree tree, List<Integer> toAdd) {
+    private void add(StringIntegerBTree tree, List<Integer> toAdd) {
         for(Integer key : toAdd) {
             //printTree(tree);
             //System.out.println("added " + key + "\n");
-            tree.add(key.toString(), (long)key);
+            tree.add(key.toString(), key);
         }
     }
 
-    private void delete(StringLongBTree tree, List<Integer> toDelete) {
+    private void delete(StringIntegerBTree tree, List<Integer> toDelete) {
         for(Integer key : toDelete) {
             //printTree(tree);
             //System.out.println("delete " + key + "\n");
-            tree.delete(key.toString());
+            boolean result = tree.delete(key.toString());
+            assertThat(result).isTrue();
         }
     }
 
@@ -146,7 +170,7 @@ class BTreeTest {
         return integers;
     }
 
-    private void printTree(StringLongBTree btree) {
+    private void printTree(StringIntegerBTree btree) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
         flatTree(btree.root, map);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
@@ -157,11 +181,11 @@ class BTreeTest {
         }
     }
 
-    private void flatTree(BTreeNode<String, Long> node, Map<Integer, List<List<String>>> map) {
+    private void flatTree(BTreeNode<String, Integer> node, Map<Integer, List<List<String>>> map) {
         List<List<String>> parentLevelList = map.computeIfAbsent(node.level, k -> new ArrayList<>());
         parentLevelList.add(node.getKeys());
 
-        for(BTreeNode<String, Long> childNode : node.getChildren()) {
+        for(BTreeNode<String, Integer> childNode : node.getChildren()) {
             flatTree(childNode, map);
         }
     }
