@@ -11,6 +11,15 @@ abstract class AbstractBTree<K extends Comparable<K>, V> implements BTree<K, V> 
         root = new BTreeNode<>(m, 0);
     }
 
+    abstract boolean isFetchedKeySatisfy(K key, K fetchKey);
+
+    @Override
+    public Map<K, V> fetch(K key) {
+        Map<K, V> result = new HashMap<>();
+        fetch(key, root, result);
+        return result;
+    }
+
     @Override
     public V searchByKey(K key) {
         return searchByKey(key, root);
@@ -39,6 +48,46 @@ abstract class AbstractBTree<K extends Comparable<K>, V> implements BTree<K, V> 
             throw new IllegalStateException();
         }
         return root.getKeysSize() == 0;
+    }
+
+    private void fetch(K key, BTreeNode<K, V> nextNode, Map<K, V> result) {
+
+        int lastChildIndex = 0;
+        boolean found = false;
+        List<K> keys = nextNode.getKeys();
+        for (int i = 0; i < keys.size(); i++) {
+            Entry<K, V> entry = nextNode.getKeyValue(i);
+            if (isFetchedKeySatisfy(entry.key, key)) {
+                found = true;
+                result.put(entry.key, entry.value);
+
+                if (!nextNode.isLeaf()) {
+                    if (lastChildIndex == 0 || lastChildIndex < i) {
+                        BTreeNode<K, V> leftNode = nextNode.getChildNode(i);
+                        if (leftNode != null) {
+                            fetch(key, leftNode, result);
+                        }
+                    }
+
+                    BTreeNode<K, V> rightNode = nextNode.getChildNode(i + 1);
+                    if (rightNode != null) {
+                        fetch(key, rightNode, result);
+                        lastChildIndex = i + 1;
+                    }
+                }
+            } else if(found) {
+                break;
+            }
+        }
+        if (!found) {
+            int index = nextNode.searchKey(key);
+            if (index > -1) {
+                throw new IllegalStateException();
+            } else if (!nextNode.isLeaf()) {
+                BTreeNode<K, V> child = nextNode.getChildNode(-index - 1);
+                fetch(key, child, result);
+            }
+        }
     }
 
     private V searchByKey(K key, BTreeNode<K, V> nextNode) {

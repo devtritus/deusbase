@@ -22,13 +22,29 @@ class BTreeTest {
     void search_list_test() {
         StringIntegerBTree tree = new StringIntegerBTree(3);
 
-        List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab", "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba");
+        List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab",
+                "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba", "bbbb", "bbba");
 
         for(int i = 0; i < keys.size() - 1; i++) {
             tree.add(keys.get(i), i);
         }
 
         printTree(tree);
+
+        Map<String, Integer> result = tree.fetch("aaaa");
+        assertThat(result).containsOnlyKeys("aaaa");
+
+        result = tree.fetch("bba");
+        assertThat(result).containsOnlyKeys("bba", "bbaa", "bbab");
+
+        result = tree.fetch("ba");
+        assertThat(result).containsOnlyKeys("baba", "babb", "baa", "baab");
+
+        result = tree.fetch("aaaa");
+        assertThat(result).containsOnlyKeys("aaaa");
+
+        result = tree.fetch("a");
+        assertThat(result).containsOnlyKeys("a", "aa", "aaa", "abb", "aab", "aaaa", "aaab", "aabb", "abab", "abba", "abaa", "aaba");
     }
 
     @Test
