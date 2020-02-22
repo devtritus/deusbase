@@ -7,7 +7,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         int port = 7599;//getRandomPort();
 
-        MockApi api = new MockApi();
+        NodeApi api = new NodeApi();
         LoggingApiDecorator<String, String> loggingApiDecorator = new LoggingApiDecorator<>(api);
 
         RequestBodyHandler requestBodyHandler = new RequestBodyHandler(loggingApiDecorator);

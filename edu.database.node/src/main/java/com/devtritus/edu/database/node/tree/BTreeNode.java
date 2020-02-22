@@ -37,7 +37,7 @@ class BTreeNode<K extends Comparable<K>, V> {
         int index = searchKey(key);
 
         if(index > -1) {
-            throw new IllegalStateException(String.format("Key %s already exists", key));
+            replaceValue(index, value);
         } else {
             int insertionIndex = -index - 1;
             insertKeyValue(insertionIndex, key, value);

@@ -29,8 +29,6 @@ class BTreeTest {
             tree.add(keys.get(i), i);
         }
 
-        printTree(tree);
-
         Map<String, Integer> result = tree.fetch("aaaa");
         assertThat(result).containsOnlyKeys("aaaa");
 

@@ -24,7 +24,7 @@ public class RequestBodyHandler {
                 break;
             case READ:
                 data = api.read(args[0]);
-                if(data.get(args[0]) == null) {
+                if(data.isEmpty()){
                     responseStatus = ResponseStatus.NOT_FOUND;
                 }
                 break;
