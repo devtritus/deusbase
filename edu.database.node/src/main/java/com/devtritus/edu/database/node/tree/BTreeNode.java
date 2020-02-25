@@ -12,25 +12,14 @@ class BTreeNode<K extends Comparable<K>, V> {
     private final List<V> values = new ArrayList<>();
     private final List<BTreeNode<K, V>> children = new ArrayList<>();
 
-    final int m;
-    final int max;
-    final int min;
-    final int level;
+    private final int level;
 
-    BTreeNode(int m) {
-        this(m, 0);
+    BTreeNode(int level) {
+        this.level = level;
     }
 
-    BTreeNode(int m, int level) {
-        if(m < 3) {
-            throw new IllegalArgumentException("m must be more or equal then 3");
-        }
-        this.m = m;
-        this.max = m - 1;
-        //m = 3 => 3/2 = 1.5 ~ 2 => t = 2 => t - 1 = 2 - 1
-        //m = 4 => 4/2 =   2 ~ 2 => t = 2 => t - 1 = 2 - 1
-        this.min = (int)Math.ceil(m / 2d) - 1;
-        this.level = level;
+    int getLevel() {
+        return level;
     }
 
     void putKeyValue(K key, V value) {
@@ -77,9 +66,6 @@ class BTreeNode<K extends Comparable<K>, V> {
 
     V getValue(K key) {
         int size = getKeysSize();
-        if(max < size) {
-            throw new IllegalStateException(String.format("Node has %s keys. Reading permitted only if keys number is %s", size, max));
-        }
 
         int index = searchKey(key);
         if(index < 0) {
@@ -93,17 +79,13 @@ class BTreeNode<K extends Comparable<K>, V> {
         return Collections.binarySearch(keys, key);
     }
 
-    BTreeNode<K, V> copy(int start, int end) {
-        BTreeNode<K, V> newNode = new BTreeNode<>(m, level);
-
-        newNode.keys.addAll(new ArrayList<>(keys.subList(start, end)));
-        newNode.values.addAll(new ArrayList<>(values.subList(start, end)));
+    void copy(int start, int end, BTreeNode<K, V> toNode) {
+        toNode.keys.addAll(new ArrayList<>(keys.subList(start, end)));
+        toNode.values.addAll(new ArrayList<>(values.subList(start, end)));
 
         if(!children.isEmpty()) {
-            newNode.children.addAll(new ArrayList<>(children.subList(start, end + 1)));
+            toNode.children.addAll(new ArrayList<>(children.subList(start, end + 1)));
         }
-
-        return newNode;
     }
 
     BTreeNode<K, V> union(BTreeNode<K, V> anotherNode) {
@@ -111,7 +93,7 @@ class BTreeNode<K extends Comparable<K>, V> {
             throw new IllegalStateException(String.format("Nodes %s and %s from different levels", this, anotherNode));
         }
 
-        BTreeNode<K, V> unionNode = new BTreeNode<>(m, level);
+        BTreeNode<K, V> unionNode = new BTreeNode<>(level);
 
         unionNode.keys.addAll(keys);
         unionNode.keys.addAll(anotherNode.keys);
@@ -139,9 +121,6 @@ class BTreeNode<K extends Comparable<K>, V> {
         if(index == -1) {
             throw new IllegalStateException(String.format("Node %s doesn't contain a child node %s", this, node));
         }
-        if(node.getKeysSize() < min - 1) {
-            throw new IllegalStateException(String.format("Number of keys less then t - 1. t = %s, keys size = %s", min, keys));
-        }
         children.remove(index);
         return index;
     }
@@ -161,7 +140,7 @@ class BTreeNode<K extends Comparable<K>, V> {
 
         int keysSize = getKeysSize();
         if(keysSize >= childrenSize) {
-            throw new IllegalStateException(String.format("Number of children must be as keys number + 1. m - %s, number of keys - %s", m, keysSize));
+            throw new IllegalStateException(String.format("Number of children must be equal - %s but number of children - %s, number of keys - %s", keysSize + 1, childrenSize, keysSize));
         }
 
         if(index < 0 || index >= childrenSize) {
@@ -200,6 +179,6 @@ class BTreeNode<K extends Comparable<K>, V> {
 
     @Override
     public String toString() {
-        return String.format("node_%s(level=%s, min=%s, max=%s, m=%s) keys=%s", nodeId, level, min, max, m, keys);
+        return String.format("node_%s(level=%s) keys=%s", nodeId, level, keys);
     }
 }

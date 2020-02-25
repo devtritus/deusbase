@@ -20,7 +20,7 @@ class BTreeNodeTest {
 
     @Test
     void get_value_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(4);
+        BTreeNode<String, Long> node = new BTreeNode<>(0);
         node.putKeyValue("c", 1L);
         node.putKeyValue("a", 0L);
 
@@ -30,18 +30,11 @@ class BTreeNodeTest {
         node.putKeyValue("b", 3L);
 
         assertThat(node.getValue("b")).isEqualTo(3L);
-
-        node.putKeyValue("d", 4L);
-
-        assertThatThrownBy(() -> node.getValue("a")).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> node.getValue("b")).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> node.getValue("c")).isInstanceOf(IllegalStateException.class);
-        assertThatThrownBy(() -> node.getValue("d")).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
     void replace_value_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(4);
+        BTreeNode<String, Long> node = new BTreeNode<>(0);
         node.putKeyValue("c", 1L);
         assertThat(node.getValue("c")).isEqualTo(1L);
 
@@ -53,7 +46,7 @@ class BTreeNodeTest {
 
     @Test
     void delete_key_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(4);
+        BTreeNode<String, Long> node = new BTreeNode<>(0);
         node.putKeyValue("a", 0L);
         node.putKeyValue("b", 1L);
         node.putKeyValue("c", 2L);
@@ -82,36 +75,39 @@ class BTreeNodeTest {
 
     @Test
     void copy_node_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(3);
+        BTreeNode<String, Long> node = new BTreeNode<>(0);
         node.putKeyValue("a", 0L);
         node.putKeyValue("b", 1L);
         node.putKeyValue("c", 2L);
 
-        BTreeNode<String, Long> newNode = node.copy(0, 2);
+        BTreeNode<String, Long> newNode = new BTreeNode<>(0);
+         node.copy(0, 2, newNode);
 
         assertThat(newNode.getValue("a")).isEqualTo(0L);
         assertThat(newNode.getValue("b")).isEqualTo(1L);
 
-        BTreeNode<String, Long> newNode2 = node.copy(2, 3);
+        BTreeNode<String, Long> newNode2 = new BTreeNode<>(0);
+        node.copy(2, 3, newNode2);
 
         assertThat(newNode2.getValue("c")).isEqualTo(2L);
 
-        BTreeNode<String, Long> newNode3 = node.copy(0, 1);
+        BTreeNode<String, Long> newNode3 = new BTreeNode<>(0);
+        node.copy(0, 1, newNode3);
 
         assertThat(newNode3.getValue("a")).isEqualTo(0L);
     }
 
     @Test
     void get_children_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(3, 1);
+        BTreeNode<String, Long> node = new BTreeNode<>(0);
 
         node.putKeyValue("a", 0L);
 
-        BTreeNode<String, Long> childNodeA = new BTreeNode<>(3, 0);
+        BTreeNode<String, Long> childNodeA = new BTreeNode<>(0);
 
         childNodeA.putKeyValue("b", 1L);
 
-        BTreeNode<String, Long> childNodeB = new BTreeNode<>(3, 0);
+        BTreeNode<String, Long> childNodeB = new BTreeNode<>(0);
 
         childNodeB.putKeyValue("c", 2L);
 
@@ -127,7 +123,7 @@ class BTreeNodeTest {
 
     @Test
     void delete_children_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(3);
+        BTreeNode<String, Long> node = new BTreeNode<>(0);
         node.putKeyValue("a", 0L);
 
         assertThat(node.getValue("a")).isEqualTo(0L);
@@ -142,11 +138,11 @@ class BTreeNodeTest {
 
     @Test
     void union_test() {
-        BTreeNode<String, Long> leftNode = new BTreeNode<>(3, 0);
+        BTreeNode<String, Long> leftNode = new BTreeNode<>(0);
 
         leftNode.putKeyValue("a", 0L);
 
-        BTreeNode<String, Long> rightNode = new BTreeNode<>(3, 0);
+        BTreeNode<String, Long> rightNode = new BTreeNode<>(0);
 
         rightNode.putKeyValue("c", 2L);
         rightNode.putKeyValue("d", 3L);

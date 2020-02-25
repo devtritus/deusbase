@@ -196,7 +196,7 @@ class BTreeTest {
     }
 
     private void flatTree(BTreeNode<String, Integer> node, Map<Integer, List<List<String>>> map) {
-        List<List<String>> parentLevelList = map.computeIfAbsent(node.level, k -> new ArrayList<>());
+        List<List<String>> parentLevelList = map.computeIfAbsent(node.getLevel(), k -> new ArrayList<>());
         parentLevelList.add(node.getKeys());
 
         for(BTreeNode<String, Integer> childNode : node.getChildren()) {
