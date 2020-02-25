@@ -162,7 +162,7 @@ class BTreeTest {
     private void add(StringIntegerBTree tree, List<Integer> toAdd) {
         for(Integer key : toAdd) {
             //printTree(tree);
-            //System.out.println("added " + key + "\n");
+            //System.out.println("add " + key + "\n");
             tree.add(key.toString(), key);
         }
     }

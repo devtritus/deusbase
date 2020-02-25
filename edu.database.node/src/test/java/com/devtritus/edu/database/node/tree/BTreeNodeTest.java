@@ -81,18 +81,18 @@ class BTreeNodeTest {
         node.putKeyValue("c", 2L);
 
         BTreeNode<String, Long> newNode = new BTreeNode<>(0);
-         node.copy(0, 2, newNode);
+        newNode.copy(0, 2, node);
 
         assertThat(newNode.getValue("a")).isEqualTo(0L);
         assertThat(newNode.getValue("b")).isEqualTo(1L);
 
         BTreeNode<String, Long> newNode2 = new BTreeNode<>(0);
-        node.copy(2, 3, newNode2);
+        newNode2.copy(2, 3, node);
 
         assertThat(newNode2.getValue("c")).isEqualTo(2L);
 
         BTreeNode<String, Long> newNode3 = new BTreeNode<>(0);
-        node.copy(0, 1, newNode3);
+        newNode3.copy(0, 1, node);
 
         assertThat(newNode3.getValue("a")).isEqualTo(0L);
     }
@@ -147,11 +147,11 @@ class BTreeNodeTest {
         rightNode.putKeyValue("c", 2L);
         rightNode.putKeyValue("d", 3L);
 
-        BTreeNode<String, Long> union = leftNode.union(rightNode);
+        leftNode.add(rightNode);
 
-        assertThat(union.getKeyValue(0)).isEqualTo(new Entry<>("a", 0L));
-        assertThat(union.getKeyValue(1)).isEqualTo(new Entry<>("c", 2L));
-        assertThat(union.getKeyValue(2)).isEqualTo(new Entry<>("d", 3L));
+        assertThat(leftNode.getKeyValue(0)).isEqualTo(new Entry<>("a", 0L));
+        assertThat(leftNode.getKeyValue(1)).isEqualTo(new Entry<>("c", 2L));
+        assertThat(leftNode.getKeyValue(2)).isEqualTo(new Entry<>("d", 3L));
     }
 
 

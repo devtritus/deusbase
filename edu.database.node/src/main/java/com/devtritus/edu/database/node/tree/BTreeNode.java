@@ -56,6 +56,14 @@ class BTreeNode<K extends Comparable<K>, V> {
         values.set(index, value);
     }
 
+    void deleteInterval(int fromIndex, int toIndex) {
+        keys.subList(fromIndex, toIndex).clear();
+        values.subList(fromIndex, toIndex).clear();
+        if(!children.isEmpty()) {
+            children.subList(fromIndex, toIndex + 1).clear();
+        }
+    }
+
     void replaceValue(int index, V value) {
         if(index < 0) {
             throw new IllegalStateException(String.format("Negative index %s", index));
@@ -65,8 +73,6 @@ class BTreeNode<K extends Comparable<K>, V> {
     }
 
     V getValue(K key) {
-        int size = getKeysSize();
-
         int index = searchKey(key);
         if(index < 0) {
             return null;
@@ -79,49 +85,39 @@ class BTreeNode<K extends Comparable<K>, V> {
         return Collections.binarySearch(keys, key);
     }
 
-    void copy(int start, int end, BTreeNode<K, V> toNode) {
-        toNode.keys.addAll(new ArrayList<>(keys.subList(start, end)));
-        toNode.values.addAll(new ArrayList<>(values.subList(start, end)));
+    void copy(int start, int end, BTreeNode<K, V> fromNode) {
+        keys.addAll(fromNode.getKeys().subList(start, end));
+        values.addAll(fromNode.getValues().subList(start, end));
 
-        if(!children.isEmpty()) {
-            toNode.children.addAll(new ArrayList<>(children.subList(start, end + 1)));
+        if(!fromNode.getChildren().isEmpty()) {
+            children.addAll(fromNode.getChildren().subList(start, end + 1));
         }
     }
 
-    BTreeNode<K, V> union(BTreeNode<K, V> anotherNode) {
+    void add(BTreeNode<K, V> anotherNode) {
         if (level != anotherNode.level) {
             throw new IllegalStateException(String.format("Nodes %s and %s from different levels", this, anotherNode));
         }
 
-        BTreeNode<K, V> unionNode = new BTreeNode<>(level);
-
-        unionNode.keys.addAll(keys);
-        unionNode.keys.addAll(anotherNode.keys);
-
-        unionNode.values.addAll(values);
-        unionNode.values.addAll(anotherNode.values);
-
-        unionNode.children.addAll(children);
-        unionNode.children.addAll(anotherNode.children);
-
-        return unionNode;
+        keys.addAll(anotherNode.keys);
+        values.addAll(anotherNode.values);
+        children.addAll(anotherNode.children);
     }
 
     void addChildNode(int index, BTreeNode<K, V> node) {
         insert(children, node, index);
     }
 
-
     BTreeNode<K, V> deleteChild(int index) {
         return children.remove(index);
     }
 
-    int deleteChild(BTreeNode<K, V> node) {
-        int index = children.indexOf(node);
+    int indexOfChild(BTreeNode<K, V> child) {
+        int index = children.indexOf(child);
         if(index == -1) {
-            throw new IllegalStateException(String.format("Node %s doesn't contain a child node %s", this, node));
+            throw new IllegalStateException(String.format("Node %s doesn't contain a child node %s", this, child));
         }
-        children.remove(index);
+
         return index;
     }
 
@@ -152,6 +148,10 @@ class BTreeNode<K extends Comparable<K>, V> {
 
     List<K> getKeys() {
         return new ArrayList<>(keys);
+    }
+
+    List<V> getValues() {
+        return new ArrayList<>(values);
     }
 
     List<BTreeNode<K, V>> getChildren() {
