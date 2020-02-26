@@ -25,7 +25,7 @@ class BTreeTest {
         List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab",
                 "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba", "bbbb", "bbba");
 
-        for(int i = 0; i < keys.size() - 1; i++) {
+        for (int i = 0; i < keys.size() - 1; i++) {
             tree.add(keys.get(i), i);
         }
 
@@ -75,7 +75,7 @@ class BTreeTest {
 
     @Test
     void delete_test_random_cases() {
-        for(int i = 0; i < 50; i++) {
+        for (int i = 0; i < 50; i++) {
             addThenDeleteTest(3, 1);
             addThenDeleteTest(3, 2);
             addThenDeleteTest(3, 3);
