@@ -14,7 +14,7 @@ class BTreeNodeBytesConverter {
         byte[] levelBytes = toByteArray(node.getLevel());
         out.write(levelBytes);
 
-        byte[] keysSizeBytes = toByteArray(node.getKeysSize());
+        byte[] keysSizeBytes = toByteArray(node.getKeys().size());
         out.write(keysSizeBytes);
 
         for(String key : node.getKeys()) {
