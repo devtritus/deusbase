@@ -1,7 +1,7 @@
 package com.devtritus.edu.database.node.tree;
 
-abstract class StringKeyAbstractBTree<V> extends AbstractBTree<String, V> {
-    StringKeyAbstractBTree(int m) {
+public class StringIntegerBTree extends AbstractBTree<String, Integer> {
+    public StringIntegerBTree(int m) {
         super(m);
     }
 

@@ -125,7 +125,7 @@ abstract class AbstractBTree<K extends Comparable<K>, V> implements BTree<K, V> 
         } else {
             int index = nextNode.searchKey(key);
             if(index > -1) {
-                nextNode.replaceValue(index, value);
+                nextNode.putKeyValue(index, key, value);
             }
             BTreeNode<K, V> nextChild = nextNode.getChildNode(-index - 1);
 
@@ -134,7 +134,8 @@ abstract class AbstractBTree<K extends Comparable<K>, V> implements BTree<K, V> 
     }
 
     private void doAdd(K key, V value, BTreeNode<K, V> nextNode, LinkedList<BTreeNode<K, V>> path) {
-        nextNode.putKeyValue(key, value);
+        int index = nextNode.searchKey(key);
+        nextNode.putKeyValue(index, key, value);
 
         if(nextNode.getKeysSize() >= m) {
             balanceAfterAdd(nextNode, path);
@@ -228,7 +229,8 @@ abstract class AbstractBTree<K extends Comparable<K>, V> implements BTree<K, V> 
                                     int sourceKeyIndex) {
 
         sourceNode.deleteKeyValue(sourceKeyIndex);
-        consumerNode.replaceKeyValue(consumerKeyIndex, entryToReplace.key, entryToReplace.value);
+        consumerNode.deleteKeyValue(consumerKeyIndex);
+        consumerNode.insertKeyValue(consumerKeyIndex, entryToReplace.key, entryToReplace.value);
 
         if(sourceNode.getKeysSize() < min) {
             balanceAfterDelete(sourceNode, path, sourcePositionIndex, sourceNodeParent);

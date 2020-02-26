@@ -22,11 +22,25 @@ class BTreeNode<K extends Comparable<K>, V> {
         return level;
     }
 
-    void putKeyValue(K key, V value) {
-        int index = searchKey(key);
+    boolean isLeaf() {
+        return level == 0;
+    }
 
+    int getKeysSize() {
+        return keys.size();
+    }
+
+    int getChildrenSize() {
+        return children.size();
+    }
+
+    int searchKey(K key) {
+        return Collections.binarySearch(keys, key);
+    }
+
+    void putKeyValue(int index, K key, V value) {
         if(index > -1) {
-            replaceValue(index, value);
+            values.set(index, value);
         } else {
             int insertionIndex = -index - 1;
             insertKeyValue(insertionIndex, key, value);
@@ -51,38 +65,10 @@ class BTreeNode<K extends Comparable<K>, V> {
         return keyValue;
     }
 
-    void replaceKeyValue(int index, K key, V value) {
-        keys.set(index, key);
-        values.set(index, value);
-    }
-
-    void deleteInterval(int fromIndex, int toIndex) {
-        keys.subList(fromIndex, toIndex).clear();
-        values.subList(fromIndex, toIndex).clear();
-        if(!children.isEmpty()) {
-            children.subList(fromIndex, toIndex + 1).clear();
-        }
-    }
-
-    void replaceValue(int index, V value) {
-        if(index < 0) {
-            throw new IllegalStateException(String.format("Negative index %s", index));
-        }
-
-        values.set(index, value);
-    }
-
-    V getValue(K key) {
-        int index = searchKey(key);
-        if(index < 0) {
-            return null;
-        } else {
-            return values.get(index);
-        }
-    }
-
-    int searchKey(K key) {
-        return Collections.binarySearch(keys, key);
+    Entry<K, V> getKeyValue(int index) {
+        K key = keys.get(index);
+        V value = values.get(index);
+        return new Entry<>(key, value);
     }
 
     void copy(int start, int end, BTreeNode<K, V> fromNode) {
@@ -108,29 +94,6 @@ class BTreeNode<K extends Comparable<K>, V> {
         insert(children, node, index);
     }
 
-    BTreeNode<K, V> deleteChild(int index) {
-        return children.remove(index);
-    }
-
-    int indexOfChild(BTreeNode<K, V> child) {
-        int index = children.indexOf(child);
-        if(index == -1) {
-            throw new IllegalStateException(String.format("Node %s doesn't contain a child node %s", this, child));
-        }
-
-        return index;
-    }
-
-    Entry<K, V> getKeyValue(int index) {
-        K key = keys.get(index);
-        V value = values.get(index);
-        return new Entry<>(key, value);
-    }
-
-    boolean isLeaf() {
-        return level == 0;
-    }
-
     BTreeNode<K, V> getChildNode(int index) {
         int childrenSize = children.size();
 
@@ -146,24 +109,51 @@ class BTreeNode<K extends Comparable<K>, V> {
         return children.get(index);
     }
 
+    void deleteInterval(int fromIndex, int toIndex) {
+        keys.subList(fromIndex, toIndex).clear();
+        values.subList(fromIndex, toIndex).clear();
+        if(!children.isEmpty()) {
+            children.subList(fromIndex, toIndex + 1).clear();
+        }
+    }
+
+    int indexOfChild(BTreeNode<K, V> child) {
+        int index = children.indexOf(child);
+        if(index == -1) {
+            throw new IllegalStateException(String.format("Node %s doesn't contain a child node %s", this, child));
+        }
+
+        return index;
+    }
+
     List<K> getKeys() {
         return new ArrayList<>(keys);
+    }
+
+    BTreeNode<K, V> deleteChild(int index) {
+        return children.remove(index);
     }
 
     List<V> getValues() {
         return new ArrayList<>(values);
     }
 
+    void putKeyValue(K key, V value) {
+        int index = searchKey(key);
+        putKeyValue(index, key, value);
+    }
+
+    V getValue(K key) {
+        int index = searchKey(key);
+        if(index < 0) {
+            return null;
+        } else {
+            return values.get(index);
+        }
+    }
+
     List<BTreeNode<K, V>> getChildren() {
         return new ArrayList<>(children);
-    }
-
-    int getKeysSize() {
-        return keys.size();
-    }
-
-    int getChildrenSize() {
-        return children.size();
     }
 
     static <T> List<T> insert(List<T> list, T element, int insertIndex)  {

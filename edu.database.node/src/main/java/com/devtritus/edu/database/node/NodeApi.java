@@ -2,22 +2,24 @@ package com.devtritus.edu.database.node;
 
 import com.devtritus.edu.database.core.Api;
 import com.devtritus.edu.database.node.tree.BTree;
-import com.devtritus.edu.database.node.tree.BTreeImpl;
+import com.devtritus.edu.database.node.tree.StringIntegerBTree;
+
 import java.util.Collections;
 import java.util.Map;
 
 public class NodeApi implements Api<String, String> {
-    private BTree<String, String> tree = new BTreeImpl(50);
+    private BTree<String, Integer> tree = new StringIntegerBTree(50);
 
     @Override
     public Map<String, String> create(String key, String value) {
-        tree.add(key, value);
+        tree.add(key, 0);
         return Collections.singletonMap(key, value);
     }
 
     @Override
     public Map<String, String> read(String key) {
-        return tree.fetch(key);
+        tree.fetch(key);
+        return null;
     }
 
     @Override
@@ -28,7 +30,7 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, String> update(String key, String value) {
-        tree.add(key, value);
+        tree.add(key, 0);
         return Collections.singletonMap(key, value);
     }
 }

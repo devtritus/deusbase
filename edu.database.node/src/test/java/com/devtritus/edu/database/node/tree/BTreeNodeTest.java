@@ -1,7 +1,6 @@
 package com.devtritus.edu.database.node.tree;
 
 import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -30,18 +29,6 @@ class BTreeNodeTest {
         node.putKeyValue("b", 3L);
 
         assertThat(node.getValue("b")).isEqualTo(3L);
-    }
-
-    @Test
-    void replace_value_test() {
-        BTreeNode<String, Long> node = new BTreeNode<>(0);
-        node.putKeyValue("c", 1L);
-        assertThat(node.getValue("c")).isEqualTo(1L);
-
-        int index = node.searchKey("c");
-        node.replaceValue(index, 2L);
-
-        assertThat(node.getValue("c")).isEqualTo(2L);
     }
 
     @Test
