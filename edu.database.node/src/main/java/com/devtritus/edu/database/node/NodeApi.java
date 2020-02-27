@@ -2,13 +2,14 @@ package com.devtritus.edu.database.node;
 
 import com.devtritus.edu.database.core.Api;
 import com.devtritus.edu.database.node.tree.BTree;
+import com.devtritus.edu.database.node.tree.BTreeNodeInMemoryProvider;
 import com.devtritus.edu.database.node.tree.StringIntegerBTree;
 
 import java.util.Collections;
 import java.util.Map;
 
 public class NodeApi implements Api<String, String> {
-    private BTree<String, Integer> tree = new StringIntegerBTree(50);
+    private BTree<String, Integer> tree = new StringIntegerBTree(50, new BTreeNodeInMemoryProvider());
 
     @Override
     public Map<String, String> create(String key, String value) {

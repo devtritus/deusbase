@@ -20,7 +20,8 @@ class BTreeTest {
 
     @Test
     void search_list_test() {
-        StringIntegerBTree tree = new StringIntegerBTree(3);
+        BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
+        StringIntegerBTree tree = new StringIntegerBTree(3, provider);
 
         List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab",
                 "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba", "bbbb", "bbba");
@@ -104,22 +105,24 @@ class BTreeTest {
 
     @Test
     void delete_result_test() {
-        StringIntegerBTree tree = new StringIntegerBTree(3);
+        BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
+        StringIntegerBTree tree = new StringIntegerBTree(3, provider);
 
-        add(tree, Arrays.asList(1, 2, 3, 4, 5));
+        add(tree, Arrays.asList(1, 2, 3, 4, 5), provider);
 
         assertThat(tree.delete("5")).isTrue();
         assertThat(tree.delete("5")).isFalse();
     }
 
     private void addThenSearchByKeyTest(int m, int count) {
-        StringIntegerBTree tree = new StringIntegerBTree(m);
+        BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
+        StringIntegerBTree tree = new StringIntegerBTree(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(count);
         List<Integer> toSearch = getShuffledIntegerStream(count);
 
         try {
-            add(tree, toAdd);
+            add(tree, toAdd, provider);
         } catch (Exception e) {
             System.out.println("to add: " + toAdd);
             throw e;
@@ -143,11 +146,12 @@ class BTreeTest {
     }
 
     void addThenDeleteTest(int m, List<Integer> toAdd, List<Integer> toDelete) {
-        StringIntegerBTree tree = new StringIntegerBTree(m);
+        BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
+        StringIntegerBTree tree = new StringIntegerBTree(m, provider);
 
         try {
-            add(tree, toAdd);
-            delete(tree, toDelete);
+            add(tree, toAdd, provider);
+            delete(tree, toDelete, provider);
         } catch (Exception e) {
             System.out.println("to add: " + toAdd);
             System.out.println("to delete: " + toDelete);
@@ -159,17 +163,17 @@ class BTreeTest {
         //System.out.println("END\n-------------------------------------------------\n");
     }
 
-    private void add(StringIntegerBTree tree, List<Integer> toAdd) {
+    private void add(StringIntegerBTree tree, List<Integer> toAdd, BTreeNodeInMemoryProvider provider) {
         for(Integer key : toAdd) {
-            //printTree(tree);
+            //printTree(provider);
             //System.out.println("add " + key + "\n");
             tree.add(key.toString(), key);
         }
     }
 
-    private void delete(StringIntegerBTree tree, List<Integer> toDelete) {
+    private void delete(StringIntegerBTree tree, List<Integer> toDelete, BTreeNodeInMemoryProvider provider) {
         for(Integer key : toDelete) {
-            //printTree(tree);
+            //printTree(provider);
             //System.out.println("delete " + key + "\n");
             boolean result = tree.delete(key.toString());
             assertThat(result).isTrue();
@@ -184,9 +188,9 @@ class BTreeTest {
         return integers;
     }
 
-    private void printTree(StringIntegerBTree btree) {
+    private void printTree(BTreeNodeInMemoryProvider provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
-        flatTree(btree.root, map);
+        flatTree(provider.getRootNode(), map, provider);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
             for(List<String> value : entry.getValue()) {
                 System.out.print(value + " ");
@@ -195,12 +199,12 @@ class BTreeTest {
         }
     }
 
-    private void flatTree(BTreeNode<String, Integer> node, Map<Integer, List<List<String>>> map) {
+    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeInMemoryProvider provider) {
         List<List<String>> parentLevelList = map.computeIfAbsent(node.getLevel(), k -> new ArrayList<>());
         parentLevelList.add(node.getKeys());
 
-        for(BTreeNode<String, Integer> childNode : node.getChildren()) {
-            flatTree(childNode, map);
+        for(BTreeNode childNode : provider.getNodes(node.getChildren())) {
+            flatTree(childNode, map, provider);
         }
     }
 }

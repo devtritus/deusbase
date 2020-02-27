@@ -8,8 +8,11 @@ import java.util.List;
 
 class BTreeNodeBytesConverter {
 
-    static byte[] toBytes(BTreeNode<String, Integer> node) throws IOException {
+    static byte[] toBytes(BTreeNode node) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        byte[] nodeIdBytes = toByteArray(node.getNodeId());
+        out.write(nodeIdBytes);
 
         byte[] levelBytes = toByteArray(node.getLevel());
         out.write(levelBytes);
@@ -24,19 +27,24 @@ class BTreeNodeBytesConverter {
             out.write(key.getBytes(StandardCharsets.UTF_8));
         }
 
-        for(Integer value : node.getValues()) {
+        for(int value : node.getValues()) {
             out.write(toByteArray(value));
+        }
+
+        for(int children : node.getChildren()) {
+            out.write(toByteArray(children));
         }
 
         return out.toByteArray();
     }
 
-    static BTreeNode<String, Integer> fromBytes(byte[] bytes) throws IOException {
+    static BTreeNode fromBytes(byte[] bytes) throws IOException {
         ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+        int nodeId = readInt(in);
         int level = readInt(in);
         int keysSize = readInt(in);
 
-        BTreeNode<String, Integer> node = new BTreeNode<>(level);
+        BTreeNode node = new BTreeNode(nodeId, level);
 
         List<String> keys = new ArrayList<>();
         for(int i = 0; i < keysSize; i++) {
@@ -52,6 +60,12 @@ class BTreeNodeBytesConverter {
             String key = keys.get(i);
             int index = node.searchKey(key);
             node.putKeyValue(index, key, value);
+        }
+
+        for(int i = 0; i < keysSize + 1; i++) {
+            int children = readInt(in);
+
+            node.insertChildNode(i, children);
         }
 
         return node;
