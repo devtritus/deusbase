@@ -115,6 +115,17 @@ class BTreeTest {
         assertThat(tree.delete("5")).isFalse();
     }
 
+    //TODO: add timer, ignore tests
+    //@Test
+    void add_test_big_random_case() {
+        addThenSearchByKeyTest(200, 1000000);
+    }
+
+    //@Test
+    void delete_test_big_random_case() {
+        addThenDeleteTest(200, 1000000);
+    }
+
     private void addThenSearchByKeyTest(int m, int count) {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
         StringIntegerBTree tree = new StringIntegerBTree(m, provider);

@@ -5,10 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, Integer, Integer> {
-    private static int nodeIdCounter = 0;
+public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Integer, Integer>  {
+    private int MIN_BLOCK_SIZE_BYTE = 8192;
 
-    private final Map<Integer, BTreeNode> nodeIdToNodeMap = new HashMap<>();
+    private static int nodeIdCounter = 0;
+    private static int position = 0;
+
+    private final Map<Integer, Entry<BTreeNode, Integer>> nodeIdToEntry = new HashMap<>();
 
     private BTreeNode root;
 
@@ -33,7 +36,7 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
             return null;
         }
         int nodeId = parentNode.getChildren().get(index);
-        return nodeIdToNodeMap.get(nodeId);
+        return nodeIdToEntry.get(nodeId).key; //TODO: it is not key. Rename fields
     }
 
     @Override
@@ -57,15 +60,16 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     @Override
     public BTreeNode createNode(int level) {
         int nodeId = nodeIdCounter++;
+        int nodePosition = position++;
         BTreeNode node = new BTreeNode(nodeId, level);
-        nodeIdToNodeMap.put(nodeId, node);
+        nodeIdToEntry.put(nodeId, new Entry<>(node, nodePosition));
         return node;
     }
 
     @Override
     public void flush() {
-        List<BTreeNode> modifiedNodes = nodeIdToNodeMap.values().stream()
-                .filter(GenericBTreeNode::isModified)
+        List<BTreeNode> modifiedNodes = nodeIdToEntry.values().stream()
+                .map(entry -> entry.key)
                 .collect(Collectors.toList());
 
         //System.out.println("List of nodes to flush: " + modifiedNodes);
@@ -77,8 +81,6 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     List<BTreeNode> getNodes(List<Integer> nodeIds) {
-        return nodeIds.stream()
-                .map(nodeIdToNodeMap::get)
-                .collect(Collectors.toList());
+        return nodeIds.stream().map(nodeId -> nodeIdToEntry.get(nodeId).key).collect(Collectors.toList());
     }
 }
