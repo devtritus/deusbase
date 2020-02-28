@@ -64,6 +64,20 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
         return node;
     }
 
+    @Override
+    public void flush() {
+        List<BTreeNode> modifiedNodes = nodeIdToEntry.values().stream()
+                .map(entry -> entry.key)
+                .collect(Collectors.toList());
+
+        //System.out.println("List of nodes to flush: " + modifiedNodes);
+
+        //emulate flushing
+        for(BTreeNode modifiedNode : modifiedNodes) {
+            modifiedNode.markAsNotModified();
+        }
+    }
+
     List<BTreeNode> getNodes(List<Integer> nodeIds) {
         return nodeIds.stream().map(nodeId -> nodeIdToEntry.get(nodeId).key).collect(Collectors.toList());
     }

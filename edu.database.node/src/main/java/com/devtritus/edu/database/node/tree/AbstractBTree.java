@@ -45,6 +45,9 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
         D root = nodeProvider.getRootNode();
         add(key, value, root, path);
         nodeProvider.setRootNode(path.get(0));
+
+        nodeProvider.flush();
+
         return key;
     }
 
@@ -54,6 +57,8 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
         D root = nodeProvider.getRootNode();
         boolean result = delete(key, root, path, ROOT_POSITION, null);
         nodeProvider.setRootNode(path.get(0).key);
+
+        nodeProvider.flush();
 
         return result;
     }

@@ -13,9 +13,12 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
     private final C nodeId;
     private final int level;
 
-    GenericBTreeNode(C nodeId, int level) {
+    private boolean modified;
+
+    GenericBTreeNode(C nodeId, int level, boolean modified) {
         this.nodeId = nodeId;
         this.level = level;
+        this.modified = modified;
     }
 
     C getNodeId() {
@@ -28,6 +31,14 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
 
     int getLevel() {
         return level;
+    }
+
+    boolean isModified() {
+        return modified;
+    }
+
+    void markAsNotModified() {
+        modified = false;
     }
 
     List<K> getKeys() {
@@ -56,6 +67,15 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
         return new Entry<>(key, value);
     }
 
+    V getValue(K key) {
+        int index = searchKey(key);
+        if(index < 0) {
+            return null;
+        } else {
+            return values.get(index);
+        }
+    }
+
     void putKeyValue(int index, K key, V value) {
         if(index > -1) {
             values.set(index, value);
@@ -63,11 +83,15 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
             int insertionIndex = -index - 1;
             insertKeyValue(insertionIndex, key, value);
         }
+
+        modified = true;
     }
 
     void insertKeyValue(int index, K key, V value) {
         TreeUtils.insert(keys, key, index);
         TreeUtils.insert(values, value, index);
+
+        modified = true;
     }
 
     Entry<K, V> deleteKeyValue(int index) {
@@ -80,29 +104,30 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
         keys.remove(index);
         values.remove(index);
 
+        modified = true;
+
         return keyValue;
     }
 
     void insertChildNode(int index, C child) {
         TreeUtils.insert(children, child, index);
+
+        modified = true;
     }
 
     C deleteChildNode(int index) {
-        return children.remove(index);
+        C child = children.remove(index);
+
+        modified = true;
+
+        return child;
     }
 
     void putKeyValue(K key, V value) {
         int index = searchKey(key);
         putKeyValue(index, key, value);
-    }
 
-    V getValue(K key) {
-        int index = searchKey(key);
-        if(index < 0) {
-            return null;
-        } else {
-            return values.get(index);
-        }
+        modified = true;
     }
 
     void delete(int start, int end) {
@@ -111,6 +136,8 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
         if(!children.isEmpty()) {
             children.subList(start, end + 1).clear();
         }
+
+        modified = true;
     }
 
     void copy(GenericBTreeNode<K, V, C> fromNode, int start, int end) {
@@ -119,6 +146,8 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
         if(!fromNode.getChildren().isEmpty()) {
             children.addAll(fromNode.getChildren().subList(start, end + 1));
         }
+
+        modified = true;
     }
 
     @Override

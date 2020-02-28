@@ -28,6 +28,7 @@ class BTreeTest {
 
         for (int i = 0; i < keys.size() - 1; i++) {
             tree.add(keys.get(i), i);
+            //printTree(provider);
         }
 
         Map<String, Integer> result = tree.fetch("aaaa");
