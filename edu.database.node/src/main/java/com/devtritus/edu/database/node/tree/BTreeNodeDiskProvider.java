@@ -51,25 +51,12 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
             return null;
         }
         int nodeId = parentNode.getChildren().get(index);
-        return nodeIdToEntry.get(nodeId).key; //TODO: it is not key. Rename fields
-    }
-
-    @Override
-    public int getChildrenSize(BTreeNode parentNode) {
-        return parentNode.getChildren().size();
-    }
-
-    @Override
-    public int indexOfChildNode(BTreeNode parentNode, BTreeNode childNode) {
-        int childNodeId = childNode.getNodeId();
-        List<Integer> children = parentNode.getChildren();
-        for(int i = 0; i < children.size(); i++) {
-            if(childNodeId == children.get(i)) {
-                return i;
-            }
+        Entry<BTreeNode, Integer> cachedChild = nodeIdToEntry.get(nodeId);
+        if(cachedChild != null) {
+            return cachedChild.key;
+        } else {
         }
-
-        throw new IllegalStateException();
+        return null;
     }
 
     @Override
@@ -98,6 +85,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
 
     void loadRoot(int rootPosition) {
         root = getNodeByPosition(rootPosition);
+        putToMap(root, rootPosition);
     }
 
     BTreeNode getNodeByPosition(int position) {
@@ -110,6 +98,21 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    void writeNodeToPosition(BTreeNode node, int position) {
+        try(FileChannel fileChannel = openWriteChannel()) {
+            fileChannel.position(position * blockSize);
+            byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
+            ByteBuffer blockBuffer = ByteBuffer.wrap(bytes);
+            fileChannel.write(blockBuffer);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void putToMap(BTreeNode node, int nodePosition) {
+        nodeIdToEntry.put(node.getNodeId(), new Entry<>(root, nodePosition));
     }
 
     private FileChannel openReadChannel() throws IOException {

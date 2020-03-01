@@ -4,8 +4,6 @@ interface BTreeNodeProvider<D extends GenericBTreeNode<K, V, C>, K extends Compa
     D getRootNode();
     void setRootNode(D node);
     D getChildNode(D parentNode, int index);
-    int getChildrenSize(D parentNode);
-    int indexOfChildNode(D parentNode, D childNode);
     D createNode(int level);
     void flush();
 }
