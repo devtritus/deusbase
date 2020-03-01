@@ -62,10 +62,12 @@ class BTreeNodeBytesConverter {
             node.putKeyValue(index, key, value);
         }
 
-        for(int i = 0; i < keysSize + 1; i++) {
-            int children = readInt(in);
+        if(!keys.isEmpty()) {
+            for(int i = 0; i < keysSize + 1; i++) {
+                int children = readInt(in);
 
-            node.insertChildNode(i, children);
+                node.insertChildNode(i, children);
+            }
         }
 
         return node;

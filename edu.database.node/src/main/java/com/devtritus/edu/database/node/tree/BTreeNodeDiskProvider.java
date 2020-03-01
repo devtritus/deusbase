@@ -1,30 +1,45 @@
 package com.devtritus.edu.database.node.tree;
 
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Integer, Integer>  {
-    private int MIN_BLOCK_SIZE_BYTE = 8192;
-
-    private static int nodeIdCounter = 0;
-    private static int position = 0;
-
     private final Map<Integer, Entry<BTreeNode, Integer>> nodeIdToEntry = new HashMap<>();
+
+    private final File file;
+    private final int m;
+    private final int blockSize;
+    private int lastId;
 
     private BTreeNode root;
 
+    public BTreeNodeDiskProvider(int m, int blockSize, int lastId, File file) {
+        this.m = m;
+        this.blockSize = blockSize;
+        this.lastId = lastId;
+        this.file = file;
+    }
+
     @Override
     public BTreeNode getRootNode() {
-        if(root == null) {
-            root = createNode(0);
-        }
         return root;
     }
 
     @Override
     public void setRootNode(BTreeNode node) {
+        int nodeId = node.getNodeId();
+        try(FileChannel fileChannel = openWriteChannel()) {
+            fileChannel.position(12);
+            fileChannel.write(ByteBuffer.allocate(4).putInt(nodeId));
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+
         root = node;
     }
 
@@ -59,11 +74,12 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
 
     @Override
     public BTreeNode createNode(int level) {
-        int nodeId = nodeIdCounter++;
+/*        int nodeId = nodeIdCounter++;
         int nodePosition = position++;
         BTreeNode node = new BTreeNode(nodeId, level);
         nodeIdToEntry.put(nodeId, new Entry<>(node, nodePosition));
-        return node;
+        return node;*/
+        return null;
     }
 
     @Override
@@ -80,7 +96,27 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
         }
     }
 
-    List<BTreeNode> getNodes(List<Integer> nodeIds) {
-        return nodeIds.stream().map(nodeId -> nodeIdToEntry.get(nodeId).key).collect(Collectors.toList());
+    void loadRoot(int rootPosition) {
+        root = getNodeByPosition(rootPosition);
+    }
+
+    BTreeNode getNodeByPosition(int position) {
+        try(FileChannel fileChannel = openReadChannel()) {
+            ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
+            fileChannel.position(position * blockSize);
+            fileChannel.read(blockBuffer);
+            blockBuffer.flip();
+            return BTreeNodeBytesConverter.fromBytes(blockBuffer.array());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private FileChannel openReadChannel() throws IOException {
+        return new FileInputStream(file).getChannel();
+    }
+
+    private FileChannel openWriteChannel() throws IOException {
+        return new FileOutputStream(file).getChannel();
     }
 }

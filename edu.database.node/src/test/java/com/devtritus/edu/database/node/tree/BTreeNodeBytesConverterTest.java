@@ -8,6 +8,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BTreeNodeBytesConverterTest {
 
     @Test
+    void serialize_deserialize_empty_node_test() throws IOException {
+        BTreeNode node = new BTreeNode(42, 0);
+
+        byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
+        BTreeNode result = BTreeNodeBytesConverter.fromBytes(bytes);
+
+        assertThat(result.getNodeId()).isEqualTo(42);
+        assertThat(result.getLevel()).isEqualTo(0);
+        assertThat(result.getKeys()).isEmpty();
+        assertThat(result.getChildren()).isEmpty();
+    }
+
+    @Test
     void serialize_deserialize_leaf_node_test() throws IOException {
         BTreeNode node = new BTreeNode(42, 3);
         node.putKeyValue("Jack Nicholson", 3000000);
