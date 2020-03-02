@@ -53,7 +53,7 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
         return new ArrayList<>(children);
     }
 
-    public int getChildrenSize() {
+    int getChildrenSize() {
         return children.size();
     }
 

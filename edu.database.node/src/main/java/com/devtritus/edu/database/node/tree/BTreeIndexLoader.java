@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class BTreeIndexLoader {
-        private final static int DEFAULT_BLOCK_BYTE_SIZE = 8192;
+        private final static int MIN_BLOCK_BYTE_SIZE = 512;
         private final File file;
 
         public BTreeIndexLoader(String filePath) {
@@ -16,19 +16,20 @@ public class BTreeIndexLoader {
         }
 
         public boolean initialized() {
-            return file.exists();
+            return file.exists() && file.length() != 0;
         }
 
         public BTreeNodeDiskProvider load() {
             try (FileInputStream in = new FileInputStream(file)) {
                 FileChannel fileChannel = in.getChannel();
-                ByteBuffer headerBuffer = ByteBuffer.allocate(16);
+                ByteBuffer headerBuffer = ByteBuffer.allocate(20);
                 fileChannel.read(headerBuffer);
                 headerBuffer.flip();
                 int blockSize = headerBuffer.getInt();
                 int m = headerBuffer.getInt();
                 int rootPosition = headerBuffer.getInt();
-                int lastId = headerBuffer.getInt();
+                int lastPosition = headerBuffer.getInt();
+                int lastNodeId = headerBuffer.getInt();
                 fileChannel.position(rootPosition * blockSize);
 
                 ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
@@ -37,7 +38,7 @@ public class BTreeIndexLoader {
 
                 blockBuffer.flip();
 
-                BTreeNodeDiskProvider nodeProvider = new BTreeNodeDiskProvider(m, blockSize, lastId, file);
+                BTreeNodeDiskProvider nodeProvider = new BTreeNodeDiskProvider(m, blockSize, lastPosition, lastNodeId, file);
                 nodeProvider.loadRoot(rootPosition);
 
                 return nodeProvider;
@@ -54,8 +55,10 @@ public class BTreeIndexLoader {
         }
 
         try(FileChannel fileChannel = new FileOutputStream(file).getChannel()) {
-            int blockSize = DEFAULT_BLOCK_BYTE_SIZE;
-            int lastId = 1;
+            int blockSize = calculateBlockSize(m);
+            System.out.println("BLOCKSIZE: " + blockSize);
+            int lastPosition = 1;
+            int lastNodeId = 1;
             int rootPosition = 1;
 
             ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
@@ -63,14 +66,15 @@ public class BTreeIndexLoader {
             blockBuffer.putInt(blockSize)
                     .putInt(m)
                     .putInt(rootPosition)
-                    .putInt(lastId)
+                    .putInt(lastPosition)
+                    .putInt(lastNodeId)
                     .rewind();
 
             fileChannel.write(blockBuffer);
 
             blockBuffer.clear();
 
-            BTreeNode root = new BTreeNode(lastId, 0);
+            BTreeNode root = new BTreeNode(lastNodeId, 0);
 
             byte[] bytes = BTreeNodeBytesConverter.toBytes(root);
 
@@ -79,12 +83,19 @@ public class BTreeIndexLoader {
 
             fileChannel.write(blockBuffer);
 
-            BTreeNodeDiskProvider nodeProvider = new BTreeNodeDiskProvider(m, blockSize, lastId, file);
+            BTreeNodeDiskProvider nodeProvider = new BTreeNodeDiskProvider(m, blockSize, lastPosition, lastNodeId, file);
             nodeProvider.loadRoot(rootPosition);
 
             return nodeProvider;
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private int calculateBlockSize(int m) {
+        int minBlockSize = (32 + 12) * m;
+        int blockSize = MIN_BLOCK_BYTE_SIZE;
+        while((blockSize = blockSize * 2) < minBlockSize) {}
+        return blockSize;
     }
 }

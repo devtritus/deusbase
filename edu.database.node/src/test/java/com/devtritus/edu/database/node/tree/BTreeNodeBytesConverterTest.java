@@ -8,6 +8,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BTreeNodeBytesConverterTest {
 
     @Test
+    void serialize_deserialize_leaf_node_test() throws IOException {
+        BTreeNode node = new BTreeNode(42, 3);
+        node.putKeyValue("Jack Nicholson", 3000000);
+        node.putKeyValue("Sean Connery", 2000000);
+
+        byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
+        BTreeNode result = BTreeNodeBytesConverter.fromBytes(bytes);
+
+        assertThat(result.getChildren()).isEmpty();
+    }
+
+    @Test
     void serialize_deserialize_empty_node_test() throws IOException {
         BTreeNode node = new BTreeNode(42, 0);
 
@@ -21,7 +33,7 @@ class BTreeNodeBytesConverterTest {
     }
 
     @Test
-    void serialize_deserialize_leaf_node_test() throws IOException {
+    void serialize_deserialize_inner_node_test() throws IOException {
         BTreeNode node = new BTreeNode(42, 3);
         node.putKeyValue("Jack Nicholson", 3000000);
         node.putKeyValue("Sean Connery", 2000000);

@@ -2,6 +2,7 @@ package com.devtritus.edu.database.node.tree;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.FileOutputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -9,6 +10,39 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BTreeTest {
+    @Test
+    void add_then_serialize_then_search_by_keys_test() {
+        String fileName = "btree.index";
+        clearFile(fileName);
+        BTreeIndexLoader loader = new BTreeIndexLoader(fileName);
+        BTreeNodeDiskProvider provider;
+        if (loader.initialized()) {
+            provider = loader.load();
+        } else {
+            provider = loader.initialize(3);
+        }
+        StringIntegerBTree tree = new StringIntegerBTree(3, provider);
+
+        List<Integer> toAdd = getShuffledIntegerStream(100000);
+        List<Integer> toSearch = getShuffledIntegerStream(100000);
+
+        try {
+            add(tree, toAdd, provider);
+        } catch (Exception e) {
+            System.out.println("to add: " + toAdd);
+            throw e;
+        }
+
+        provider.clearCache();
+
+        System.out.println("After:");
+        printTree(provider);
+
+        for (Integer key : toSearch) {
+            Integer value = tree.searchByKey(key.toString());
+            assertThat(key).isEqualTo(value);
+        }
+    }
 
     @Test
     void add_then_search_by_keys_test() {
@@ -175,7 +209,7 @@ class BTreeTest {
         //System.out.println("END\n-------------------------------------------------\n");
     }
 
-    private void add(StringIntegerBTree tree, List<Integer> toAdd, BTreeNodeInMemoryProvider provider) {
+    private void add(StringIntegerBTree tree, List<Integer> toAdd, BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
         for(Integer key : toAdd) {
             //printTree(provider);
             //System.out.println("add " + key + "\n");
@@ -183,7 +217,7 @@ class BTreeTest {
         }
     }
 
-    private void delete(StringIntegerBTree tree, List<Integer> toDelete, BTreeNodeInMemoryProvider provider) {
+    private void delete(StringIntegerBTree tree, List<Integer> toDelete, BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
         for(Integer key : toDelete) {
             //printTree(provider);
             //System.out.println("delete " + key + "\n");
@@ -200,7 +234,7 @@ class BTreeTest {
         return integers;
     }
 
-    private void printTree(BTreeNodeInMemoryProvider provider) {
+    private void printTree(BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
         flatTree(provider.getRootNode(), map, provider);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
@@ -211,12 +245,20 @@ class BTreeTest {
         }
     }
 
-    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeInMemoryProvider provider) {
+    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
         List<List<String>> parentLevelList = map.computeIfAbsent(node.getLevel(), k -> new ArrayList<>());
         parentLevelList.add(node.getKeys());
 
         for(BTreeNode childNode : provider.getNodes(node.getChildren())) {
             flatTree(childNode, map, provider);
+        }
+    }
+
+    private void clearFile(String name) {
+        try(FileOutputStream writer = new FileOutputStream(name)) {
+            writer.write(("").getBytes());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

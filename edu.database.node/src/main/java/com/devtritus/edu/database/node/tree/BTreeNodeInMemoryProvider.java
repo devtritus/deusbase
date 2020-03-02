@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, Integer, Integer> {
     private static int nodePositionCounter = 0;
 
+    //for in-memory provider nodeId is same as nodePosition
     private final Map<Integer, BTreeNode> nodePositionToNodeMap = new HashMap<>();
 
     private BTreeNode root;
@@ -45,6 +46,11 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
+    public void insertChildNode(BTreeNode parentNode, BTreeNode newChildNode, int index) {
+        parentNode.insertChildNode(index, newChildNode.getNodeId());
+    }
+
+    @Override
     public void flush() {
         List<BTreeNode> modifiedNodes = nodePositionToNodeMap.values().stream()
                 .filter(GenericBTreeNode::isModified)
@@ -58,7 +64,8 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
         }
     }
 
-    List<BTreeNode> getNodes(List<Integer> nodePositions) {
+    @Override
+    public List<BTreeNode> getNodes(List<Integer> nodePositions) {
         return nodePositions.stream()
                 .map(nodePositionToNodeMap::get)
                 .collect(Collectors.toList());
