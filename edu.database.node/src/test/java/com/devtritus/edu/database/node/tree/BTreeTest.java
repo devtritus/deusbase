@@ -12,19 +12,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BTreeTest {
     @Test
     void add_then_serialize_then_search_by_keys_test() {
-        String fileName = "btree.index";
+        String fileName = "test.index";
         clearFile(fileName);
         BTreeIndexLoader loader = new BTreeIndexLoader(fileName);
         BTreeNodeDiskProvider provider;
         if (loader.initialized()) {
             provider = loader.load();
         } else {
-            provider = loader.initialize(3);
+            provider = loader.initialize(100);
         }
-        StringIntegerBTree tree = new StringIntegerBTree(3, provider);
+        StringLongBTree tree = new StringLongBTree(101, provider);
 
-        List<Integer> toAdd = getShuffledIntegerStream(100000);
-        List<Integer> toSearch = getShuffledIntegerStream(100000);
+        List<Integer> toAdd = getShuffledIntegerStream(10000);
+        List<Integer> toSearch = getShuffledIntegerStream(10000);
 
         try {
             add(tree, toAdd, provider);
@@ -39,8 +39,8 @@ class BTreeTest {
         printTree(provider);
 
         for (Integer key : toSearch) {
-            Integer value = tree.searchByKey(key.toString());
-            assertThat(key).isEqualTo(value);
+            Long value = tree.searchByKey(key.toString());
+            assertThat(key).isEqualTo(value.intValue());
         }
     }
 
@@ -55,17 +55,17 @@ class BTreeTest {
     @Test
     void search_list_test() {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringIntegerBTree tree = new StringIntegerBTree(3, provider);
+        StringLongBTree tree = new StringLongBTree(3, provider);
 
         List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab",
                 "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba", "bbbb", "bbba");
 
         for (int i = 0; i < keys.size() - 1; i++) {
-            tree.add(keys.get(i), i);
+            tree.add(keys.get(i), (long)i);
             //printTree(provider);
         }
 
-        Map<String, Integer> result = tree.fetch("aaaa");
+        Map<String, Long> result = tree.fetch("aaaa");
         assertThat(result).containsOnlyKeys("aaaa");
 
         result = tree.fetch("bba");
@@ -141,7 +141,7 @@ class BTreeTest {
     @Test
     void delete_result_test() {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringIntegerBTree tree = new StringIntegerBTree(3, provider);
+        StringLongBTree tree = new StringLongBTree(3, provider);
 
         add(tree, Arrays.asList(1, 2, 3, 4, 5), provider);
 
@@ -162,7 +162,7 @@ class BTreeTest {
 
     private void addThenSearchByKeyTest(int m, int count) {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringIntegerBTree tree = new StringIntegerBTree(m, provider);
+        StringLongBTree tree = new StringLongBTree(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(count);
         List<Integer> toSearch = getShuffledIntegerStream(count);
@@ -193,7 +193,7 @@ class BTreeTest {
 
     void addThenDeleteTest(int m, List<Integer> toAdd, List<Integer> toDelete) {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringIntegerBTree tree = new StringIntegerBTree(m, provider);
+        StringLongBTree tree = new StringLongBTree(m, provider);
 
         try {
             add(tree, toAdd, provider);
@@ -209,15 +209,15 @@ class BTreeTest {
         //System.out.println("END\n-------------------------------------------------\n");
     }
 
-    private void add(StringIntegerBTree tree, List<Integer> toAdd, BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
+    private void add(StringLongBTree tree, List<Integer> toAdd, BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
         for(Integer key : toAdd) {
             //printTree(provider);
             //System.out.println("add " + key + "\n");
-            tree.add(key.toString(), key);
+            tree.add(key.toString(), key.longValue());
         }
     }
 
-    private void delete(StringIntegerBTree tree, List<Integer> toDelete, BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
+    private void delete(StringLongBTree tree, List<Integer> toDelete, BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
         for(Integer key : toDelete) {
             //printTree(provider);
             //System.out.println("delete " + key + "\n");
@@ -234,7 +234,7 @@ class BTreeTest {
         return integers;
     }
 
-    private void printTree(BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
+    private void printTree(BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
         flatTree(provider.getRootNode(), map, provider);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
@@ -245,7 +245,7 @@ class BTreeTest {
         }
     }
 
-    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeProvider<BTreeNode, String, Integer, Integer> provider) {
+    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
         List<List<String>> parentLevelList = map.computeIfAbsent(node.getLevel(), k -> new ArrayList<>());
         parentLevelList.add(node.getKeys());
 

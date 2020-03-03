@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, Integer, Integer> {
+public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, Long, Integer> {
     private static int nodePositionCounter = 0;
 
     //for in-memory provider nodeId is same as nodePosition

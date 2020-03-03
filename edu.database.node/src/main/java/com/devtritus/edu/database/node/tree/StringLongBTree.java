@@ -1,7 +1,7 @@
 package com.devtritus.edu.database.node.tree;
 
-public class StringIntegerBTree extends AbstractBTree<BTreeNode, String, Integer, Integer> {
-    public StringIntegerBTree(int m, BTreeNodeProvider<BTreeNode, String, Integer, Integer> nodeProvider) {
+public class StringLongBTree extends AbstractBTree<BTreeNode, String, Long, Integer> {
+    public StringLongBTree(int m, BTreeNodeProvider<BTreeNode, String, Long, Integer> nodeProvider) {
         super(m, nodeProvider);
     }
 

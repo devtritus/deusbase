@@ -27,7 +27,7 @@ class BTreeNodeBytesConverter {
             out.write(key.getBytes(StandardCharsets.UTF_8));
         }
 
-        for(int value : node.getValues()) {
+        for(Long value : node.getValues()) {
             out.write(toByteArray(value));
         }
 
@@ -58,7 +58,7 @@ class BTreeNodeBytesConverter {
         }
 
         for(int i = 0; i < keysSize; i++) {
-            int value = readInt(in);
+            long value = readLong(in);
 
             String key = keys.get(i);
             int index = node.searchKey(key);
@@ -84,6 +84,14 @@ class BTreeNodeBytesConverter {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
+    private static long readLong(InputStream in) throws IOException {
+        byte[] bytes = new byte[8];
+
+        in.read(bytes);
+
+        return toLongFromByteArray(bytes);
+    }
+
     private static int readInt(InputStream in) throws IOException {
         byte[] bytes = new byte[4];
 
@@ -92,11 +100,19 @@ class BTreeNodeBytesConverter {
         return toIntFromByteArray(bytes);
     }
 
+    private static byte[] toByteArray(long i) {
+        return ByteBuffer.allocate(8).putLong(i).array();
+    }
+
     private static byte[] toByteArray(int i) {
         return ByteBuffer.allocate(4).putInt(i).array();
     }
 
     private static int toIntFromByteArray(byte[] bytes) {
         return ByteBuffer.wrap(bytes).getInt();
+    }
+
+    private static long toLongFromByteArray(byte[] bytes) {
+        return ByteBuffer.wrap(bytes).getLong();
     }
 }

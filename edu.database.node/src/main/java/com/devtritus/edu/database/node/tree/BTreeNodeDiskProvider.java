@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Integer, Integer>  {
+public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long, Integer>  {
     private final Map<Integer, Integer> nodeIdToNodePosition = new HashMap<>();
     private final Map<Integer, BTreeNode> nodePositionToNode = new HashMap<>();
 

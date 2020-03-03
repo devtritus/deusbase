@@ -8,13 +8,13 @@ class BTreeNodeTest {
     @Test
     void get_value_test() {
         BTreeNode node = new BTreeNode(0, 0);
-        node.putKeyValue("c", 1);
-        node.putKeyValue("a", 0);
+        node.putKeyValue("c", 1L);
+        node.putKeyValue("a", 0L);
 
         assertThat(node.getValue("a")).isEqualTo(0L);
         assertThat(node.getValue("c")).isEqualTo(1L);
 
-        node.putKeyValue("b", 3);
+        node.putKeyValue("b", 3L);
 
         assertThat(node.getValue("b")).isEqualTo(3L);
     }
@@ -22,9 +22,9 @@ class BTreeNodeTest {
     @Test
     void delete_key_test() {
         BTreeNode node = new BTreeNode(0, 0);
-        node.putKeyValue("a", 0);
-        node.putKeyValue("b", 1);
-        node.putKeyValue("c", 2);
+        node.putKeyValue("a", 0L);
+        node.putKeyValue("b", 1L);
+        node.putKeyValue("c", 2L);
 
         int index = node.searchKey("b");
         node.deleteKeyValue(index);
@@ -51,12 +51,12 @@ class BTreeNodeTest {
     @Test
     void delete_children_test() {
         BTreeNode node = new BTreeNode(0, 0);
-        node.putKeyValue("a", 0);
+        node.putKeyValue("a", 0L);
 
         assertThat(node.getValue("a")).isEqualTo(0L);
 
         int indexA = node.searchKey("a");
-        Entry<String, Integer> entryA = node.deleteKeyValue(indexA);
+        Entry<String, Long> entryA = node.deleteKeyValue(indexA);
 
         assertThat(entryA).isEqualTo(new Entry<>("a", 0L));
 

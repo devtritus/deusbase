@@ -10,8 +10,8 @@ class BTreeNodeBytesConverterTest {
     @Test
     void serialize_deserialize_leaf_node_test() throws IOException {
         BTreeNode node = new BTreeNode(42, 3);
-        node.putKeyValue("Jack Nicholson", 3000000);
-        node.putKeyValue("Sean Connery", 2000000);
+        node.putKeyValue("Jack Nicholson", 3000000L);
+        node.putKeyValue("Sean Connery", 2000000L);
 
         byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
         BTreeNode result = BTreeNodeBytesConverter.fromBytes(bytes);
@@ -35,9 +35,9 @@ class BTreeNodeBytesConverterTest {
     @Test
     void serialize_deserialize_inner_node_test() throws IOException {
         BTreeNode node = new BTreeNode(42, 3);
-        node.putKeyValue("Jack Nicholson", 3000000);
-        node.putKeyValue("Sean Connery", 2000000);
-        node.putKeyValue("Tom Hanks", 1000000);
+        node.putKeyValue("Jack Nicholson", 3000000L);
+        node.putKeyValue("Sean Connery", 2000000L);
+        node.putKeyValue("Tom Hanks", 1000000L);
 
         node.insertChildNode(0, 1993);
         node.insertChildNode(1, 1994);
