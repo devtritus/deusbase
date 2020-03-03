@@ -137,6 +137,7 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
             int index = nextNode.searchKey(key);
             if(index > -1) {
                 nextNode.putKeyValue(index, key, value);
+                return; //TODO: resolve a problem with matched keys
             }
             int childPositionIndex = -index - 1;
             D nextChild = nodeProvider.getChildNode(nextNode, childPositionIndex);

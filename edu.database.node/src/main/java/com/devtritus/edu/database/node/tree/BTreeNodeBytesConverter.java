@@ -21,10 +21,11 @@ class BTreeNodeBytesConverter {
         out.write(keysSizeBytes);
 
         for(String key : node.getKeys()) {
-            byte[] keyLength = toByteArray(key.length());
-            out.write(keyLength);
+            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+            byte[] keyLength = toByteArray(keyBytes.length);
 
-            out.write(key.getBytes(StandardCharsets.UTF_8));
+            out.write(keyLength);
+            out.write(keyBytes);
         }
 
         for(Long value : node.getValues()) {

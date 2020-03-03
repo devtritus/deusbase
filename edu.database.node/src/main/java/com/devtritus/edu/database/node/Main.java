@@ -8,9 +8,9 @@ public class Main {
         int port = 7599;//getRandomPort();
 
         NodeApi api = new NodeApi();
-        LoggingApiDecorator<String, String> loggingApiDecorator = new LoggingApiDecorator<>(api);
+        //LoggingApiDecorator<String, String> loggingApiDecorator = new LoggingApiDecorator<>(api);
 
-        RequestBodyHandler requestBodyHandler = new RequestBodyHandler(loggingApiDecorator);
+        RequestBodyHandler requestBodyHandler = new RequestBodyHandler(api);
         DatabaseRequestHandler databaseRequestHandler = new DatabaseRequestHandler(requestBodyHandler);
 
         new DatabaseServer(databaseRequestHandler).start(LOCALHOST, port, () -> successCallback(port));

@@ -5,6 +5,8 @@ import org.apache.http.conn.HttpHostConnectException;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -69,13 +71,18 @@ class Terminal {
 
             CommandParamsValidator.validate(command, params);
 
+            Instant start = Instant.now();
+
             ResponseBody responseBody = client.request(command, params);
+
+            Instant finish = Instant.now();
 
             ResponseStatus status = ResponseStatus.ofCode(responseBody.getCode());
             if(status != ResponseStatus.OK) {
                 print(status.getMessage());
             } else {
                 print(responseBody.getData());
+                print(Duration.between(start, finish).toMillis() + " ms");
             }
         } catch(HttpHostConnectException e) {
             print(SERVICE_UNAVAILABLE);

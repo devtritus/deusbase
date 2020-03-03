@@ -21,10 +21,10 @@ public class NodeApi implements Api<String, String> {
         if(loader.initialized()) {
             provider = loader.load();
         } else {
-            provider = loader.initialize(50);
+            provider = loader.initialize(100);
         }
 
-        tree = new StringLongBTree(50, provider);
+        tree = new StringLongBTree(100, provider);
         valueStorage = new ValueDiskStorage(Paths.get("value.storage"));
     }
 
