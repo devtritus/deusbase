@@ -3,8 +3,6 @@ package com.devtritus.edu.database.node.tree;
 import java.util.*;
 
 abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comparable<K>, V, C> implements BTree<K, V> {
-    private static final int ROOT_POSITION = -1;
-
     private BTreeNodeProvider<D, K, V, C> nodeProvider;
 
     private final int m;
@@ -28,26 +26,25 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
     @Override
     public Map<K, V> fetch(K key) {
         Map<K, V> result = new HashMap<>();
-        D root = nodeProvider.getRootNode();
-        fetch(key, root, result);
+        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
+        fetch(key, root.key, result);
         return result;
     }
 
     @Override
     public V searchByKey(K key) {
-        D root = nodeProvider.getRootNode();
-        return searchByKey(key, root);
+        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
+        return searchByKey(key, root.key);
     }
 
     @Override
     public K add(K key, V value) {
         LinkedList<PathEntry<D, K, V, C>> path = new LinkedList<>();
-        D root = nodeProvider.getRootNode();
-        add(key, value, root, path, ROOT_POSITION);
+        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
+        add(key, value, root.key, path, root.value);
 
+        nodeProvider.setRootNode(path.get(0));
         nodeProvider.flush();
-
-        nodeProvider.setRootNode(path.get(0).key);
 
         return key;
     }
@@ -55,23 +52,22 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
     @Override
     public boolean delete(K key) {
         LinkedList<PathEntry<D, K, V, C>> path = new LinkedList<>();
-        D root = nodeProvider.getRootNode();
-        boolean result = delete(key, root, path, ROOT_POSITION, null);
+        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
+        boolean result = delete(key, root.key, path, root.value, null);
 
+        nodeProvider.setRootNode(path.get(0));
         nodeProvider.flush();
-
-        nodeProvider.setRootNode(path.get(0).key);
 
         return result;
     }
 
     @Override
     public boolean isEmpty() {
-        D root = nodeProvider.getRootNode();
-        if(root.getKeysSize() == 0 && root.getChildrenSize() != 0)  {
+        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
+        if(root.key.getKeysSize() == 0 && root.key.getChildrenSize() != 0)  {
             throw new IllegalStateException();
         }
-        return root.getKeysSize() == 0;
+        return root.key.getKeysSize() == 0;
     }
 
     private void fetch(K key, D nextNode, Map<K, V> result) {
@@ -156,32 +152,32 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
     }
 
     private void balanceAfterAdd(D nextNode, LinkedList<PathEntry<D, K, V, C>> path) {
-        D nextParent;
+        PathEntry<D, K, V, C> nextParent;
         int insertionIndex;
 
         List<PathEntry<D, K, V, C>> parents = new ArrayList<>(path.subList(0, path.size() - 1));
 
         if(parents.isEmpty()) {
             nextParent = nodeProvider.createNode(nextNode.getLevel() + 1);
-            path.addFirst(new PathEntry<>(nextParent, ROOT_POSITION));
-            nodeProvider.insertChildNode(nextParent, nextNode, 0);
+            path.addFirst(nextParent);
+            nodeProvider.insertChildNode(nextParent.key, path.get(path.size() - 1), 0); //TODO: pass nextNode only in path list
             insertionIndex = 0;
         } else {
-            nextParent = parents.get(parents.size() - 1).key;
+            nextParent = parents.get(parents.size() - 1);
             insertionIndex = path.get(path.size() - 1).value;
         }
 
-        D rightNode = nodeProvider.createNode(nextNode.getLevel());
-        rightNode.copy(nextNode, min + 1, nextNode.getKeysSize());
+        PathEntry<D, K, V, C> rightNode = nodeProvider.createNode(nextNode.getLevel());
+        rightNode.key.copy(nextNode, min + 1, nextNode.getKeysSize());
         nextNode.delete(min + 1, nextNode.getKeysSize());
 
-        nodeProvider.insertChildNode(nextParent, rightNode, insertionIndex + 1);
+        nodeProvider.insertChildNode(nextParent.key, rightNode, insertionIndex + 1);
 
         Entry<K, V> middleKeyValue = nextNode.deleteKeyValue(min);
 
         path.remove(path.size() - 1);
 
-        doAdd(middleKeyValue.key, middleKeyValue.value, nextParent, path);
+        doAdd(middleKeyValue.key, middleKeyValue.value, nextParent.key, path);
     }
 
     private boolean delete(K key, D nextNode, LinkedList<PathEntry<D, K, V, C>> path, int positionIndex, D parent) {

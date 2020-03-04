@@ -4,6 +4,7 @@ import com.devtritus.edu.database.core.Command;
 import com.devtritus.edu.database.core.RequestBody;
 import com.devtritus.edu.database.core.RequestBodyHandler;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class ActorsLoader {
@@ -15,7 +16,7 @@ public class ActorsLoader {
     void load(int count) throws Exception {
         RequestBodyHandler handler = new RequestBodyHandler(new NodeApi());
 
-        try(Scanner scanner = new Scanner(new File("data.tsv"), "UTF-8")) {
+        try(Scanner scanner = new Scanner(new File("data.tsv"), StandardCharsets.UTF_8.name())) {
             scanner.nextLine();
 
             int i = 0;

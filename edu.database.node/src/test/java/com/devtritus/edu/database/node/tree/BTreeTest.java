@@ -21,7 +21,7 @@ class BTreeTest {
         } else {
             provider = loader.initialize(100);
         }
-        StringLongBTree tree = new StringLongBTree(101, provider);
+        StringLongBTree tree = new StringLongBTree(100, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(10000);
         List<Integer> toSearch = getShuffledIntegerStream(10000);
@@ -236,7 +236,7 @@ class BTreeTest {
 
     private void printTree(BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
-        flatTree(provider.getRootNode(), map, provider);
+        flatTree(provider.getRootNode().key, map, provider);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
             for(List<String> value : entry.getValue()) {
                 System.out.print(value + " ");
@@ -261,4 +261,18 @@ class BTreeTest {
             throw new RuntimeException(e);
         }
     }
+
+
+    //Tasks
+
+    /*
+        1. Implement a cache
+        2. Exclude unnecessary writing/reading operations
+        3. Find a solution for equals keys
+        4. Resolve a problem with overflow of node's block
+        5. Optimize a size of index
+        6. Improve the terminal
+        7. Refactoring
+        8. Think about concurrent access
+     */
 }

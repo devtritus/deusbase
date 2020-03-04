@@ -11,10 +11,10 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     //for in-memory provider nodeId is same as nodePosition
     private final Map<Integer, BTreeNode> nodePositionToNodeMap = new HashMap<>();
 
-    private BTreeNode root;
+    private PathEntry<BTreeNode, String, Long, Integer> root;
 
     @Override
-    public BTreeNode getRootNode() {
+    public PathEntry<BTreeNode, String, Long, Integer> getRootNode() {
         if(root == null) {
             root = createNode(0);
         }
@@ -22,7 +22,7 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
-    public void setRootNode(BTreeNode node) {
+    public void setRootNode(PathEntry<BTreeNode, String, Long, Integer> node) {
         root = node;
     }
 
@@ -38,16 +38,16 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
-    public BTreeNode createNode(int level) {
+    public PathEntry<BTreeNode, String, Long, Integer> createNode(int level) {
         int nodePosition = nodePositionCounter++;
         BTreeNode node = new BTreeNode(nodePosition, level);
         nodePositionToNodeMap.put(nodePosition, node);
-        return node;
+        return new PathEntry<>(node, nodePosition);
     }
 
     @Override
-    public void insertChildNode(BTreeNode parentNode, BTreeNode newChildNode, int index) {
-        parentNode.insertChildNode(index, newChildNode.getNodeId());
+    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, Long, Integer> newChildNode, int index) {
+        parentNode.insertChildNode(index, newChildNode.value);
     }
 
     @Override

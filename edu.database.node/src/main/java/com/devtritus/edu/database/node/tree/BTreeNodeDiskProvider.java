@@ -5,14 +5,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long, Integer>  {
-    private final Map<Integer, Integer> nodeIdToNodePosition = new HashMap<>();
     private final Map<Integer, BTreeNode> nodePositionToNode = new HashMap<>();
 
     private final File file;
@@ -22,7 +18,8 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     private int lastNodeId;
     private int rootPosition;
 
-    private BTreeNode root;
+    private BTreeNodeCache cache;
+    private PathEntry<BTreeNode, String, Long, Integer> root;
 
     public BTreeNodeDiskProvider(int m, int blockSize, int lastPosition, int lastNodeId, File file) {
         this.m = m;
@@ -33,13 +30,13 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     }
 
     @Override
-    public BTreeNode getRootNode() {
+    public PathEntry<BTreeNode, String, Long, Integer> getRootNode() {
         return root;
     }
 
     @Override
-    public void setRootNode(BTreeNode node) {
-        int nodePosition = nodeIdToNodePosition.get(node.getNodeId());
+    public void setRootNode(PathEntry<BTreeNode, String, Long, Integer> entry) {
+        int nodePosition = entry.value;
         try(SeekableByteChannel channel = openWriteChannel()) {
             channel.position(8);
             ByteBuffer buffer = ByteBuffer.allocate(4).putInt(nodePosition);
@@ -50,9 +47,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
         }
 
         rootPosition = nodePosition;
-        root = node;
-
-        updateHeader();
+        root = entry;
     }
 
     @Override
@@ -76,28 +71,27 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     }
 
     @Override
-    public BTreeNode createNode(int level) {
+    public PathEntry<BTreeNode, String, Long, Integer> createNode(int level) {
         BTreeNode node = new BTreeNode(++lastNodeId, level);
         putToMap(node, ++lastPosition);
-        return node;
+        return new PathEntry<>(node, lastPosition);
     }
 
     @Override
-    public void insertChildNode(BTreeNode parentNode, BTreeNode newChildNode, int index) {
-        Integer position = nodeIdToNodePosition.get(newChildNode.getNodeId());
-        parentNode.insertChildNode(index, position);
+    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, Long, Integer> newChildNode, int index) {
+        parentNode.insertChildNode(index, newChildNode.value);
     }
 
     @Override
     public void flush() {
-        List<BTreeNode> modifiedNodes = nodePositionToNode.values().stream()
-                .filter(BTreeNode::isModified)
-                .collect(Collectors.toList());
+        Map<Integer, BTreeNode> modifiedNodes = nodePositionToNode.entrySet().stream()
+                .filter(entry -> entry.getValue().isModified())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         try(SeekableByteChannel channel = openWriteChannel()) {
-            for(BTreeNode modifiedNode : modifiedNodes) {
-                int position = nodeIdToNodePosition.get(modifiedNode.getNodeId());
-                byte[] bytes = BTreeNodeBytesConverter.toBytes(modifiedNode);
+            for(Map.Entry<Integer, BTreeNode> entry : modifiedNodes.entrySet()) {
+                int position = entry.getKey();
+                byte[] bytes = BTreeNodeBytesConverter.toBytes(entry.getValue());
                 ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize).put(bytes);
                 blockBuffer.rewind();
                 channel.position(position * blockSize);
@@ -107,7 +101,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
             throw new RuntimeException(e);
         }
 
-        for(BTreeNode modifiedNode : modifiedNodes) {
+        for(BTreeNode modifiedNode : modifiedNodes.values()) {
             modifiedNode.markAsNotModified();
         }
 
@@ -130,9 +124,9 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     }
 
     void loadRoot(int rootPosition) {
-        root = getNodeByPosition(rootPosition);
+        root = new PathEntry<>(getNodeByPosition(rootPosition), rootPosition);
         this.rootPosition = rootPosition;
-        putToMap(root, rootPosition);
+        putToMap(root.key, rootPosition);
     }
 
     BTreeNode getNodeByPosition(int nodePosition) {
@@ -148,7 +142,6 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     }
 
     private void putToMap(BTreeNode node, int nodePosition) {
-        nodeIdToNodePosition.put(node.getNodeId(), nodePosition);
         nodePositionToNode.put(nodePosition, node);
     }
 
@@ -179,7 +172,6 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
 
     void clearCache() {
         nodePositionToNode.clear();
-        nodeIdToNodePosition.clear();
         loadRoot(rootPosition);
     }
 }
