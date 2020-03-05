@@ -13,4 +13,18 @@ abstract class TreeUtils {
 
         return list;
     }
+
+    static <T> List<T> delete(List<T> list, int deleteIndex) {
+        if(list.isEmpty()) {
+            return list;
+        }
+
+        for(int i = deleteIndex + 1; i < list.size(); i++) {
+            T nextElement = list.get(i);
+            list.set(i - 1, nextElement);
+        }
+        list.remove(list.size() - 1);
+
+        return list;
+    }
 }

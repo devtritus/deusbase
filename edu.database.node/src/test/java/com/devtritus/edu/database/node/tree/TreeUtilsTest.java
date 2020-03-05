@@ -18,6 +18,14 @@ class TreeUtilsTest {
         assertThat(TreeUtils.insert(listOf(1, 2, 3), 4, 3)).containsExactly(1, 2, 3, 4);
     }
 
+    @Test
+    void delete_element_from_list_test() {
+        assertThat(TreeUtils.delete(listOf(1), 0)).containsExactly();
+        assertThat(TreeUtils.delete(listOf(1, 2, 3), 1)).containsExactly(1, 3);
+        assertThat(TreeUtils.delete(listOf(1, 2, 3, 4), 0)).containsExactly(2, 3, 4);
+        assertThat(TreeUtils.delete(listOf(1, 2, 3, 4), 3)).containsExactly(1, 2, 3);
+    }
+
     private <T> List<T> listOf(T... values) {
         return new ArrayList<>(Arrays.asList(values));
     }
