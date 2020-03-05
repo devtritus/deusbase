@@ -6,11 +6,8 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long, Integer>  {
-    private final Map<Integer, BTreeNode> nodePositionToNode = new HashMap<>();
-
     private final File file;
     private final int m;
     private final int blockSize;
@@ -18,7 +15,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     private int lastNodeId;
     private int rootPosition;
 
-    private BTreeNodeCache cache;
+    private BTreeNodeCache cache = new BTreeNodeCache(10000);
     private PathEntry<BTreeNode, String, Long, Integer> root;
 
     public BTreeNodeDiskProvider(int m, int blockSize, int lastPosition, int lastNodeId, File file) {
@@ -59,13 +56,13 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
         }
 
         int nodePosition = parentNode.getChildren().get(index);
-        BTreeNode cachedChildNode = nodePositionToNode.get(nodePosition);
+        BTreeNode cachedChildNode = cache.get(nodePosition);
 
         if(cachedChildNode != null) {
             return cachedChildNode;
         } else {
             BTreeNode childNode = getNodeByPosition(nodePosition);
-            putToMap(childNode, nodePosition);
+            cache.put(nodePosition, childNode);
             return childNode;
         }
     }
@@ -73,7 +70,8 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     @Override
     public PathEntry<BTreeNode, String, Long, Integer> createNode(int level) {
         BTreeNode node = new BTreeNode(++lastNodeId, level);
-        putToMap(node, ++lastPosition);
+        ++lastPosition;
+        cache.put(lastPosition, node);
         return new PathEntry<>(node, lastPosition);
     }
 
@@ -84,9 +82,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
 
     @Override
     public void flush() {
-        Map<Integer, BTreeNode> modifiedNodes = nodePositionToNode.entrySet().stream()
-                .filter(entry -> entry.getValue().isModified())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Integer, BTreeNode> modifiedNodes = cache.getModifiedNodes();
 
         try(SeekableByteChannel channel = openWriteChannel()) {
             for(Map.Entry<Integer, BTreeNode> entry : modifiedNodes.entrySet()) {
@@ -112,7 +108,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     public List<BTreeNode> getNodes(List<Integer> nodePositions) {
         List<BTreeNode> result = new ArrayList<>();
         for(Integer nodePosition : nodePositions) {
-            BTreeNode node = nodePositionToNode.get(nodePosition);
+            BTreeNode node = cache.get(nodePosition);
             if(node != null) {
                 result.add(node);
             } else {
@@ -124,9 +120,10 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     }
 
     void loadRoot(int rootPosition) {
-        root = new PathEntry<>(getNodeByPosition(rootPosition), rootPosition);
+        BTreeNode node = getNodeByPosition(rootPosition);
+        root = new PathEntry<>(node, rootPosition);
         this.rootPosition = rootPosition;
-        putToMap(root.key, rootPosition);
+        cache.put(rootPosition, node);
     }
 
     BTreeNode getNodeByPosition(int nodePosition) {
@@ -139,10 +136,6 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void putToMap(BTreeNode node, int nodePosition) {
-        nodePositionToNode.put(nodePosition, node);
     }
 
     private SeekableByteChannel openReadChannel() throws IOException {
@@ -171,7 +164,7 @@ public class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, Strin
     }
 
     void clearCache() {
-        nodePositionToNode.clear();
+        cache.clear();
         loadRoot(rootPosition);
     }
 }
