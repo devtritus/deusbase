@@ -14,14 +14,12 @@ class BTreeTest {
     void add_then_serialize_then_search_by_keys_test() {
         String fileName = "test.index";
         clearFile(fileName);
-        BTreeIndexLoader loader = new BTreeIndexLoader(fileName);
-        BTreeNodeDiskProvider provider;
-        if (loader.initialized()) {
-            provider = loader.load();
-        } else {
-            provider = loader.initialize(100);
-        }
-        StringLongBTree tree = new StringLongBTree(100, provider);
+        BTreeNodeDiskManager manager = new BTreeNodeDiskManager(fileName);
+        int m = manager.initialize();
+
+        BTreeNodeDiskProvider provider = manager.getNodeProvider();
+
+        StringLongBTree tree = new StringLongBTree(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(10000);
         List<Integer> toSearch = getShuffledIntegerStream(10000);
@@ -34,9 +32,6 @@ class BTreeTest {
         }
 
         provider.clearCache();
-
-        System.out.println("After:");
-        printTree(provider);
 
         for (Integer key : toSearch) {
             Long value = tree.searchByKey(key.toString());
@@ -266,7 +261,7 @@ class BTreeTest {
     //Tasks
 
     /*
-        1. Implement a cache
+        1. Implement a cache +
         2. Exclude unnecessary writing/reading operations
         3. Find a solution for equals keys
         4. Resolve a problem with overflow of node's block

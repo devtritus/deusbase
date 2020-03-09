@@ -16,15 +16,10 @@ public class NodeApi implements Api<String, String> {
     private ValueStorage valueStorage;
 
     NodeApi() {
-        BTreeIndexLoader loader = new BTreeIndexLoader("node.index");
-        BTreeNodeDiskProvider provider;
-        if(loader.initialized()) {
-            provider = loader.load();
-        } else {
-            provider = loader.initialize(100);
-        }
+        BTreeNodeDiskManager manager = new BTreeNodeDiskManager("node.index");
+        int m = manager.initialize();
 
-        tree = new StringLongBTree(100, provider);
+        tree = new StringLongBTree(m, manager.getNodeProvider());
         valueStorage = new ValueDiskStorage(Paths.get("value.storage"));
     }
 
