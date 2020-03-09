@@ -28,7 +28,8 @@ class BTreeIndexLoader {
             updateHeader(channel, header);
 
             BTreeNode root = new BTreeNode(header.lastNodeId, 0);
-            writeNode(channel, root, blockSize, 1);
+            ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
+            writeNode(channel, root, blockSize, 1, blockBuffer);
 
             return new BTreeIndexLoader(file, header);
         }
@@ -53,12 +54,16 @@ class BTreeIndexLoader {
     }
 
     void flush(Map<Integer, BTreeNode> nodesToFlush, int rootPosition, int lastPosition, int lastNodeId) {
+        int blockSize = header.blockSize;
+
         try(SeekableByteChannel channel = openWriteChannel(file)) {
+            ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
             for(Map.Entry<Integer, BTreeNode> entry : nodesToFlush.entrySet()) {
-                writeNode(channel, entry.getValue(), header.blockSize, entry.getKey());
+                writeNode(channel, entry.getValue(), blockSize, entry.getKey(), blockBuffer);
+                blockBuffer.clear();
             }
 
-            BTreeIndexHeader updatedHeader = new BTreeIndexHeader(header.blockSize, header.m, rootPosition, lastPosition, lastNodeId);
+            BTreeIndexHeader updatedHeader = new BTreeIndexHeader(blockSize, header.m, rootPosition, lastPosition, lastNodeId);
             if(!updatedHeader.equals(header)) {
                 channel.position(0);
                 updateHeader(channel, updatedHeader);
@@ -86,9 +91,8 @@ class BTreeIndexLoader {
         }
     }
 
-    private static void writeNode(SeekableByteChannel channel,  BTreeNode node, int blockSize, int position) throws IOException {
+    private static void writeNode(SeekableByteChannel channel,  BTreeNode node, int blockSize, int position, ByteBuffer blockBuffer) throws IOException {
         byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
-        ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
 
         blockBuffer
                 .put(bytes)

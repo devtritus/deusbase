@@ -4,7 +4,7 @@ import java.io.File;
 
 public class BTreeNodeDiskManager {
     private final static int DEFAULT_M = 100;
-    private final static int DEFAULT_CACHE_LIMIT = 100_000;
+    private final static int DEFAULT_CACHE_LIMIT = 100;
 
     private final File file;
 

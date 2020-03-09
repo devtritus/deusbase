@@ -22,7 +22,12 @@ class BTreeTest {
         StringLongBTree tree = new StringLongBTree(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(10000);
+        //List<Integer> toAdd = Arrays.asList();
+        //System.out.println(toAdd);
+
         List<Integer> toSearch = getShuffledIntegerStream(10000);
+        //List<Integer> toSearch = Arrays.asList();
+        //System.out.println(toSearch);
 
         try {
             add(tree, toAdd, provider);
@@ -31,7 +36,7 @@ class BTreeTest {
             throw e;
         }
 
-        provider.clearCache();
+        //provider.clearCache();
 
         for (Integer key : toSearch) {
             Long value = tree.searchByKey(key.toString());
@@ -209,6 +214,8 @@ class BTreeTest {
             //printTree(provider);
             //System.out.println("add " + key + "\n");
             tree.add(key.toString(), key.longValue());
+            Long value = tree.searchByKey(key.toString());
+            assertThat(key).isEqualTo(value.intValue());
         }
     }
 
@@ -262,7 +269,7 @@ class BTreeTest {
 
     /*
         1. Implement a cache +
-        2. Exclude unnecessary writing/reading operations
+        2. Exclude unnecessary writing/reading operations +
         3. Find a solution for equals keys
         4. Resolve a problem with overflow of node's block
         5. Optimize a size of index

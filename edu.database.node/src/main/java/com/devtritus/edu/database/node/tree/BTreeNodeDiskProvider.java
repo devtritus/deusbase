@@ -34,7 +34,9 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long
     @Override
     public void setRootNode(PathEntry<BTreeNode, String, Long, Integer> entry) {
         root = entry;
-        cache.put(entry.value, entry.key);
+        if(cache.get(entry.value) == null) {
+            cache.put(entry.value, entry.key);
+        }
     }
 
     @Override
@@ -75,6 +77,8 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long
         Map<Integer, BTreeNode> modifiedNodes = cache.getModifiedNodes();
 
         loader.flush(modifiedNodes, root.value, lastPosition, lastNodeId);
+
+        cache.clearToLimit();
 
         for(BTreeNode modifiedNode : modifiedNodes.values()) {
             modifiedNode.markAsNotModified();

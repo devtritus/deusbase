@@ -26,8 +26,19 @@ class BTreeNodeCache {
                     nodePositionToNodeIndex.put(entry.getKey(), entry.getValue() - 1);
                 }
             }
+        }
+    }
 
-        } else if(nodes.size() > limit) {
+    BTreeNode get(int position) {
+        Integer nodeIndex = nodePositionToNodeIndex.get(position);
+        if(nodeIndex == null) {
+            return null;
+        }
+        return nodes.get(nodeIndex);
+    }
+
+    void clearToLimit() {
+        if(nodes.size() > limit) {
             int n = Math.max((int)(nodes.size() * C), 1);
             nodes.subList(0, n).clear();
 
@@ -44,14 +55,6 @@ class BTreeNodeCache {
                 nodePositionToNodeIndex.remove(positionToDelete);
             }
         }
-    }
-
-    BTreeNode get(int position) {
-        Integer nodeIndex = nodePositionToNodeIndex.get(position);
-        if(nodeIndex == null) {
-            return null;
-        }
-        return nodes.get(nodeIndex);
     }
 
     void clear() {

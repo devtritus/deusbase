@@ -20,24 +20,31 @@ class BTreeCacheNodeTest {
         PathEntry<BTreeNode, String, Long, Integer> entry5 = entryOf(new BTreeNode(4, 4), 4);
 
         cache.put(entry1.value, entry1.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry1);
 
         cache.put(entry2.value, entry2.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry1, entry2);
 
         cache.put(entry3.value, entry3.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry1, entry2, entry3);
 
         cache.put(entry4.value, entry4.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry2, entry3, entry4);
 
         cache.put(entry3.value, entry3.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry2, entry4, entry3);
 
         cache.put(entry5.value, entry5.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry4, entry3, entry5);
 
         cache.put(entry1.value, entry1.key);
+        cache.clearToLimit();
         assertCacheContent(cache, entry3, entry5, entry1);
     }
 
