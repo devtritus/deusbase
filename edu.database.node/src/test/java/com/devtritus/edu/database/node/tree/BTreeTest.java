@@ -269,7 +269,7 @@ class BTreeTest {
         1. Implement a cache +
         2. Exclude unnecessary writing/reading operations +
         3. Find a solution for equals keys +
-        4. Resolve a problem with overflow of node's block
+        4. Resolve a problem with overflow of node's block +
         5. Optimize a size of index
         6. Improve the terminal
         7. Refactoring

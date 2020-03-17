@@ -95,6 +95,10 @@ class BTreeIndexLoader {
     private static void writeNode(SeekableByteChannel channel,  BTreeNode node, int blockSize, int position, ByteBuffer blockBuffer) throws IOException {
         byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
 
+        if(bytes.length > blockSize) {
+            throw new IllegalStateException("Block size is too small");
+        }
+
         blockBuffer
                 .put(bytes)
                 .rewind();
