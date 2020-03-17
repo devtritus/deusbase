@@ -13,11 +13,11 @@ class BTreeCacheNodeTest {
 
         assertThat(cache.getCachedEntries()).hasSize(0);
 
-        PathEntry<BTreeNode, String, Long, Integer> entry1 = entryOf(new BTreeNode(0, 0), 0);
-        PathEntry<BTreeNode, String, Long, Integer> entry2 = entryOf(new BTreeNode(1, 1), 1);
-        PathEntry<BTreeNode, String, Long, Integer> entry3 = entryOf(new BTreeNode(2, 2), 2);
-        PathEntry<BTreeNode, String, Long, Integer> entry4 = entryOf(new BTreeNode(3, 3), 3);
-        PathEntry<BTreeNode, String, Long, Integer> entry5 = entryOf(new BTreeNode(4, 4), 4);
+        PathEntry<BTreeNode, String, List<Long>, Integer> entry1 = entryOf(new BTreeNode(0, 0), 0);
+        PathEntry<BTreeNode, String, List<Long>, Integer> entry2 = entryOf(new BTreeNode(1, 1), 1);
+        PathEntry<BTreeNode, String, List<Long>, Integer> entry3 = entryOf(new BTreeNode(2, 2), 2);
+        PathEntry<BTreeNode, String, List<Long>, Integer> entry4 = entryOf(new BTreeNode(3, 3), 3);
+        PathEntry<BTreeNode, String, List<Long>, Integer> entry5 = entryOf(new BTreeNode(4, 4), 4);
 
         cache.put(entry1.value, entry1.key);
         cache.clearToLimit();
@@ -66,15 +66,15 @@ class BTreeCacheNodeTest {
         assertThat(cache.get(3)).isNull();
     }
 
-    private static void assertCacheContent(BTreeNodeCache cache, PathEntry<BTreeNode, String, Long, Integer>... entries) {
-        List<PathEntry<BTreeNode, String, Long, Integer>> result = cache.getCachedEntries().entrySet().stream()
+    private static void assertCacheContent(BTreeNodeCache cache, PathEntry<BTreeNode, String, List<Long>, Integer>... entries) {
+        List<PathEntry<BTreeNode, String, List<Long>, Integer>> result = cache.getCachedEntries().entrySet().stream()
                 .map(entry -> entryOf(entry.getValue(), entry.getKey()))
                 .collect(Collectors.toList());
 
         assertThat(result).containsExactlyInAnyOrder(entries);
     }
 
-    private static PathEntry<BTreeNode, String, Long, Integer> entryOf(BTreeNode node, int position) {
+    private static PathEntry<BTreeNode, String, List<Long>, Integer> entryOf(BTreeNode node, int position) {
         return new PathEntry<>(node, position);
     }
 }

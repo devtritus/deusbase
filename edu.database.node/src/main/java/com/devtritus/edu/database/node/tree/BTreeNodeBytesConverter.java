@@ -3,8 +3,7 @@ package com.devtritus.edu.database.node.tree;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 class BTreeNodeBytesConverter {
 
@@ -28,8 +27,28 @@ class BTreeNodeBytesConverter {
             out.write(keyBytes);
         }
 
-        for(Long value : node.getValues()) {
-            out.write(toByteArray(value));
+        List<Entry<Integer, Integer>> indexToSizeValuesArray = new ArrayList<>();
+        int valuesArrayCount = 0;
+        for(int i = 0; i < node.getValues().size(); i++) {
+            List<Long> values = node.getValues().get(i);
+            if(values.size() > 1) {
+                indexToSizeValuesArray.add(new Entry<>(i, values.size()));
+                valuesArrayCount++;
+            }
+        }
+
+        out.write(toByteArray(valuesArrayCount));;
+
+        for(int i = 0; i < valuesArrayCount; i++) {
+            Entry<Integer, Integer> entry = indexToSizeValuesArray.get(i);
+            out.write(toByteArray(entry.key));
+            out.write(toByteArray(entry.value));
+        }
+
+        for(List<Long> values : node.getValues()) {
+            for(Long value : values) {
+                out.write(toByteArray(value));
+            }
         }
 
         byte[] childrenSizeBytes = toByteArray(node.getChildren().size());
@@ -58,12 +77,26 @@ class BTreeNodeBytesConverter {
             keys.add(key);
         }
 
+        Map<Integer, Integer> indexToSizeOfValuesArray = new HashMap<>();
+        int valuesArrayCount = readInt(in);
+        for(int i = 0; i < valuesArrayCount; i++) {
+            int index = readInt(in);
+            int size = readInt(in);
+            indexToSizeOfValuesArray.put(index, size);
+        }
+
         for(int i = 0; i < keysSize; i++) {
-            long value = readLong(in);
+            Integer valuesArraySize = indexToSizeOfValuesArray.get(i);
+            int size = valuesArraySize != null ? valuesArraySize : 1;
+
+            List<Long> values = new ArrayList<>();
+            for(int j = 0; j < size; j++) {
+                values.add(readLong(in));
+            }
 
             String key = keys.get(i);
             int index = node.searchKey(key);
-            node.putKeyValue(index, key, value);
+            node.putKeyValue(index, key, values);
         }
 
         int childrenSize = readInt(in);

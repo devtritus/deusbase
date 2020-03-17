@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import java.util.Map;
 
 class BTreeIndexLoader {
@@ -74,7 +75,7 @@ class BTreeIndexLoader {
         }
     }
 
-    PathEntry<BTreeNode, String, Long, Integer> readRoot() {
+    PathEntry<BTreeNode, String, List<Long>, Integer> readRoot() {
         BTreeNode node = readNodeByPosition(header.rootPosition);
         return new PathEntry<>(node, header.rootPosition);
     }

@@ -2,7 +2,7 @@ package com.devtritus.edu.database.node.tree;
 
 import java.util.*;
 
-abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comparable<K>, V, C> implements BTree<K, V> {
+abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Comparable<K>, V, C> implements BTree<K, V> {
     private BTreeNodeProvider<D, K, V, C> nodeProvider;
 
     private final int m;
@@ -50,7 +50,7 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
     }
 
     @Override
-    public boolean delete(K key) {
+    public boolean deleteKey(K key) {
         LinkedList<PathEntry<D, K, V, C>> path = new LinkedList<>();
         PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
         boolean result = delete(key, root.key, path, root.value, null);
@@ -125,15 +125,16 @@ abstract class AbstractBTree<D extends GenericBTreeNode<K, V, C>, K extends Comp
     }
 
     private void add(K key, V value, D nextNode, LinkedList<PathEntry<D, K, V, C>> path, int positionIndex) {
-        path.add(new PathEntry<>(nextNode, positionIndex));
+        PathEntry<D, K, V, C> entry = new PathEntry<>(nextNode, positionIndex);
+        path.add(entry);
 
         if(nextNode.isLeaf()) {
             doAdd(key, value, nextNode, path);
         } else {
             int index = nextNode.searchKey(key);
             if(index > -1) {
-                nextNode.putKeyValue(index, key, value);
-                return; //TODO: resolve a problem with matched keys
+                nodeProvider.putKeyValueToNode(entry, index, key, value);
+                return;
             }
             int childPositionIndex = -index - 1;
             D nextChild = nodeProvider.getChildNode(nextNode, childPositionIndex);

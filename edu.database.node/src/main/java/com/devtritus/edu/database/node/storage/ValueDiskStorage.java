@@ -27,7 +27,7 @@ public class ValueDiskStorage implements ValueStorage {
     }
 
     @Override
-    public long put(String value) {
+    public long write(String value) {
         try(SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.APPEND)) {
             byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
             int valueSize = valueBytes.length;
@@ -47,7 +47,7 @@ public class ValueDiskStorage implements ValueStorage {
     }
 
     @Override
-    public Map<Long, String> get(List<Long> addresses) {
+    public Map<Long, String> read(List<Long> addresses) {
         try(SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
             Map<Long, String> result = new HashMap<>();
             for(Long address : addresses) {

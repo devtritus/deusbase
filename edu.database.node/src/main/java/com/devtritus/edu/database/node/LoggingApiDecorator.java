@@ -2,6 +2,7 @@ package com.devtritus.edu.database.node;
 
 import com.devtritus.edu.database.core.Api;
 
+import java.util.List;
 import java.util.Map;
 
 public class LoggingApiDecorator<K, V> implements Api<K, V> {
@@ -12,33 +13,41 @@ public class LoggingApiDecorator<K, V> implements Api<K, V> {
     }
 
     @Override
-    public Map<K, V> create(K key, V value) {
-        log("create", key, value);
-        Map<K, V> result = api.create(key, value);
-        logSuccess(result);
-        return result;
-    }
-
-    @Override
-    public Map<K, V> read(K key) {
+    public Map<K, List<V>> read(K key) {
         log("read", key);
-        Map<K, V> result = api.read(key);
+        Map<K, List<V>> result = api.read(key);
         logSuccess(result);
         return result;
     }
 
     @Override
-    public Map<K, V> delete(K key) {
-        log("delete", key);
-        Map<K, V> result = api.delete(key);
+    public Map<K, List<V>> search(K key) {
+        log("search", key);
+        Map<K, List<V>> result = api.search(key);
         logSuccess(result);
         return result;
     }
 
     @Override
-    public Map<K, V> update(K key, V value) {
+    public Map<K, List<V>> create(K key, V value) {
+        log("create", key, value);
+        Map<K, List<V>> result = api.create(key, value);
+        logSuccess(result);
+        return result;
+    }
+
+    @Override
+    public Map<K, List<V>> update(K key, int valueIndex, V value) {
         log("update", key, value);
-        Map<K, V> result = api.update(key, value);
+        Map<K, List<V>> result = api.update(key, valueIndex, value);
+        logSuccess(result);
+        return result;
+    }
+
+    @Override
+    public Map<K, List<V>> delete(K key, int valueIndex) {
+        log("delete", key);
+        Map<K, List<V>> result = api.delete(key, valueIndex);
         logSuccess(result);
         return result;
     }

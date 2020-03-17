@@ -28,13 +28,13 @@ class ValueDiskStorageTest {
 
     @Test
     void test() {
-        long position = storage.put("aaa");
+        long position = storage.write("aaa");
         assertThatStorageContains(position, "aaa");
 
-        long position1 = storage.put("bbbb");
+        long position1 = storage.write("bbbb");
         assertThatStorageContains(position1, "bbbb");
 
-        long position2 = storage.put("ccccc");
+        long position2 = storage.write("ccccc");
         assertThatStorageContains(position2, "ccccc");
 
         assertThatStorageContains(position1, "bbbb");
@@ -43,7 +43,7 @@ class ValueDiskStorageTest {
     }
 
     private void assertThatStorageContains(long position, String value) {
-        Map<Long, String> result = storage.get(Collections.singletonList(position));
+        Map<Long, String> result = storage.read(Collections.singletonList(position));
         assertThat(result.get(position)).isEqualTo(value);
     }
 }

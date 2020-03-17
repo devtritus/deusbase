@@ -44,7 +44,7 @@ class Terminal {
             String message = scanner.nextLine();
             String[] tokens = message.split("\\s+");
             String commandMessage = tokens[0];
-            String[] params = Arrays.copyOfRange(tokens, 1, tokens.length);
+            String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
 
             if(commandMessage.trim().isEmpty()) {
                 continue;
@@ -58,22 +58,22 @@ class Terminal {
                 printAllCommands();
 
             } else if(isSystemCommand(commandMessage)) {
-                handleSystemCommand(commandMessage, params);
+                handleSystemCommand(commandMessage, args);
             } else {
                 print(WRONG_COMMAND + ": \"" + commandMessage + "\"");
             }
         }
     }
 
-    private void handleSystemCommand(String message, String[] params) {
+    private void handleSystemCommand(String message, String[] args) {
         try {
             Command command = Command.getCommand(message);
 
-            CommandParamsValidator.validate(command, params);
+            CommandParamsUtils.handleParams(command, args);
 
             Instant start = Instant.now();
 
-            ResponseBody responseBody = client.request(command, params);
+            ResponseBody responseBody = client.request(command, args);
 
             Instant finish = Instant.now();
 
@@ -126,16 +126,26 @@ class Terminal {
         print("");
     }
 
-    private void print(Map<String, String> map) {
+    private void print(Map<String, List<String>> map) {
         int i = 0;
-        for(Map.Entry<String, String> entry : map.entrySet()) {
+        for(Map.Entry<String, List<String>> entry : map.entrySet()) {
             if(map.size() > 1) {
                 printInline(++i + ". ");
             }
             printInline(entry.getKey());
             printInline(" : ");
-            printInline(entry.getValue());
-            printInline("\n");
+            if(entry.getValue() != null) {
+                if(entry.getValue().size() == 1) {
+                    printInline(entry.getValue().get(0));
+                    printInline("\n");
+                } else {
+                    printInline("\n");
+                    for (int j = 0; j < entry.getValue().size(); j++) {
+                        printInline("      " + j + ". " + entry.getValue().get(j) + "\n");
+                    }
+                    printInline("\n");
+                }
+            }
         }
     }
 

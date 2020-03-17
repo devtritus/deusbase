@@ -9,7 +9,7 @@ public interface BTree<K extends Comparable<K>, V> {
 
     K add(K key, V value);
 
-    boolean delete(K key);
+    boolean deleteKey(K key);
 
     boolean isEmpty();
 }

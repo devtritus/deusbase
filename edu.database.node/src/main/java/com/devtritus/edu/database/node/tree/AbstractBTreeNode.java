@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class GenericBTreeNode<K extends Comparable<K>, V, C> {
+class AbstractBTreeNode<K extends Comparable<K>, V, C> {
 
     private final List<K> keys = new ArrayList<>();
     private final List<V> values = new ArrayList<>();
@@ -15,7 +15,7 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
 
     private boolean modified;
 
-    GenericBTreeNode(C nodeId, int level, boolean modified) {
+    AbstractBTreeNode(C nodeId, int level, boolean modified) {
         this.nodeId = nodeId;
         this.level = level;
         this.modified = modified;
@@ -144,7 +144,7 @@ class GenericBTreeNode<K extends Comparable<K>, V, C> {
         modified = true;
     }
 
-    void copy(GenericBTreeNode<K, V, C> fromNode, int start, int end) {
+    void copy(AbstractBTreeNode<K, V, C> fromNode, int start, int end) {
         keys.addAll(fromNode.getKeys().subList(start, end));
         values.addAll(fromNode.getValues().subList(start, end));
         if(!fromNode.getChildren().isEmpty()) {

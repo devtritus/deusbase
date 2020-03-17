@@ -1,5 +1,6 @@
 package com.devtritus.edu.database.core;
 
+import java.util.List;
 import java.util.Map;
 
 public class RequestBodyHandler {
@@ -13,26 +14,32 @@ public class RequestBodyHandler {
         Command command = Command.getCommand(requestBody.getCommand());
         String[] args = requestBody.getArgs();
 
-        CommandParamsValidator.validate(command, args);
+        args = CommandParamsUtils.handleParams(command, args);
 
-        Map<String, String> data;
+        Map<String, List<String>> data;
         ResponseStatus responseStatus = ResponseStatus.OK;
 
         switch (command) {
-            case CREATE:
-                data = api.create(args[0], args[1]);
-                break;
             case READ:
                 data = api.read(args[0]);
                 if(data.isEmpty()){
                     responseStatus = ResponseStatus.NOT_FOUND;
                 }
                 break;
+            case SEARCH:
+                data = api.search(args[0]);
+                if(data.isEmpty()){
+                    responseStatus = ResponseStatus.NOT_FOUND;
+                }
+                break;
+            case CREATE:
+                data = api.create(args[0], args[1]);
+                break;
             case DELETE:
-                data = api.delete(args[0]);
+                data = api.delete(args[0], Integer.parseInt(args[1]));
                 break;
             case UPDATE:
-                data = api.update(args[0], args[1]);
+                data = api.update(args[0], Integer.parseInt(args[1]), args[2]);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown command: " + command);

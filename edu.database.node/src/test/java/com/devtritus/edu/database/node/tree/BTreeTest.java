@@ -19,7 +19,7 @@ class BTreeTest {
 
         BTreeNodeDiskProvider provider = manager.getNodeProvider();
 
-        StringLongBTree tree = new StringLongBTree(m, provider);
+        BTreeImpl tree = new BTreeImpl(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(10000);
         //List<Integer> toAdd = Arrays.asList();
@@ -39,8 +39,8 @@ class BTreeTest {
         //provider.clearCache();
 
         for (Integer key : toSearch) {
-            Long value = tree.searchByKey(key.toString());
-            assertThat(key).isEqualTo(value.intValue());
+            List<Long> value = tree.searchByKey(key.toString());
+            assertThat(key).isEqualTo(value.get(0).intValue());
         }
     }
 
@@ -55,17 +55,17 @@ class BTreeTest {
     @Test
     void search_list_test() {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringLongBTree tree = new StringLongBTree(3, provider);
+        BTreeImpl tree = new BTreeImpl(3, provider);
 
         List<String> keys = Arrays.asList("a", "aa", "aaa", "b", "bb", "bbb", "abb", "bba", "aab", "baa", "aaaa", "aaab",
                 "bbbba", "aabb", "bbaa", "baba", "abab", "baab", "abba", "babb", "abaa", "bbab", "aaba", "bbbb", "bbba");
 
         for (int i = 0; i < keys.size() - 1; i++) {
-            tree.add(keys.get(i), (long)i);
+            tree.add(keys.get(i), Collections.singletonList((long)i));
             //printTree(provider);
         }
 
-        Map<String, Long> result = tree.fetch("aaaa");
+        Map<String, List<Long>> result = tree.fetch("aaaa");
         assertThat(result).containsOnlyKeys("aaaa");
 
         result = tree.fetch("bba");
@@ -141,12 +141,12 @@ class BTreeTest {
     @Test
     void delete_result_test() {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringLongBTree tree = new StringLongBTree(3, provider);
+        BTreeImpl tree = new BTreeImpl(3, provider);
 
         add(tree, Arrays.asList(1, 2, 3, 4, 5), provider);
 
-        assertThat(tree.delete("5")).isTrue();
-        assertThat(tree.delete("5")).isFalse();
+        assertThat(tree.deleteKey("5")).isTrue();
+        assertThat(tree.deleteKey("5")).isFalse();
     }
 
     //TODO: add timer, ignore tests
@@ -162,7 +162,7 @@ class BTreeTest {
 
     private void addThenSearchByKeyTest(int m, int count) {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringLongBTree tree = new StringLongBTree(m, provider);
+        BTreeImpl tree = new BTreeImpl(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(count);
         List<Integer> toSearch = getShuffledIntegerStream(count);
@@ -175,11 +175,9 @@ class BTreeTest {
         }
 
         for(Integer key : toSearch) {
-            int value = key;
-
             assertThat(tree.searchByKey(key.toString()))
-                    .as("value " + value + " must be found by key " + key)
-                    .isEqualTo(value);
+                    .as("value " + key + " must be found by key " + key)
+                    .containsOnly(key.longValue());
         }
     }
 
@@ -193,7 +191,7 @@ class BTreeTest {
 
     void addThenDeleteTest(int m, List<Integer> toAdd, List<Integer> toDelete) {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
-        StringLongBTree tree = new StringLongBTree(m, provider);
+        BTreeImpl tree = new BTreeImpl(m, provider);
 
         try {
             add(tree, toAdd, provider);
@@ -209,21 +207,21 @@ class BTreeTest {
         //System.out.println("END\n-------------------------------------------------\n");
     }
 
-    private void add(StringLongBTree tree, List<Integer> toAdd, BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
+    private void add(BTreeImpl tree, List<Integer> toAdd, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
         for(Integer key : toAdd) {
             //printTree(provider);
             //System.out.println("add " + key + "\n");
-            tree.add(key.toString(), key.longValue());
-            Long value = tree.searchByKey(key.toString());
-            assertThat(key).isEqualTo(value.intValue());
+            tree.add(key.toString(), Collections.singletonList(key.longValue()));
+            List<Long> value = tree.searchByKey(key.toString());
+            assertThat(key).isEqualTo(value.get(0).intValue());
         }
     }
 
-    private void delete(StringLongBTree tree, List<Integer> toDelete, BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
+    private void delete(BTreeImpl tree, List<Integer> toDelete, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
         for(Integer key : toDelete) {
             //printTree(provider);
             //System.out.println("delete " + key + "\n");
-            boolean result = tree.delete(key.toString());
+            boolean result = tree.deleteKey(key.toString());
             assertThat(result).isTrue();
         }
     }
@@ -236,7 +234,7 @@ class BTreeTest {
         return integers;
     }
 
-    private void printTree(BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
+    private void printTree(BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
         flatTree(provider.getRootNode().key, map, provider);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
@@ -247,7 +245,7 @@ class BTreeTest {
         }
     }
 
-    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeProvider<BTreeNode, String, Long, Integer> provider) {
+    private void flatTree(BTreeNode node, Map<Integer, List<List<String>>> map, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
         List<List<String>> parentLevelList = map.computeIfAbsent(node.getLevel(), k -> new ArrayList<>());
         parentLevelList.add(node.getKeys());
 
@@ -270,7 +268,7 @@ class BTreeTest {
     /*
         1. Implement a cache +
         2. Exclude unnecessary writing/reading operations +
-        3. Find a solution for equals keys
+        3. Find a solution for equals keys +
         4. Resolve a problem with overflow of node's block
         5. Optimize a size of index
         6. Improve the terminal

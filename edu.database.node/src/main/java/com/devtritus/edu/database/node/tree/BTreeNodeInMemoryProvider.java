@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, Long, Integer> {
+public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> {
     private static int nodePositionCounter = 0;
 
     //for in-memory provider nodeId is same as nodePosition
     private final Map<Integer, BTreeNode> nodePositionToNodeMap = new HashMap<>();
 
-    private PathEntry<BTreeNode, String, Long, Integer> root;
+    private PathEntry<BTreeNode, String, List<Long>, Integer> root;
 
     @Override
-    public PathEntry<BTreeNode, String, Long, Integer> getRootNode() {
+    public PathEntry<BTreeNode, String, List<Long>, Integer> getRootNode() {
         if(root == null) {
             root = createNode(0);
         }
@@ -22,7 +22,7 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
-    public void setRootNode(PathEntry<BTreeNode, String, Long, Integer> node) {
+    public void setRootNode(PathEntry<BTreeNode, String, List<Long>, Integer> node) {
         root = node;
     }
 
@@ -38,7 +38,7 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
-    public PathEntry<BTreeNode, String, Long, Integer> createNode(int level) {
+    public PathEntry<BTreeNode, String, List<Long>, Integer> createNode(int level) {
         int nodePosition = nodePositionCounter++;
         BTreeNode node = new BTreeNode(nodePosition, level);
         nodePositionToNodeMap.put(nodePosition, node);
@@ -46,14 +46,20 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
-    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, Long, Integer> newChildNode, int index) {
+    public void putKeyValueToNode(PathEntry<BTreeNode, String, List<Long>, Integer> entry, int index, String key, List<Long> value) {
+        entry.key.putKeyValue(index, key, value);
+        nodePositionToNodeMap.put(entry.value, entry.key);
+    }
+
+    @Override
+    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, List<Long>, Integer> newChildNode, int index) {
         parentNode.insertChildNode(index, newChildNode.value);
     }
 
     @Override
     public void flush() {
         List<BTreeNode> modifiedNodes = nodePositionToNodeMap.values().stream()
-                .filter(GenericBTreeNode::isModified)
+                .filter(AbstractBTreeNode::isModified)
                 .collect(Collectors.toList());
 
         //System.out.println("List of nodes to flush: " + modifiedNodes);

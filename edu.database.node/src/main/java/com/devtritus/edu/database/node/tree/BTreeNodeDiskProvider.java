@@ -2,17 +2,17 @@ package com.devtritus.edu.database.node.tree;
 
 import java.util.*;
 
-class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long, Integer>  {
+class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer>  {
     private final BTreeIndexLoader loader;
     private final BTreeNodeCache cache;
 
-    private PathEntry<BTreeNode, String, Long, Integer> root;
+    private PathEntry<BTreeNode, String, List<Long>, Integer> root;
     private int lastPosition;
     private int lastNodeId;
 
     private BTreeNodeDiskProvider(BTreeIndexLoader loader,
                                   BTreeNodeCache cache,
-                                  PathEntry<BTreeNode, String, Long, Integer> root,
+                                  PathEntry<BTreeNode, String, List<Long>, Integer> root,
                                   int lastPosition,
                                   int lastNodeId) {
         this.loader = loader;
@@ -27,12 +27,12 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long
     }
 
     @Override
-    public PathEntry<BTreeNode, String, Long, Integer> getRootNode() {
+    public PathEntry<BTreeNode, String, List<Long>, Integer> getRootNode() {
         return root;
     }
 
     @Override
-    public void setRootNode(PathEntry<BTreeNode, String, Long, Integer> entry) {
+    public void setRootNode(PathEntry<BTreeNode, String, List<Long>, Integer> entry) {
         root = entry;
         if(cache.get(entry.value) == null) {
             cache.put(entry.value, entry.key);
@@ -60,7 +60,7 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long
     }
 
     @Override
-    public PathEntry<BTreeNode, String, Long, Integer> createNode(int level) {
+    public PathEntry<BTreeNode, String, List<Long>, Integer> createNode(int level) {
         BTreeNode node = new BTreeNode(++lastNodeId, level);
         ++lastPosition;
         cache.put(lastPosition, node);
@@ -68,7 +68,16 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, Long
     }
 
     @Override
-    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, Long, Integer> newChildNode, int index) {
+    public void putKeyValueToNode(PathEntry<BTreeNode, String, List<Long>, Integer> entry, int index, String key, List<Long> value) {
+        BTreeNode node = entry.key;
+        int nodePosition = entry.value;
+
+        node.putKeyValue(key, value);
+        cache.put(nodePosition, node);
+    }
+
+    @Override
+    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, List<Long>, Integer> newChildNode, int index) {
         parentNode.insertChildNode(index, newChildNode.value);
     }
 
