@@ -21,6 +21,10 @@ class BTreeIndexLoader {
     }
 
     static BTreeIndexLoader init(int m, File file) throws IOException {
+        if(m > 255) {
+            throw new IllegalArgumentException("Size of keys can't be more then byte(255). m: " + m);
+        }
+
         int blockSize = calculateBlockSize(m);
 
         try(SeekableByteChannel channel = openWriteChannel(file)) {
@@ -30,7 +34,8 @@ class BTreeIndexLoader {
 
             BTreeNode root = new BTreeNode(header.lastNodeId, 0);
             ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
-            writeNode(channel, root, blockSize, 1, blockBuffer);
+            byte[] bytes = BTreeNodeBytesConverter.toBytes(root);
+            writeNode(channel, bytes, blockSize, 1, blockBuffer);
 
             return new BTreeIndexLoader(file, header);
         }
@@ -60,7 +65,8 @@ class BTreeIndexLoader {
         try(SeekableByteChannel channel = openWriteChannel(file)) {
             ByteBuffer blockBuffer = ByteBuffer.allocate(blockSize);
             for(Map.Entry<Integer, BTreeNode> entry : nodesToFlush.entrySet()) {
-                writeNode(channel, entry.getValue(), blockSize, entry.getKey(), blockBuffer);
+                byte[] bytes = BTreeNodeBytesConverter.toBytes(entry.getValue());
+                writeNode(channel, bytes, blockSize, entry.getKey(), blockBuffer);
                 blockBuffer.clear();
             }
 
@@ -92,9 +98,7 @@ class BTreeIndexLoader {
         }
     }
 
-    private static void writeNode(SeekableByteChannel channel,  BTreeNode node, int blockSize, int position, ByteBuffer blockBuffer) throws IOException {
-        byte[] bytes = BTreeNodeBytesConverter.toBytes(node);
-
+    private static void writeNode(SeekableByteChannel channel, byte[] bytes, int blockSize, int position, ByteBuffer blockBuffer) throws IOException {
         if(bytes.length > blockSize) {
             throw new IllegalStateException("Block size is too small");
         }
@@ -146,7 +150,7 @@ class BTreeIndexLoader {
     }
 
     private static int calculateBlockSize(int m) {
-        int minBlockSize = (32 + 12) * m;
+        int minBlockSize = (32 + 6) * m;
         int blockSize = MIN_BLOCK_BYTE_SIZE;
         while((blockSize = blockSize * 2) < minBlockSize) {}
         return blockSize;

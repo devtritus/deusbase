@@ -13,17 +13,16 @@ class BTreeNodeBytesConverter {
         byte[] nodeIdBytes = toByteArray(node.getNodeId());
         out.write(nodeIdBytes);
 
-        byte[] levelBytes = toByteArray(node.getLevel());
-        out.write(levelBytes);
-
-        byte[] keysSizeBytes = toByteArray(node.getKeys().size());
-        out.write(keysSizeBytes);
+        out.write(node.getLevel());
+        out.write(node.getKeys().size());
 
         for(String key : node.getKeys()) {
             byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
-            byte[] keyLength = toByteArray(keyBytes.length);
+            if(keyBytes.length > 254) { //size is 254 because children = (keySize + 1) and that value must be write to one byte
+                throw new IllegalArgumentException("Key " + key + " is too long. Max size of key is 254 bytes");
+            }
 
-            out.write(keyLength);
+            out.write(keyBytes.length);
             out.write(keyBytes);
         }
 
@@ -37,12 +36,12 @@ class BTreeNodeBytesConverter {
             }
         }
 
-        out.write(toByteArray(valuesArrayCount));;
+        out.write(valuesArrayCount);
 
         for(int i = 0; i < valuesArrayCount; i++) {
             Entry<Integer, Integer> entry = indexToSizeValuesArray.get(i);
-            out.write(toByteArray(entry.key));
-            out.write(toByteArray(entry.value));
+            out.write(entry.key);
+            out.write(entry.value);
         }
 
         for(List<Long> values : node.getValues()) {
@@ -51,8 +50,7 @@ class BTreeNodeBytesConverter {
             }
         }
 
-        byte[] childrenSizeBytes = toByteArray(node.getChildren().size());
-        out.write(childrenSizeBytes);
+        out.write(node.getChildren().size());
 
         for(int children : node.getChildren()) {
             out.write(toByteArray(children));
@@ -64,24 +62,25 @@ class BTreeNodeBytesConverter {
     static BTreeNode fromBytes(byte[] bytes) throws IOException {
         ByteArrayInputStream in = new ByteArrayInputStream(bytes);
         int nodeId = readInt(in);
-        int level = readInt(in);
-        int keysSize = readInt(in);
+
+        int level = readByte(in);
+        int keysSize = readByte(in);
 
         BTreeNode node = new BTreeNode(nodeId, level);
 
         List<String> keys = new ArrayList<>();
         for(int i = 0; i < keysSize; i++) {
-            int keySize = readInt(in);
+            int keySize = readByte(in);
             String key = readString(keySize, in);
 
             keys.add(key);
         }
 
         Map<Integer, Integer> indexToSizeOfValuesArray = new HashMap<>();
-        int valuesArrayCount = readInt(in);
+        int valuesArrayCount = readByte(in);
         for(int i = 0; i < valuesArrayCount; i++) {
-            int index = readInt(in);
-            int size = readInt(in);
+            int index = readByte(in);
+            int size = readByte(in);
             indexToSizeOfValuesArray.put(index, size);
         }
 
@@ -99,7 +98,7 @@ class BTreeNodeBytesConverter {
             node.putKeyValue(index, key, values);
         }
 
-        int childrenSize = readInt(in);
+        int childrenSize = readByte(in);
 
         for(int i = 0; i < childrenSize; i++) {
             int children = readInt(in);
@@ -108,6 +107,10 @@ class BTreeNodeBytesConverter {
         }
 
         return node;
+    }
+
+    private static int readByte(InputStream in) throws IOException {
+        return in.read();
     }
 
     private static String readString(int length, InputStream in) throws IOException {
