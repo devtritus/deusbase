@@ -5,18 +5,18 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-class BTreeNodeBytesConverter {
+abstract class BTreeNodeDataConverter {
 
-    static byte[] toBytes(BTreeNode node) throws IOException {
+    static byte[] toBytes(BTreeNodeData data) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        byte[] nodeIdBytes = toByteArray(node.getNodeId());
+        byte[] nodeIdBytes = toByteArray(data.getNodeId());
         out.write(nodeIdBytes);
 
-        out.write(node.getLevel());
-        out.write(node.getKeys().size());
+        out.write(data.getLevel());
+        out.write(data.getKeys().size());
 
-        for(String key : node.getKeys()) {
+        for(String key : data.getKeys()) {
             byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
             if(keyBytes.length > 254) { //size is 254 because children = (keySize + 1) and that value must be write to one byte
                 throw new IllegalArgumentException("Key " + key + " is too long. Max size of key is 254 bytes");
@@ -26,12 +26,12 @@ class BTreeNodeBytesConverter {
             out.write(keyBytes);
         }
 
-        List<Entry<Integer, Integer>> indexToSizeValuesArray = new ArrayList<>();
+        List<Pair<Integer, Integer>> indexToSizeValuesArray = new ArrayList<>();
         int valuesArrayCount = 0;
-        for(int i = 0; i < node.getValues().size(); i++) {
-            List<Long> values = node.getValues().get(i);
+        for(int i = 0; i < data.getValues().size(); i++) {
+            List<Long> values = data.getValues().get(i);
             if(values.size() > 1) {
-                indexToSizeValuesArray.add(new Entry<>(i, values.size()));
+                indexToSizeValuesArray.add(new Pair<>(i, values.size()));
                 valuesArrayCount++;
             }
         }
@@ -39,34 +39,40 @@ class BTreeNodeBytesConverter {
         out.write(valuesArrayCount);
 
         for(int i = 0; i < valuesArrayCount; i++) {
-            Entry<Integer, Integer> entry = indexToSizeValuesArray.get(i);
-            out.write(entry.key);
-            out.write(entry.value);
+            Pair<Integer, Integer> entry = indexToSizeValuesArray.get(i);
+            out.write(entry.first);
+            out.write(entry.second);
         }
 
-        for(List<Long> values : node.getValues()) {
+        for(List<Long> values : data.getValues()) {
             for(Long value : values) {
                 out.write(toByteArray(value));
             }
         }
 
-        out.write(node.getChildren().size());
+        out.write(data.getChildrenPositions().size());
 
-        for(int children : node.getChildren()) {
-            out.write(toByteArray(children));
+        for(int childPosition : data.getChildrenPositions()) {
+            out.write(toByteArray(childPosition));
+        }
+
+        for(int childNodeId : data.getChildrenNodeIds()) {
+            out.write(toByteArray(childNodeId));
         }
 
         return out.toByteArray();
     }
 
-    static BTreeNode fromBytes(byte[] bytes) throws IOException {
+    static BTreeNodeData fromBytes(byte[] bytes) throws IOException {
         ByteArrayInputStream in = new ByteArrayInputStream(bytes);
         int nodeId = readInt(in);
 
         int level = readByte(in);
         int keysSize = readByte(in);
 
-        BTreeNode node = new BTreeNode(nodeId, level);
+        BTreeNodeData data = new BTreeNodeData();
+        data.setNodeId(nodeId);
+        data.setLevel(level);
 
         List<String> keys = new ArrayList<>();
         for(int i = 0; i < keysSize; i++) {
@@ -76,6 +82,8 @@ class BTreeNodeBytesConverter {
             keys.add(key);
         }
 
+        data.setKeys(keys);
+
         Map<Integer, Integer> indexToSizeOfValuesArray = new HashMap<>();
         int valuesArrayCount = readByte(in);
         for(int i = 0; i < valuesArrayCount; i++) {
@@ -84,6 +92,7 @@ class BTreeNodeBytesConverter {
             indexToSizeOfValuesArray.put(index, size);
         }
 
+        List<List<Long>> allValues = new ArrayList<>();
         for(int i = 0; i < keysSize; i++) {
             Integer valuesArraySize = indexToSizeOfValuesArray.get(i);
             int size = valuesArraySize != null ? valuesArraySize : 1;
@@ -93,20 +102,32 @@ class BTreeNodeBytesConverter {
                 values.add(readLong(in));
             }
 
-            String key = keys.get(i);
-            int index = node.searchKey(key);
-            node.putKeyValue(index, key, values);
+            allValues.add(values);
         }
+
+        data.setValues(allValues);
 
         int childrenSize = readByte(in);
 
+        List<Integer> childrenPositions = new ArrayList<>();
         for(int i = 0; i < childrenSize; i++) {
-            int children = readInt(in);
+            int childPosition = readInt(in);
 
-            node.insertChildNode(i, children);
+            childrenPositions.add(childPosition);
         }
 
-        return node;
+        data.setChildrenPositions(childrenPositions);
+
+        List<Integer> childrenNodeIds = new ArrayList<>();
+        for(int i = 0; i < childrenSize; i++) {
+            int childrenNodeId = readInt(in);
+
+            childrenNodeIds.add(childrenNodeId);
+        }
+
+        data.setChildrenNodeIds(childrenNodeIds);
+
+        return data;
     }
 
     private static int readByte(InputStream in) throws IOException {

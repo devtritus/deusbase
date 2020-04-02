@@ -3,8 +3,7 @@ package com.devtritus.edu.database.node.tree;
 import java.util.*;
 
 abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Comparable<K>, V, C> implements BTree<K, V> {
-    private BTreeNodeProvider<D, K, V, C> nodeProvider;
-
+    private final BTreeNodeProvider<D, K, V, C> nodeProvider;
     private final int m;
     private final int min;
 
@@ -26,24 +25,23 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
     @Override
     public Map<K, V> fetch(K key) {
         Map<K, V> result = new HashMap<>();
-        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
-        fetch(key, root.key, result);
+        D root = nodeProvider.getRootNode();
+        fetch(key, root, result);
         return result;
     }
 
     @Override
     public V searchByKey(K key) {
-        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
-        return searchByKey(key, root.key);
+        D root = nodeProvider.getRootNode();
+        return searchByKey(key, root);
     }
 
     @Override
     public K add(K key, V value) {
         LinkedList<PathEntry<D, K, V, C>> path = new LinkedList<>();
-        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
-        add(key, value, root.key, path, root.value);
+        D root = nodeProvider.getRootNode();
+        add(key, value, root, path, null);
 
-        nodeProvider.setRootNode(path.get(0));
         nodeProvider.flush();
 
         return key;
@@ -52,10 +50,9 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
     @Override
     public boolean deleteKey(K key) {
         LinkedList<PathEntry<D, K, V, C>> path = new LinkedList<>();
-        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
-        boolean result = delete(key, root.key, path, root.value, null);
+        D root = nodeProvider.getRootNode();
+        boolean result = delete(key, root, path, null, null);
 
-        nodeProvider.setRootNode(path.get(0));
         nodeProvider.flush();
 
         return result;
@@ -63,11 +60,11 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
 
     @Override
     public boolean isEmpty() {
-        PathEntry<D, K, V, C> root = nodeProvider.getRootNode();
-        if(root.key.getKeysSize() == 0 && root.key.getChildrenSize() != 0)  {
+        D root = nodeProvider.getRootNode();
+        if(root.getKeysSize() == 0 && root.getChildrenSize() != 0)  {
             throw new IllegalStateException();
         }
-        return root.key.getKeysSize() == 0;
+        return root.getKeysSize() == 0;
     }
 
     private void fetch(K key, D nextNode, Map<K, V> result) {
@@ -76,10 +73,10 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
         boolean found = false;
         List<K> keys = nextNode.getKeys();
         for (int i = 0; i < keys.size(); i++) {
-            Entry<K, V> entry = nextNode.getKeyValue(i);
-            if (isFetchedKeySatisfy(entry.key, key)) {
+            Pair<K, V> entry = nextNode.getKeyValue(i);
+            if (isFetchedKeySatisfy(entry.first, key)) {
                 found = true;
-                result.put(entry.key, entry.value);
+                result.put(entry.first, entry.second);
 
                 if (!nextNode.isLeaf()) {
                     if (lastChildIndex == 0 || lastChildIndex < i) {
@@ -113,7 +110,7 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
     private V searchByKey(K key, D nextNode) {
         int index = nextNode.searchKey(key);
         if(index > -1) {
-            return nextNode.getKeyValue(index).value;
+            return nextNode.getKeyValue(index).second;
         } else {
             if(nextNode.isLeaf()) {
                 return null;
@@ -124,8 +121,8 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
         }
     }
 
-    private void add(K key, V value, D nextNode, LinkedList<PathEntry<D, K, V, C>> path, int positionIndex) {
-        PathEntry<D, K, V, C> entry = new PathEntry<>(nextNode, positionIndex);
+    private void add(K key, V value, D nextNode, LinkedList<PathEntry<D, K, V, C>> path, Integer position) {
+        PathEntry<D, K, V, C> entry = new PathEntry<>(nextNode, position);
         path.add(entry);
 
         if(nextNode.isLeaf()) {
@@ -133,7 +130,7 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
         } else {
             int index = nextNode.searchKey(key);
             if(index > -1) {
-                nodeProvider.putKeyValueToNode(entry, index, key, value);
+                nodeProvider.putKeyValueToNode(entry.first, index, key, value);
                 return;
             }
             int childPositionIndex = -index - 1;
@@ -153,36 +150,39 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
     }
 
     private void balanceAfterAdd(D nextNode, LinkedList<PathEntry<D, K, V, C>> path) {
-        PathEntry<D, K, V, C> nextParent;
+        PathEntry<D, K, V, C> nextParentEntry;
         int insertionIndex;
 
         List<PathEntry<D, K, V, C>> parents = new ArrayList<>(path.subList(0, path.size() - 1));
 
         if(parents.isEmpty()) {
-            nextParent = nodeProvider.createNode(nextNode.getLevel() + 1);
-            path.addFirst(nextParent);
-            nodeProvider.insertChildNode(nextParent.key, path.get(path.size() - 1), 0); //TODO: pass nextNode only in path list
+            D nextParent = nodeProvider.createNode(nextNode.getLevel() + 1);
+            nextParent.setRoot(true);
+            nextNode.setRoot(false);
+            nextParentEntry = new PathEntry<>(nextParent, null);
+            path.addFirst(nextParentEntry);
+            nodeProvider.insertChildNode(nextParent, nextNode, 0);
             insertionIndex = 0;
         } else {
-            nextParent = parents.get(parents.size() - 1);
-            insertionIndex = path.get(path.size() - 1).value;
+            nextParentEntry = parents.get(parents.size() - 1);
+            insertionIndex = path.get(path.size() - 1).second;
         }
 
-        PathEntry<D, K, V, C> rightNode = nodeProvider.createNode(nextNode.getLevel());
-        rightNode.key.copy(nextNode, min + 1, nextNode.getKeysSize());
+        D rightNode = nodeProvider.createNode(nextNode.getLevel());
+        rightNode.copy(nextNode, min + 1, nextNode.getKeysSize());
         nextNode.delete(min + 1, nextNode.getKeysSize());
 
-        nodeProvider.insertChildNode(nextParent.key, rightNode, insertionIndex + 1);
+        nodeProvider.insertChildNode(nextParentEntry.first, rightNode, insertionIndex + 1);
 
-        Entry<K, V> middleKeyValue = nextNode.deleteKeyValue(min);
+        Pair<K, V> middleKeyValue = nextNode.deleteKeyValue(min);
 
         path.remove(path.size() - 1);
 
-        doAdd(middleKeyValue.key, middleKeyValue.value, nextParent.key, path);
+        doAdd(middleKeyValue.first, middleKeyValue.second, nextParentEntry.first, path);
     }
 
-    private boolean delete(K key, D nextNode, LinkedList<PathEntry<D, K, V, C>> path, int positionIndex, D parent) {
-        PathEntry<D, K, V, C> entry = new PathEntry<>(nextNode, positionIndex);
+    private boolean delete(K key, D nextNode, LinkedList<PathEntry<D, K, V, C>> path, Integer position, D parent) {
+        PathEntry<D, K, V, C> entry = new PathEntry<>(nextNode, position);
         path.add(entry);
 
         int index = nextNode.searchKey(key);
@@ -192,7 +192,7 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
                 nextNode.deleteKeyValue(index);
 
                 if(nextNode.getKeysSize() < min && parent != null) {
-                    balanceAfterDelete(nextNode, path, positionIndex, parent);
+                    balanceAfterDelete(nextNode, path, position, parent);
                 }
             } else if(!nextNode.isLeaf()) {
                 deleteInternalNode(index, nextNode, path);
@@ -212,16 +212,16 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
         D leftChildNode = nodeProvider.getChildNode(nextNode, deletingKeyIndex);
 
         if(rightChildNode != null) {
-            Entry<K, V> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
+            Pair<K, V> entry = getMinKey(rightChildNode, path, deletingKeyIndex + 1);
             PathEntry<D, K, V, C> rightMinNodeEntry = path.get(path.size() - 1);
             PathEntry<D, K, V, C> rightMinNodeParentEntry = path.get(path.size() - 2);
-            replaceAfterDelete(nextNode, rightMinNodeEntry.key, rightMinNodeParentEntry.key, entry, path, rightMinNodeEntry.value, deletingKeyIndex, 0);
+            replaceAfterDelete(nextNode, rightMinNodeEntry.first, rightMinNodeParentEntry.first, entry, path, rightMinNodeEntry.second, deletingKeyIndex, 0);
 
         } else if(leftChildNode != null) {
-            Entry<K, V> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
+            Pair<K, V> entry = getMaxKey(leftChildNode, path, deletingKeyIndex);
             PathEntry<D, K, V, C> leftMaxNodeEntry = path.get(path.size() - 1);
             PathEntry<D, K, V, C> leftMaxNodeParentEntry = path.get(path.size() - 1);
-            replaceAfterDelete(nextNode, leftMaxNodeEntry.key, leftMaxNodeParentEntry.key, entry, path, leftMaxNodeEntry.value, deletingKeyIndex, leftMaxNodeEntry.key.getKeysSize());
+            replaceAfterDelete(nextNode, leftMaxNodeEntry.first, leftMaxNodeParentEntry.first, entry, path, leftMaxNodeEntry.second, deletingKeyIndex, leftMaxNodeEntry.first.getKeysSize());
 
         } else {
             throw new IllegalStateException();
@@ -231,7 +231,7 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
     private void replaceAfterDelete(D consumerNode,
                                     D sourceNode,
                                     D sourceNodeParent,
-                                    Entry<K, V> entryToReplace,
+                                    Pair<K, V> entryToReplace,
                                     LinkedList<PathEntry<D, K, V, C>> path,
                                     int sourcePositionIndex,
                                     int consumerKeyIndex,
@@ -239,28 +239,28 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
 
         sourceNode.deleteKeyValue(sourceKeyIndex);
         consumerNode.deleteKeyValue(consumerKeyIndex);
-        consumerNode.insertKeyValue(consumerKeyIndex, entryToReplace.key, entryToReplace.value);
+        consumerNode.insertKeyValue(consumerKeyIndex, entryToReplace.first, entryToReplace.second);
 
         if(sourceNode.getKeysSize() < min) {
             balanceAfterDelete(sourceNode, path, sourcePositionIndex, sourceNodeParent);
         }
     }
 
-    private void balanceAfterDelete(D nextNode, LinkedList<PathEntry<D, K, V, C>> path, int positionIndex, D parentNode) {
-        D leftNode = nodeProvider.getChildNode(parentNode, positionIndex - 1);
-        D rightNode = nodeProvider.getChildNode(parentNode, positionIndex + 1);
+    private void balanceAfterDelete(D nextNode, LinkedList<PathEntry<D, K, V, C>> path, int position, D parentNode) {
+        D leftNode = nodeProvider.getChildNode(parentNode, position - 1);
+        D rightNode = nodeProvider.getChildNode(parentNode, position + 1);
 
         if(rightNode != null && rightNode.getKeysSize() > min) {
-            rotate(nextNode, parentNode, rightNode, nextNode.getKeysSize(), positionIndex, 0, 0, nextNode.getChildrenSize());
+            rotate(nextNode, parentNode, rightNode, nextNode.getKeysSize(), position, 0, 0, nextNode.getChildrenSize());
 
         } else if(leftNode != null && leftNode.getKeysSize() > min) {
-            rotate(nextNode, parentNode, leftNode, 0, positionIndex - 1, leftNode.getKeysSize() - 1, leftNode.getChildrenSize() - 1, 0);
+            rotate(nextNode, parentNode, leftNode, 0, position - 1, leftNode.getKeysSize() - 1, leftNode.getChildrenSize() - 1, 0);
 
         } else if(rightNode != null) {
-            union(nextNode, parentNode, rightNode, path, positionIndex);
+            union(nextNode, parentNode, rightNode, path, position);
 
         } else if(leftNode != null) {
-            union(leftNode, parentNode, nextNode, path, positionIndex - 1);
+            union(leftNode, parentNode, nextNode, path, position - 1);
         }
     }
 
@@ -273,14 +273,14 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
                         int sourceChildIndex,
                         int consumerChildInsertIndex) {
 
-        Entry<K, V> parentKeyValue = parentNode.deleteKeyValue(parentKeyIndex);
-        consumerNode.insertKeyValue(consumerKeyIndex, parentKeyValue.key, parentKeyValue.value);
-        Entry<K, V> sourceKeyValue = sourceNode.deleteKeyValue(sourceKeyIndex);
-        parentNode.insertKeyValue(parentKeyIndex, sourceKeyValue.key, sourceKeyValue.value);
+        Pair<K, V> parentKeyValue = parentNode.deleteKeyValue(parentKeyIndex);
+        consumerNode.insertKeyValue(consumerKeyIndex, parentKeyValue.first, parentKeyValue.second);
+        Pair<K, V> sourceKeyValue = sourceNode.deleteKeyValue(sourceKeyIndex);
+        parentNode.insertKeyValue(parentKeyIndex, sourceKeyValue.first, sourceKeyValue.second);
 
         if(sourceNode.getChildrenSize() > 0) {
-            C deletedChild = sourceNode.deleteChildNode(sourceChildIndex);
-            consumerNode.insertChildNode(consumerChildInsertIndex, deletedChild);
+            C deletedChild = sourceNode.deleteChild(sourceChildIndex);
+            consumerNode.insertChild(consumerChildInsertIndex, deletedChild);
         }
     }
 
@@ -290,33 +290,36 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
                        LinkedList<PathEntry<D, K, V, C>> path,
                        int parentKeyIndex) {
 
-        Entry<K, V> parentKeyValue = parentNode.getKeyValue(parentKeyIndex);
-        firstNode.insertKeyValue(firstNode.getKeysSize(), parentKeyValue.key, parentKeyValue.value);
+        Pair<K, V> parentKeyValue = parentNode.getKeyValue(parentKeyIndex);
+        firstNode.insertKeyValue(firstNode.getKeysSize(), parentKeyValue.first, parentKeyValue.second);
 
         firstNode.copy(secondNode, 0, secondNode.getKeysSize());
 
-        parentNode.deleteChildNode(parentKeyIndex + 1);
+        parentNode.deleteChild(parentKeyIndex + 1);
 
         path.remove(path.size() - 1);
 
         parentNode.deleteKeyValue(parentKeyIndex);
 
-        if(parentNode == path.get(0).key) {
+        if(parentNode == path.get(0).first) {
             if(parentNode.getChildrenSize() > 0 && parentNode.getKeysSize() == 0) {
                 path.remove(0);
                 path.add(new PathEntry<>(firstNode, 0));
+
+                parentNode.setRoot(false);
+                firstNode.setRoot(true);
             }
         } else if(parentNode.getKeysSize() < min) {
-            int parentPositionIndex = path.get(path.size() - 1).value;
-            balanceAfterDelete(parentNode, path, parentPositionIndex, path.get(path.size() - 2).key);
+            int parentPositionIndex = path.get(path.size() - 1).second;
+            balanceAfterDelete(parentNode, path, parentPositionIndex, path.get(path.size() - 2).first);
         }
     }
 
-    private Entry<K, V> getMaxKey(D nextNode,
-                                  LinkedList<PathEntry<D, K, V, C>> path,
-                                  int positionIndex) {
+    private Pair<K, V> getMaxKey(D nextNode,
+                                 LinkedList<PathEntry<D, K, V, C>> path,
+                                 int position) {
 
-        path.add(new PathEntry<>(nextNode, positionIndex));
+        path.add(new PathEntry<>(nextNode, position));
 
         int maxKeyIndex = nextNode.getKeysSize() - 1;
         if(nextNode.isLeaf()) {
@@ -326,11 +329,11 @@ abstract class AbstractBTree<D extends AbstractBTreeNode<K, V, C>, K extends Com
         }
     }
 
-    private Entry<K, V> getMinKey(D nextNode,
-                                  LinkedList<PathEntry<D, K, V, C>> path,
-                                  int positionIndex) {
+    private Pair<K, V> getMinKey(D nextNode,
+                                 LinkedList<PathEntry<D, K, V, C>> path,
+                                 int position) {
 
-        path.add(new PathEntry<>(nextNode, positionIndex));
+        path.add(new PathEntry<>(nextNode, position));
 
         int minKeyIndex = 0;
         if(nextNode.isLeaf()) {

@@ -27,11 +27,11 @@ public class BTreeNodeDiskManager {
         BTreeIndexLoader loader;
         try {
             if (file.exists() && file.length() != 0) {
-                loader = BTreeIndexLoader.read(file);
+                loader = BTreeIndexLoader.readIndex(file);
                 m = loader.getM();
             } else {
                 file.createNewFile();
-                loader = BTreeIndexLoader.init(DEFAULT_M, file);
+                loader = BTreeIndexLoader.initIndex(DEFAULT_M, file);
                 m = DEFAULT_M;
             }
         } catch (Exception e) {
@@ -39,7 +39,7 @@ public class BTreeNodeDiskManager {
         }
 
         BTreeNodeCache cache = new BTreeNodeCache(DEFAULT_CACHE_LIMIT);
-        provider = BTreeNodeDiskProvider.create(loader, cache);
+        provider = new BTreeNodeDiskProvider(loader, cache);
 
         return m;
     }

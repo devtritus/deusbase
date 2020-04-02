@@ -10,6 +10,7 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BTreeTest {
+
     @Test
     void add_then_serialize_then_search_by_keys_test() {
         String fileName = "test.index";
@@ -21,26 +22,25 @@ class BTreeTest {
 
         BTreeImpl tree = new BTreeImpl(m, provider);
 
-        List<Integer> toAdd = getShuffledIntegerStream(10000);
-        //List<Integer> toAdd = Arrays.asList();
-        //System.out.println(toAdd);
+        List<String> toAdd = getRandomStrings(50, 250, 10000);
 
-        List<Integer> toSearch = getShuffledIntegerStream(10000);
-        //List<Integer> toSearch = Arrays.asList();
-        //System.out.println(toSearch);
+        Map<String, Long> toAddMap = new HashMap<>();
+        for(int i = 0; i < toAdd.size(); i++) {
+            toAddMap.put(toAdd.get(i), (long)i);
+        }
 
         try {
-            add(tree, toAdd, provider);
+            add(tree, toAddMap, provider);
         } catch (Exception e) {
-            System.out.println("to add: " + toAdd);
+            System.out.println("to add: " + toAddMap);
             throw e;
         }
 
-        //provider.clearCache();
+        provider.clearCache();
 
-        for (Integer key : toSearch) {
-            List<Long> value = tree.searchByKey(key.toString());
-            assertThat(key).isEqualTo(value.get(0).intValue());
+        for (Map.Entry<String, Long> entry : toAddMap.entrySet()) {
+            List<Long> valueList = tree.searchByKey(entry.getKey());
+            assertThat(valueList).containsExactly(entry.getValue());
         }
     }
 
@@ -143,7 +143,7 @@ class BTreeTest {
         BTreeNodeInMemoryProvider provider = new BTreeNodeInMemoryProvider();
         BTreeImpl tree = new BTreeImpl(3, provider);
 
-        add(tree, Arrays.asList(1, 2, 3, 4, 5), provider);
+        add(tree, createKeyValueMap(Arrays.asList(1, 2, 3, 4, 5)), provider);
 
         assertThat(tree.deleteKey("5")).isTrue();
         assertThat(tree.deleteKey("5")).isFalse();
@@ -165,19 +165,19 @@ class BTreeTest {
         BTreeImpl tree = new BTreeImpl(m, provider);
 
         List<Integer> toAdd = getShuffledIntegerStream(count);
-        List<Integer> toSearch = getShuffledIntegerStream(count);
+        Map<String, Long> toAddMap = createKeyValueMap(toAdd);
 
         try {
-            add(tree, toAdd, provider);
+            add(tree, createKeyValueMap(toAdd), provider);
         } catch (Exception e) {
             System.out.println("to add: " + toAdd);
             throw e;
         }
 
-        for(Integer key : toSearch) {
-            assertThat(tree.searchByKey(key.toString()))
-                    .as("value " + key + " must be found by key " + key)
-                    .containsOnly(key.longValue());
+        for(Map.Entry<String, Long> entry : toAddMap.entrySet()) {
+            assertThat(tree.searchByKey(entry.getKey()))
+                    .as("value " + entry.getValue() + " must be found by key " + entry.getKey())
+                    .containsOnly(entry.getValue());
         }
     }
 
@@ -194,8 +194,8 @@ class BTreeTest {
         BTreeImpl tree = new BTreeImpl(m, provider);
 
         try {
-            add(tree, toAdd, provider);
-            delete(tree, toDelete, provider);
+            add(tree, createKeyValueMap(toAdd), provider);
+            delete(tree, mapToStrings(toDelete), provider);
         } catch (Exception e) {
             System.out.println("to add: " + toAdd);
             System.out.println("to delete: " + toDelete);
@@ -207,23 +207,42 @@ class BTreeTest {
         //System.out.println("END\n-------------------------------------------------\n");
     }
 
-    private void add(BTreeImpl tree, List<Integer> toAdd, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
-        for(Integer key : toAdd) {
+    private void add(BTreeImpl tree, Map<String, Long> toAdd, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
+        for(Map.Entry<String, Long> entry : toAdd.entrySet()) {
             //printTree(provider);
-            //System.out.println("add " + key + "\n");
-            tree.add(key.toString(), Collections.singletonList(key.longValue()));
-            List<Long> value = tree.searchByKey(key.toString());
-            assertThat(key).isEqualTo(value.get(0).intValue());
+            //System.out.println("add " + pair.first + "\n");
+            tree.add(entry.getKey(), Collections.singletonList(entry.getValue()));
+            List<Long> valueList = tree.searchByKey(entry.getKey());
+            assertThat(valueList).containsExactly(entry.getValue());
         }
     }
 
-    private void delete(BTreeImpl tree, List<Integer> toDelete, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
-        for(Integer key : toDelete) {
+    private void delete(BTreeImpl tree, List<String> toDelete, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
+        for(String key : toDelete) {
             //printTree(provider);
             //System.out.println("delete " + key + "\n");
-            boolean result = tree.deleteKey(key.toString());
+            boolean result = tree.deleteKey(key);
             assertThat(result).isTrue();
         }
+    }
+
+    private List<String> getRandomStrings(int minLength, int maxLength, int count) {
+
+        int leftLimit = 97; // 'a'
+        int rightLimit = 122; // 'z'
+
+        List<String> strings = new ArrayList<>();
+        Random random = new Random();
+        for(int i = 0; i < count; i++) {
+            String generatedString = random.ints(leftLimit, rightLimit + 1)
+                    .limit(minLength + random.nextInt(maxLength - minLength))
+                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                    .toString();
+
+            strings.add(generatedString);
+        }
+
+        return strings;
     }
 
     private List<Integer> getShuffledIntegerStream(int count) {
@@ -236,7 +255,7 @@ class BTreeTest {
 
     private void printTree(BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
-        flatTree(provider.getRootNode().key, map, provider);
+        flatTree(provider.getRootNode(), map, provider);
         for(Map.Entry<Integer, List<List<String>>> entry : map.entrySet()) {
             for(List<String> value : entry.getValue()) {
                 System.out.print(value + " ");
@@ -260,6 +279,21 @@ class BTreeTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static <T> Map<String, Long> createKeyValueMap(List<T> list) {
+        Map<String, Long> map = new HashMap<>();
+        for(int i = 0; i < list.size(); i++) {
+            map.put(list.get(i).toString(), (long) i);
+        }
+
+        return map;
+    }
+
+    private static <T> List<String> mapToStrings(List<T> list) {
+        return list.stream()
+                .map(Object::toString)
+                .collect(Collectors.toList());
     }
 
     //Tasks

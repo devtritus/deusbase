@@ -1,42 +1,27 @@
 package com.devtritus.edu.database.node.tree;
 
 import java.util.*;
+import static com.devtritus.edu.database.node.tree.BTreeNodeConverter.*;
 
 class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer>  {
     private final BTreeIndexLoader loader;
     private final BTreeNodeCache cache;
 
-    private PathEntry<BTreeNode, String, List<Long>, Integer> root;
-    private int lastPosition;
-    private int lastNodeId;
+    private BTreeNode root;
 
-    private BTreeNodeDiskProvider(BTreeIndexLoader loader,
-                                  BTreeNodeCache cache,
-                                  PathEntry<BTreeNode, String, List<Long>, Integer> root,
-                                  int lastPosition,
-                                  int lastNodeId) {
+    BTreeNodeDiskProvider(BTreeIndexLoader loader, BTreeNodeCache cache) {
         this.loader = loader;
         this.cache = cache;
-        this.root = root;
-        this.lastPosition = lastPosition;
-        this.lastNodeId = lastNodeId;
-    }
-
-    static BTreeNodeDiskProvider create(BTreeIndexLoader loader, BTreeNodeCache cache) {
-        return new BTreeNodeDiskProvider(loader, cache, loader.readRoot(), loader.getLastPosition(), loader.getLastNodeId());
     }
 
     @Override
-    public PathEntry<BTreeNode, String, List<Long>, Integer> getRootNode() {
-        return root;
-    }
-
-    @Override
-    public void setRootNode(PathEntry<BTreeNode, String, List<Long>, Integer> entry) {
-        root = entry;
-        if(cache.get(entry.value) == null) {
-            cache.put(entry.value, entry.key);
+    public BTreeNode getRootNode() {
+        if(root == null) {
+            root = fromNodeData(loader.getRoot());
+            root.setRoot(true);
+            cache.put(root);
         }
+        return root;
     }
 
     @Override
@@ -47,62 +32,75 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List
             return null;
         }
 
-        int nodePosition = parentNode.getChildren().get(index);
-        BTreeNode cachedChildNode = cache.get(nodePosition);
+        int nodeId = parentNode.getChildren().get(index);
+        BTreeNode cachedChildNode = cache.get(nodeId);
 
         if(cachedChildNode != null) {
             return cachedChildNode;
         } else {
-            BTreeNode childNode = loader.readNodeByPosition(nodePosition);
-            cache.put(nodePosition, childNode);
+            BTreeNode childNode = fromNodeData(loader.readNodeByNodeId(nodeId));
+            cache.put(childNode);
             return childNode;
         }
     }
 
     @Override
-    public PathEntry<BTreeNode, String, List<Long>, Integer> createNode(int level) {
-        BTreeNode node = new BTreeNode(++lastNodeId, level);
-        ++lastPosition;
-        cache.put(lastPosition, node);
-        return new PathEntry<>(node, lastPosition);
+    public BTreeNode createNode(int level) {
+        BTreeNode node = fromNodeData(loader.createNode(level));
+        cache.put(node);
+        return node;
     }
 
     @Override
-    public void putKeyValueToNode(PathEntry<BTreeNode, String, List<Long>, Integer> entry, int index, String key, List<Long> value) {
-        BTreeNode node = entry.key;
-        int nodePosition = entry.value;
-
+    public void putKeyValueToNode(BTreeNode node, int index, String key, List<Long> value) {
         node.putKeyValue(key, value);
-        cache.put(nodePosition, node);
+        cache.put(node);
     }
 
     @Override
-    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, List<Long>, Integer> newChildNode, int index) {
-        parentNode.insertChildNode(index, newChildNode.value);
+    public void insertChildNode(BTreeNode parentNode, BTreeNode newChildNode, int index) {
+        parentNode.insertChild(index, newChildNode.getNodeId());
     }
 
     @Override
     public void flush() {
-        Map<Integer, BTreeNode> modifiedNodes = cache.getModifiedNodes();
+        List<BTreeNode> modifiedNodes = cache.getModifiedNodes();
 
-        loader.flush(modifiedNodes, root.value, lastPosition, lastNodeId);
+        BTreeNode updatedRootNode = null;
+        List<BTreeNodeData> modifiesNodeDataList = new ArrayList<>();
+        for(BTreeNode node : modifiedNodes) {
+            modifiesNodeDataList.add(toNodeData(node));
+            if(node.isRoot()) {
+                updatedRootNode = node;
+            }
+        }
 
-        cache.clearToLimit();
+        int rootNodeId;
+        if(updatedRootNode != null) {
+            root = updatedRootNode;
+            rootNodeId = updatedRootNode.getNodeId();
+        } else {
+            rootNodeId = root.getNodeId();
+        }
 
-        for(BTreeNode modifiedNode : modifiedNodes.values()) {
+        loader.flush(modifiesNodeDataList, rootNodeId);
+
+        for(BTreeNode modifiedNode : modifiedNodes) {
             modifiedNode.markAsNotModified();
         }
+
+        cache.clearToLimit();
     }
 
     @Override
-    public List<BTreeNode> getNodes(List<Integer> nodePositions) {
+    public List<BTreeNode> getNodes(List<Integer> nodeIds) {
         List<BTreeNode> result = new ArrayList<>();
-        for(Integer nodePosition : nodePositions) {
-            BTreeNode cachedNode = cache.get(nodePosition);
+        for(Integer nodeId : nodeIds) {
+            BTreeNode cachedNode = cache.get(nodeId);
             if(cachedNode != null) {
                 result.add(cachedNode);
             } else {
-                BTreeNode node = loader.readNodeByPosition(nodePosition);
+                BTreeNode node = fromNodeData(loader.readNodeByNodeId(nodeId));
                 result.add(node);
             }
         }
@@ -111,6 +109,5 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List
 
     void clearCache() {
         cache.clear();
-        root = loader.readRoot();
     }
 }

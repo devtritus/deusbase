@@ -4,16 +4,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class AbstractBTreeNode<K extends Comparable<K>, V, C> {
-
-    private final List<K> keys = new ArrayList<>();
-    private final List<V> values = new ArrayList<>();
-    private final List<C> children = new ArrayList<>();
+abstract class AbstractBTreeNode<K extends Comparable<K>, V, C> {
 
     private final C nodeId;
     private final int level;
 
+    private boolean root;
     private boolean modified;
+    private List<K> keys = new ArrayList<>();
+    private List<V> values = new ArrayList<>();
+    private List<C> children = new ArrayList<>();
 
     AbstractBTreeNode(C nodeId, int level, boolean modified) {
         this.nodeId = nodeId;
@@ -29,16 +29,16 @@ class AbstractBTreeNode<K extends Comparable<K>, V, C> {
         return getLevel() == 0;
     }
 
+    boolean isRoot() {
+        return root;
+    }
+
     int getLevel() {
         return level;
     }
 
     boolean isModified() {
         return modified;
-    }
-
-    void markAsNotModified() {
-        modified = false;
     }
 
     List<K> getKeys() {
@@ -61,14 +61,27 @@ class AbstractBTreeNode<K extends Comparable<K>, V, C> {
         return getKeys().size();
     }
 
+    void setRoot(boolean root) {
+        markAsModified();
+        this.root = root;
+    }
+
+    void markAsNotModified() {
+        modified = false;
+    }
+
+    void markAsModified() {
+        modified = true;
+    }
+
     int searchKey(K key) {
         return Collections.binarySearch(keys, key);
     }
 
-    Entry<K, V> getKeyValue(int index) {
+    Pair<K, V> getKeyValue(int index) {
         K key = keys.get(index);
         V value = values.get(index);
-        return new Entry<>(key, value);
+        return new Pair<>(key, value);
     }
 
     V getValue(K key) {
@@ -88,41 +101,41 @@ class AbstractBTreeNode<K extends Comparable<K>, V, C> {
             insertKeyValue(insertionIndex, key, value);
         }
 
-        modified = true;
+        markAsModified();
     }
 
     void insertKeyValue(int index, K key, V value) {
-        TreeUtils.insert(keys, key, index);
-        TreeUtils.insert(values, value, index);
+        Utils.insertToList(keys, key, index);
+        Utils.insertToList(values, value, index);
 
-        modified = true;
+        markAsModified();
     }
 
-    Entry<K, V> deleteKeyValue(int index) {
+    Pair<K, V> deleteKeyValue(int index) {
         if(index < 0) {
             throw new IllegalStateException(String.format("Key by index %s not found", index));
         }
 
-        Entry<K, V> keyValue = getKeyValue(index);
+        Pair<K, V> keyValue = getKeyValue(index);
 
         keys.remove(index);
         values.remove(index);
 
-        modified = true;
+        markAsModified();
 
         return keyValue;
     }
 
-    void insertChildNode(int index, C child) {
-        TreeUtils.insert(children, child, index);
+    void insertChild(int index, C child) {
+        Utils.insertToList(children, child, index);
 
-        modified = true;
+        markAsModified();
     }
 
-    C deleteChildNode(int index) {
+    C deleteChild(int index) {
         C child = children.remove(index);
 
-        modified = true;
+        markAsModified();
 
         return child;
     }
@@ -131,7 +144,7 @@ class AbstractBTreeNode<K extends Comparable<K>, V, C> {
         int index = searchKey(key);
         putKeyValue(index, key, value);
 
-        modified = true;
+        markAsModified();
     }
 
     void delete(int start, int end) {
@@ -141,7 +154,7 @@ class AbstractBTreeNode<K extends Comparable<K>, V, C> {
             children.subList(start, end + 1).clear();
         }
 
-        modified = true;
+        markAsModified();
     }
 
     void copy(AbstractBTreeNode<K, V, C> fromNode, int start, int end) {
@@ -151,7 +164,19 @@ class AbstractBTreeNode<K extends Comparable<K>, V, C> {
             children.addAll(fromNode.getChildren().subList(start, end + 1));
         }
 
-        modified = true;
+        markAsModified();
+    }
+
+    void setKeys(List<K> keys) {
+        this.keys = keys;
+    }
+
+    void setValues(List<V> values) {
+        this.values = values;
+    }
+
+    void setChildren(List<C> children) {
+        this.children = children;
     }
 
     @Override

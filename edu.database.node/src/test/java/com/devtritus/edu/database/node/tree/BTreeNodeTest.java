@@ -59,10 +59,10 @@ class BTreeNodeTest {
         assertThat(node.getValue("a")).isEqualTo(listOf(0L));
 
         int indexA = node.searchKey("a");
-        Entry<String, List<Long>> entryA = node.deleteKeyValue(indexA);
+        Pair<String, List<Long>> entryA = node.deleteKeyValue(indexA);
 
-        assertThat(entryA.key).isEqualTo("a");
-        assertThat(entryA.value).containsOnly(0L);
+        assertThat(entryA.first).isEqualTo("a");
+        assertThat(entryA.second).containsOnly(0L);
 
         assertThat(node.getValue("a")).isNull();
     }

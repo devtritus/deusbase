@@ -1,8 +1,8 @@
 package com.devtritus.edu.database.node.tree;
 
 import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,54 +11,54 @@ class BTreeCacheNodeTest {
     void put_test() {
         BTreeNodeCache cache = new BTreeNodeCache(3);
 
-        assertThat(cache.getCachedEntries()).hasSize(0);
+        assertThat(cache.getCachedNodes()).hasSize(0);
 
-        PathEntry<BTreeNode, String, List<Long>, Integer> entry1 = entryOf(new BTreeNode(0, 0), 0);
-        PathEntry<BTreeNode, String, List<Long>, Integer> entry2 = entryOf(new BTreeNode(1, 1), 1);
-        PathEntry<BTreeNode, String, List<Long>, Integer> entry3 = entryOf(new BTreeNode(2, 2), 2);
-        PathEntry<BTreeNode, String, List<Long>, Integer> entry4 = entryOf(new BTreeNode(3, 3), 3);
-        PathEntry<BTreeNode, String, List<Long>, Integer> entry5 = entryOf(new BTreeNode(4, 4), 4);
+        BTreeNode node1 = new BTreeNode(0, 0);
+        BTreeNode node2 = new BTreeNode(1, 1);
+        BTreeNode node3 = new BTreeNode(2, 2);
+        BTreeNode node4 = new BTreeNode(3, 3);
+        BTreeNode node5 = new BTreeNode(4, 4);
 
-        cache.put(entry1.value, entry1.key);
+        cache.put(node1);
         cache.clearToLimit();
-        assertCacheContent(cache, entry1);
+        assertCacheContent(cache, node1);
 
-        cache.put(entry2.value, entry2.key);
+        cache.put(node2);
         cache.clearToLimit();
-        assertCacheContent(cache, entry1, entry2);
+        assertCacheContent(cache, node1, node2);
 
-        cache.put(entry3.value, entry3.key);
+        cache.put(node3);
         cache.clearToLimit();
-        assertCacheContent(cache, entry1, entry2, entry3);
+        assertCacheContent(cache, node1, node2, node3);
 
-        cache.put(entry4.value, entry4.key);
+        cache.put(node4);
         cache.clearToLimit();
-        assertCacheContent(cache, entry2, entry3, entry4);
+        assertCacheContent(cache, node2, node3, node4);
 
-        cache.put(entry3.value, entry3.key);
+        cache.put(node3);
         cache.clearToLimit();
-        assertCacheContent(cache, entry2, entry4, entry3);
+        assertCacheContent(cache, node2, node4, node3);
 
-        cache.put(entry5.value, entry5.key);
+        cache.put(node5);
         cache.clearToLimit();
-        assertCacheContent(cache, entry4, entry3, entry5);
+        assertCacheContent(cache, node4, node3, node5);
 
-        cache.put(entry1.value, entry1.key);
+        cache.put(node1);
         cache.clearToLimit();
-        assertCacheContent(cache, entry3, entry5, entry1);
+        assertCacheContent(cache, node3, node5, node1);
     }
 
     @Test
     void get_test() {
         BTreeNodeCache cache = new BTreeNodeCache(3);
 
-        assertThat(cache.getCachedEntries()).hasSize(0);
+        assertThat(cache.getCachedNodes()).hasSize(0);
 
         BTreeNode node1 = new BTreeNode(0, 0);
         BTreeNode node2 = new BTreeNode(1, 1);
 
-        cache.put(0, node1);
-        cache.put(1, node2);
+        cache.put(node1);
+        cache.put(node2);
 
         assertThat(cache.get(-1)).isNull();
         assertThat(cache.get(0)).isEqualTo(node1);
@@ -66,15 +66,31 @@ class BTreeCacheNodeTest {
         assertThat(cache.get(3)).isNull();
     }
 
-    private static void assertCacheContent(BTreeNodeCache cache, PathEntry<BTreeNode, String, List<Long>, Integer>... entries) {
-        List<PathEntry<BTreeNode, String, List<Long>, Integer>> result = cache.getCachedEntries().entrySet().stream()
-                .map(entry -> entryOf(entry.getValue(), entry.getKey()))
-                .collect(Collectors.toList());
+    @Test
+    void delete_test() {
+        BTreeNodeCache cache = new BTreeNodeCache(3);
 
-        assertThat(result).containsExactlyInAnyOrder(entries);
+        assertThat(cache.getCachedNodes()).hasSize(0);
+
+        BTreeNode node1 = new BTreeNode(0, 0);
+        BTreeNode node2 = new BTreeNode(1, 1);
+
+        cache.put(node1);
+        cache.put(node2);
+
+        cache.delete(0);
+        assertThat(cache.get(0)).isNull();
+        assertThat(cache.get(1)).isEqualTo(node2);
+
+        cache.delete(1);
+        assertThat(cache.get(0)).isNull();
+        assertThat(cache.get(1)).isNull();
+        assertThat(cache.getCachedNodes()).hasSize(0);
     }
 
-    private static PathEntry<BTreeNode, String, List<Long>, Integer> entryOf(BTreeNode node, int position) {
-        return new PathEntry<>(node, position);
+    private static void assertCacheContent(BTreeNodeCache cache, BTreeNode... entries) {
+        List<BTreeNode> result = new ArrayList<>(cache.getCachedNodes().values());
+
+        assertThat(result).containsExactlyInAnyOrder(entries);
     }
 }

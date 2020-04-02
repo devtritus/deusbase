@@ -8,22 +8,16 @@ import java.util.stream.Collectors;
 public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> {
     private static int nodePositionCounter = 0;
 
-    //for in-memory provider nodeId is same as nodePosition
-    private final Map<Integer, BTreeNode> nodePositionToNodeMap = new HashMap<>();
+    private final Map<Integer, BTreeNode> nodeIdToNodeMap = new HashMap<>();
 
-    private PathEntry<BTreeNode, String, List<Long>, Integer> root;
+    private BTreeNode root;
 
     @Override
-    public PathEntry<BTreeNode, String, List<Long>, Integer> getRootNode() {
+    public BTreeNode getRootNode() {
         if(root == null) {
             root = createNode(0);
         }
         return root;
-    }
-
-    @Override
-    public void setRootNode(PathEntry<BTreeNode, String, List<Long>, Integer> node) {
-        root = node;
     }
 
     @Override
@@ -34,31 +28,31 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
             return null;
         }
         int nodePosition = parentNode.getChildren().get(index);
-        return nodePositionToNodeMap.get(nodePosition);
+        return nodeIdToNodeMap.get(nodePosition);
     }
 
     @Override
-    public PathEntry<BTreeNode, String, List<Long>, Integer> createNode(int level) {
+    public BTreeNode createNode(int level) {
         int nodePosition = nodePositionCounter++;
         BTreeNode node = new BTreeNode(nodePosition, level);
-        nodePositionToNodeMap.put(nodePosition, node);
-        return new PathEntry<>(node, nodePosition);
+        nodeIdToNodeMap.put(nodePosition, node);
+        return node;
     }
 
     @Override
-    public void putKeyValueToNode(PathEntry<BTreeNode, String, List<Long>, Integer> entry, int index, String key, List<Long> value) {
-        entry.key.putKeyValue(index, key, value);
-        nodePositionToNodeMap.put(entry.value, entry.key);
+    public void putKeyValueToNode(BTreeNode node, int index, String key, List<Long> value) {
+        node.putKeyValue(index, key, value);
+        nodeIdToNodeMap.put(node.getNodeId(), node);
     }
 
     @Override
-    public void insertChildNode(BTreeNode parentNode, PathEntry<BTreeNode, String, List<Long>, Integer> newChildNode, int index) {
-        parentNode.insertChildNode(index, newChildNode.value);
+    public void insertChildNode(BTreeNode parentNode, BTreeNode newChildNode, int index) {
+        parentNode.insertChild(index, newChildNode.getNodeId());
     }
 
     @Override
     public void flush() {
-        List<BTreeNode> modifiedNodes = nodePositionToNodeMap.values().stream()
+        List<BTreeNode> modifiedNodes = nodeIdToNodeMap.values().stream()
                 .filter(AbstractBTreeNode::isModified)
                 .collect(Collectors.toList());
 
@@ -66,6 +60,9 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
 
         //emulate flushing
         for(BTreeNode modifiedNode : modifiedNodes) {
+            if(modifiedNode.isRoot()) {
+                root = modifiedNode;
+            }
             modifiedNode.markAsNotModified();
         }
     }
@@ -73,7 +70,7 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     @Override
     public List<BTreeNode> getNodes(List<Integer> nodePositions) {
         return nodePositions.stream()
-                .map(nodePositionToNodeMap::get)
+                .map(nodeIdToNodeMap::get)
                 .collect(Collectors.toList());
     }
 }
