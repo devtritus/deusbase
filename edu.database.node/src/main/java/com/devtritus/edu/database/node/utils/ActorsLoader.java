@@ -15,7 +15,7 @@ public class ActorsLoader {
     }
 
     void load(int count) throws Exception {
-        RequestBodyHandler handler = new RequestBodyHandler(new NodeApi());
+        RequestBodyHandler handler = new RequestBodyHandler(new NodeApi("node.index", "value.storage"));
 
         try(Scanner scanner = new Scanner(new File("data.tsv"), StandardCharsets.UTF_8.name())) {
             scanner.nextLine();

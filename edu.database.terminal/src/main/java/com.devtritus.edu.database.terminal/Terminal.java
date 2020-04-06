@@ -7,10 +7,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,7 +39,7 @@ class Terminal {
         Scanner scanner = new Scanner(in);
         while(scanner.hasNextLine()) {
             String message = scanner.nextLine();
-            String[] tokens = message.split("\\s+");
+            String[] tokens = parse(message);
             String commandMessage = tokens[0];
             String[] args = Arrays.copyOfRange(tokens, 1, tokens.length);
 
@@ -120,6 +117,43 @@ class Terminal {
                     SYSTEM_COMMANDS.stream(),
                     Stream.of(STOP, HELP))
                 .collect(Collectors.toList());
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Arrays.asList(parse("\"aaa\" bbb \"ccc\" ddd \"fff\"")));
+    }
+
+    private static String[] parse(String message) {
+        List<String> result = new ArrayList<>();
+        StringBuilder builder = new StringBuilder();
+        boolean quotes = false;
+        for(int i = 0; i < message.length(); i++) {
+            char ch = message.charAt(i);
+            if(!quotes && Character.isWhitespace(ch)) {
+                if(builder.length() != 0) {
+                    result.add(builder.toString());
+                }
+                builder = new StringBuilder();
+            } else if (ch == '"') {
+                if(quotes) {
+                    quotes = false;
+                    if(builder.length() != 0) {
+                        result.add(builder.toString());
+                        builder = new StringBuilder();
+                    }
+                } else {
+                    quotes = true;
+                }
+            } else {
+                builder.append(ch);
+            }
+        }
+
+        if(builder.length() != 0) {
+            result.add(builder.toString());
+        }
+
+        return result.toArray(new String[0]);
     }
 
     private void print() {

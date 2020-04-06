@@ -33,7 +33,6 @@ public class RequestHandler extends AbstractHandler {
             httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             PrintWriter writer = httpServletResponse.getWriter();
             writer.format("Request method type \"%s\" is unsupported", method);
-            //TODO: сделать нормальную форму вывода при ошибках
             return;
         }
 

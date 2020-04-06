@@ -3,7 +3,7 @@ package com.devtritus.edu.database.core;
 import java.util.Arrays;
 
 public class CommandParamsUtils {
-    public static String[] handleParams(Command command, String[] params)  {
+    public static String[] handleParams(Command command, String[] params) throws WrongArgumentsCountException {
         command.assertTokensNumber(params.length);
 
         switch (command) {

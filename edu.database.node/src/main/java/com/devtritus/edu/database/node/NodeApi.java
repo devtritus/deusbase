@@ -13,9 +13,9 @@ public class NodeApi implements Api<String, String> {
     private BTree<String, List<Long>> tree;
     private ValueStorage valueStorage;
 
-    public NodeApi() {
-        tree = BTreeInitializer.init("node.index");
-        valueStorage = new ValueDiskStorage(Paths.get("value.storage"));
+    public NodeApi(String keyFileName, String valueStorageFileName) {
+        tree = BTreeInitializer.init(keyFileName);
+        valueStorage = new ValueDiskStorage(Paths.get(valueStorageFileName));
     }
 
     @Override

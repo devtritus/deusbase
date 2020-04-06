@@ -5,11 +5,16 @@ import com.devtritus.edu.database.node.server.RequestHandler;
 import com.devtritus.edu.database.node.server.JettyServer;
 
 public class Main {
-    private static final String LOCALHOST = "127.0.0.1";
+    private final static String LOCALHOST = "127.0.0.1";
+    private final static String DEFAULT_KEY_FILE_NAME = "node.index";
+    private final static String DEFAULT_VALUE_STORAGE_FILE_NAME = "value.storage";
+
     public static void main(String[] args) throws Exception {
+        String keyFileName = DEFAULT_KEY_FILE_NAME;
+        String valueStorageFileName = DEFAULT_VALUE_STORAGE_FILE_NAME;
         int port = 7599;//getRandomPort();
 
-        NodeApi api = new NodeApi();
+        NodeApi api = new NodeApi(keyFileName, valueStorageFileName);
 
         RequestBodyHandler requestBodyHandler = new RequestBodyHandler(api);
         RequestHandler requestHandler = new RequestHandler(requestBodyHandler);
