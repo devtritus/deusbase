@@ -1,6 +1,6 @@
 package com.devtritus.deusbase.node;
 
-import com.devtritus.deusbase.core.Api;
+import com.devtritus.deusbase.api.Api;
 import java.util.*;
 
 public class MockApi implements Api<String, String> {

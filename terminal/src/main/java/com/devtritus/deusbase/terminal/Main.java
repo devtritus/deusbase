@@ -1,6 +1,6 @@
 package com.devtritus.deusbase.terminal;
 
-import com.devtritus.deusbase.core.Client;
+import com.devtritus.deusbase.api.Client;
 import java.util.Collections;
 import java.util.Map;
 

@@ -1,8 +1,8 @@
 package com.devtritus.deusbase.node.utils;
 
-import com.devtritus.deusbase.core.Command;
-import com.devtritus.deusbase.core.RequestBody;
-import com.devtritus.deusbase.core.RequestBodyHandler;
+import com.devtritus.deusbase.api.Command;
+import com.devtritus.deusbase.api.RequestBody;
+import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.NodeApi;
 import java.io.File;
 import java.nio.charset.StandardCharsets;

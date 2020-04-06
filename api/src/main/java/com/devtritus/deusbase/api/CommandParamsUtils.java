@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.core;
+package com.devtritus.deusbase.api;
 
 import java.util.Arrays;
 

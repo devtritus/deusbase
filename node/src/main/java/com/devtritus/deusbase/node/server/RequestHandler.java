@@ -1,8 +1,8 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.core.RequestBody;
-import com.devtritus.deusbase.core.RequestBodyHandler;
-import com.devtritus.deusbase.core.ResponseBody;
+import com.devtritus.deusbase.api.RequestBody;
+import com.devtritus.deusbase.api.RequestBodyHandler;
+import com.devtritus.deusbase.api.ResponseBody;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;

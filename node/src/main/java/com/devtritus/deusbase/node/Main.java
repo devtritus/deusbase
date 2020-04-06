@@ -1,6 +1,6 @@
 package com.devtritus.deusbase.node;
 
-import com.devtritus.deusbase.core.RequestBodyHandler;
+import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.server.RequestHandler;
 import com.devtritus.deusbase.node.server.JettyServer;
 

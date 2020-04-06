@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.core;
+package com.devtritus.deusbase.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;

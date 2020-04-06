@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>com.devtritus</groupId>
-            <artifactId>deusbase.core</artifactId>
+            <artifactId>deusbase.api</artifactId>
             <version>1.0</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->

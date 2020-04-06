@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.core;
+package com.devtritus.deusbase.api;
 
 public class WrongArgumentsCountException extends Exception {
     public WrongArgumentsCountException(int min, int max, int actual) {

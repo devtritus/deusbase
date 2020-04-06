@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.core;
+package com.devtritus.deusbase.api;
 
 public class RequestBody {
     private String command;

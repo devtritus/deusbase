@@ -1,6 +1,6 @@
 package com.devtritus.deusbase.node.utils;
 
-import com.devtritus.deusbase.core.Api;
+import com.devtritus.deusbase.api.Api;
 
 import java.util.List;
 import java.util.Map;

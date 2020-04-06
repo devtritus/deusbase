@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.core;
+package com.devtritus.deusbase.api;
 
 public enum Command {
     READ("read", CommandType.READ, 1, 1),

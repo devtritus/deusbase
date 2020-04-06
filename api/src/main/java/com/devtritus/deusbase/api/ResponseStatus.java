@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.core;
+package com.devtritus.deusbase.api;
 
 public enum ResponseStatus {
     OK(0, "ok"),

@@ -1,6 +1,6 @@
 package com.devtritus.deusbase.terminal;
 
-import com.devtritus.deusbase.core.*;
+import com.devtritus.deusbase.api.*;
 import org.apache.http.conn.HttpHostConnectException;
 
 import java.io.InputStream;
