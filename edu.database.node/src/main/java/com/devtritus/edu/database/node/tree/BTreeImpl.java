@@ -2,13 +2,17 @@ package com.devtritus.edu.database.node.tree;
 
 import java.util.List;
 
-public class BTreeImpl extends AbstractBTree<BTreeNode, String, List<Long>, Integer> {
-    BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> nodeProvider;
+class BTreeImpl extends AbstractBTree<BTreeNode, String, List<Long>, Integer> {
+    private BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> nodeProvider;
 
-    public BTreeImpl(int m, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> nodeProvider) {
+    BTreeImpl(int m, BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> nodeProvider) {
         super(m, nodeProvider);
 
         this.nodeProvider = nodeProvider;
+    }
+
+    BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> getProvider() {
+        return nodeProvider;
     }
 
     @Override

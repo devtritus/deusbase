@@ -1,5 +1,7 @@
 package com.devtritus.edu.database.node.tree;
 
+import com.devtritus.edu.database.node.index.BTreeNodeData;
+
 abstract class BTreeNodeConverter {
 
     static BTreeNodeData toNodeData(BTreeNode node) {

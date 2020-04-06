@@ -1,7 +1,6 @@
 package com.devtritus.edu.database.node.tree;
 
 import org.junit.jupiter.api.Test;
-
 import java.io.FileOutputStream;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,12 +14,8 @@ class BTreeTest {
     void add_then_serialize_then_search_by_keys_test() {
         String fileName = "test.index";
         clearFile(fileName);
-        BTreeNodeDiskManager manager = new BTreeNodeDiskManager(fileName, 3);
-        int m = manager.initialize();
-
-        BTreeNodeDiskProvider provider = manager.getNodeProvider();
-
-        BTreeImpl tree = new BTreeImpl(m, provider);
+        BTreeImpl tree = (BTreeImpl)BTreeInitializer.init(fileName);
+        BTreeNodePersistenceProvider provider = (BTreeNodePersistenceProvider)tree.getProvider();
 
         List<String> toAdd = getRandomStrings(50, 250, 10000);
 
@@ -142,17 +137,6 @@ class BTreeTest {
 
         assertThat(tree.deleteKey("5")).isTrue();
         assertThat(tree.deleteKey("5")).isFalse();
-    }
-
-    //TODO: add timer, ignore tests
-    //@Test
-    void add_test_big_random_case() {
-        addThenSearchByKeyTest(200, 1000000);
-    }
-
-    //@Test
-    void delete_test_big_random_case() {
-        addThenDeleteTest(200, 1000000);
     }
 
     private void addThenSearchByKeyTest(int m, int count) {

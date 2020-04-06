@@ -1,9 +1,9 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.utils;
 
 import java.util.List;
 
-abstract class Utils {
-    static <T> List<T> insertToList(List<T> list, T element, int insertIndex)  {
+public abstract class Utils {
+    public static <T> List<T> insertToList(List<T> list, T element, int insertIndex)  {
         T current = element;
         for(int i = insertIndex; i < list.size(); i++) {
             current = list.set(i, current);
@@ -14,7 +14,7 @@ abstract class Utils {
         return list;
     }
 
-    static <T> List<T> deleteFromList(List<T> list, int deleteIndex) {
+    public static <T> List<T> deleteFromList(List<T> list, int deleteIndex) {
         if(list.isEmpty()) {
             return list;
         }

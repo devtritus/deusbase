@@ -10,14 +10,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class NodeApi implements Api<String, String> {
-    private BTreeImpl tree;
+    private BTree<String, List<Long>> tree;
     private ValueStorage valueStorage;
 
-    NodeApi() {
-        BTreeNodeDiskManager manager = new BTreeNodeDiskManager("node.index");
-        int m = manager.initialize();
-
-        tree = new BTreeImpl(m, manager.getNodeProvider());
+    public NodeApi() {
+        tree = BTreeInitializer.init("node.index");
         valueStorage = new ValueDiskStorage(Paths.get("value.storage"));
     }
 

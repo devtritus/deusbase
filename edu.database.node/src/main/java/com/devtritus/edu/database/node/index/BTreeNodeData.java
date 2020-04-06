@@ -1,10 +1,10 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.index;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-class BTreeNodeData {
+public class BTreeNodeData {
     private int nodeId;
     private int level;
 
@@ -14,43 +14,43 @@ class BTreeNodeData {
     private List<Integer> childrenNodeIds = new ArrayList<>();
     private List<Integer> childrenPositions = new ArrayList<>();
 
-    int getNodeId() {
+    public int getNodeId() {
         return nodeId;
     }
 
-    void setNodeId(int nodeId) {
+    public void setNodeId(int nodeId) {
         this.nodeId = nodeId;
     }
 
-    int getLevel() {
+    public int getLevel() {
         return level;
     }
 
-    void setLevel(int level) {
+    public void setLevel(int level) {
         this.level = level;
     }
 
-    List<String> getKeys() {
+    public List<String> getKeys() {
         return keys;
     }
 
-    void setKeys(List<String> keys) {
+    public void setKeys(List<String> keys) {
         this.keys = keys;
     }
 
-    List<List<Long>> getValues() {
+    public List<List<Long>> getValues() {
         return values;
     }
 
-    void setValues(List<List<Long>> values) {
+    public void setValues(List<List<Long>> values) {
         this.values = values;
     }
 
-    List<Integer> getChildrenNodeIds() {
+    public List<Integer> getChildrenNodeIds() {
         return childrenNodeIds;
     }
 
-    void setChildrenNodeIds(List<Integer> childrenNodeIds) {
+    public void setChildrenNodeIds(List<Integer> childrenNodeIds) {
         this.childrenNodeIds = childrenNodeIds;
     }
 

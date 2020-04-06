@@ -1,7 +1,6 @@
 package com.devtritus.edu.database.node;
 
 import com.devtritus.edu.database.core.Api;
-
 import java.util.*;
 
 public class MockApi implements Api<String, String> {

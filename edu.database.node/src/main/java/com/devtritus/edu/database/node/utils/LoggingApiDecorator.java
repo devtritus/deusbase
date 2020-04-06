@@ -1,4 +1,4 @@
-package com.devtritus.edu.database.node;
+package com.devtritus.edu.database.node.utils;
 
 import com.devtritus.edu.database.core.Api;
 

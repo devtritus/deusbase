@@ -1,5 +1,7 @@
 package com.devtritus.edu.database.node.tree;
 
+import com.devtritus.edu.database.node.index.BTreeNodeData;
+import com.devtritus.edu.database.node.utils.Pair;
 import org.junit.jupiter.api.Test;
 
 import static com.devtritus.edu.database.node.TestUtils.listOf;
@@ -28,7 +30,6 @@ class BTreeNodeConverterTest {
         assertThat(data.getKeys()).containsExactly("Jack Nicholson", "José Luis Alcaine", "Sean Connery", "Tom Hanks");
         data.setValues(listOf(listOf(4000000L), listOf(3000000L), listOf(2000000L), listOf(1000000L)));
         assertThat(data.getChildrenNodeIds()).containsExactly(1993, 1994, 1995, 1996, 1997);
-        assertThat(data.getChildrenPositions()).isEmpty();
     }
 
     @Test

@@ -1,7 +1,6 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.utils;
 
 import org.junit.jupiter.api.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

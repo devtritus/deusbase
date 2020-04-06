@@ -1,8 +1,9 @@
-package com.devtritus.edu.database.node;
+package com.devtritus.edu.database.node.utils;
 
 import com.devtritus.edu.database.core.Command;
 import com.devtritus.edu.database.core.RequestBody;
 import com.devtritus.edu.database.core.RequestBodyHandler;
+import com.devtritus.edu.database.node.NodeApi;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
@@ -10,7 +11,7 @@ import java.util.Scanner;
 public class ActorsLoader {
     public static void main(String[] args) throws Exception {
         ActorsLoader loader = new ActorsLoader();
-        loader.load(1000000);
+        loader.load(10_000_000);
     }
 
     void load(int count) throws Exception {

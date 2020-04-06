@@ -1,15 +1,18 @@
 package com.devtritus.edu.database.node.tree;
 
+import com.devtritus.edu.database.node.index.BTreeIndexLoader;
+import com.devtritus.edu.database.node.index.BTreeNodeData;
+
 import java.util.*;
 import static com.devtritus.edu.database.node.tree.BTreeNodeConverter.*;
 
-class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer>  {
+class BTreeNodePersistenceProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer>  {
     private final BTreeIndexLoader loader;
     private final BTreeNodeCache cache;
 
     private BTreeNode root;
 
-    BTreeNodeDiskProvider(BTreeIndexLoader loader, BTreeNodeCache cache) {
+    BTreeNodePersistenceProvider(BTreeIndexLoader loader, BTreeNodeCache cache) {
         this.loader = loader;
         this.cache = cache;
     }

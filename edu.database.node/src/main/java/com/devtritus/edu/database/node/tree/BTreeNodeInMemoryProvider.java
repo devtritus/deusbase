@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> {
-    private static int nodePositionCounter = 0;
+    private static int nodeIdCounter = 0;
 
     private final Map<Integer, BTreeNode> nodeIdToNodeMap = new HashMap<>();
 
@@ -27,15 +27,15 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
         if(index < 0 || index >= children.size()) {
             return null;
         }
-        int nodePosition = parentNode.getChildren().get(index);
-        return nodeIdToNodeMap.get(nodePosition);
+        int nodeId = parentNode.getChildren().get(index);
+        return nodeIdToNodeMap.get(nodeId);
     }
 
     @Override
     public BTreeNode createNode(int level) {
-        int nodePosition = nodePositionCounter++;
-        BTreeNode node = new BTreeNode(nodePosition, level);
-        nodeIdToNodeMap.put(nodePosition, node);
+        int nodeId = nodeIdCounter++;
+        BTreeNode node = new BTreeNode(nodeId, level);
+        nodeIdToNodeMap.put(nodeId, node);
         return node;
     }
 
@@ -68,8 +68,8 @@ public class BTreeNodeInMemoryProvider implements BTreeNodeProvider<BTreeNode, S
     }
 
     @Override
-    public List<BTreeNode> getNodes(List<Integer> nodePositions) {
-        return nodePositions.stream()
+    public List<BTreeNode> getNodes(List<Integer> nodeIds) {
+        return nodeIds.stream()
                 .map(nodeIdToNodeMap::get)
                 .collect(Collectors.toList());
     }

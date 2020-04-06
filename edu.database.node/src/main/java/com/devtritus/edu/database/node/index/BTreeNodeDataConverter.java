@@ -1,5 +1,6 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.index;
 
+import com.devtritus.edu.database.node.utils.Pair;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

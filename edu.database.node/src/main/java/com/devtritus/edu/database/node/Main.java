@@ -1,6 +1,8 @@
 package com.devtritus.edu.database.node;
 
 import com.devtritus.edu.database.core.RequestBodyHandler;
+import com.devtritus.edu.database.node.server.RequestHandler;
+import com.devtritus.edu.database.node.server.JettyServer;
 
 public class Main {
     private static final String LOCALHOST = "127.0.0.1";
@@ -8,12 +10,11 @@ public class Main {
         int port = 7599;//getRandomPort();
 
         NodeApi api = new NodeApi();
-        //LoggingApiDecorator<String, String> loggingApiDecorator = new LoggingApiDecorator<>(api);
 
         RequestBodyHandler requestBodyHandler = new RequestBodyHandler(api);
-        DatabaseRequestHandler databaseRequestHandler = new DatabaseRequestHandler(requestBodyHandler);
+        RequestHandler requestHandler = new RequestHandler(requestBodyHandler);
 
-        new DatabaseServer(databaseRequestHandler).start(LOCALHOST, port, () -> successCallback(port));
+        new JettyServer(requestHandler).start(LOCALHOST, port, () -> successCallback(port));
     }
 
     private final static int MIN_PORT = 7000;

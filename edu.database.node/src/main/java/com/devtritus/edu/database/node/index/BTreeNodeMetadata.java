@@ -1,4 +1,4 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.index;
 
 class BTreeNodeMetadata {
     private Integer blocksCount;

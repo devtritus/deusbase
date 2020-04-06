@@ -1,4 +1,4 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.index;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
-class BTreeIndexLoader {
+public class BTreeIndexLoader {
     private final static int MIN_BLOCK_BYTE_SIZE = 512;
 
     private final File file;
@@ -24,7 +24,7 @@ class BTreeIndexLoader {
         this.lastNodeId = flushedHeader.lastNodeId;
     }
 
-    static BTreeIndexLoader initIndex(int m, File file) throws IOException {
+    public static BTreeIndexLoader initIndex(int m, File file) throws IOException {
         if(m > 255) {
             throw new IllegalArgumentException("Size of keys can't be more then byte(255). m: " + m);
         }
@@ -48,17 +48,17 @@ class BTreeIndexLoader {
         }
     }
 
-    static BTreeIndexLoader readIndex(File file) throws IOException {
+    public static BTreeIndexLoader readIndex(File file) throws IOException {
         BTreeIndexHeader header = readHeader(file);
 
         return new BTreeIndexLoader(file, header);
     }
 
-    int getM() {
+    public int getM() {
         return flushedHeader.m;
     }
 
-    BTreeNodeData createNode(int level) {
+    public BTreeNodeData createNode(int level) {
         ++lastNodeId;
         BTreeNodeData data = new BTreeNodeData();
         data.setNodeId(lastNodeId);
@@ -67,12 +67,12 @@ class BTreeIndexLoader {
         return data;
     }
 
-    BTreeNodeData getRoot() {
+    public BTreeNodeData getRoot() {
         int flushedRootPosition = flushedHeader.rootPosition;
         return readNodeByPosition(flushedRootPosition);
     }
 
-    void flush(List<BTreeNodeData> nodesToFlush, int rootNodeId) {
+    public void flush(List<BTreeNodeData> nodesToFlush, int rootNodeId) {
         final int blockSize = flushedHeader.blockSize;
 
         List<BTreeNodeData> sortedNodesToFlush = nodesToFlush.stream()
@@ -148,12 +148,12 @@ class BTreeIndexLoader {
         }
     }
 
-    BTreeNodeData readNodeByNodeId(int nodeId) {
+    public BTreeNodeData readNodeByNodeId(int nodeId) {
         BTreeNodeMetadata metadata = nodeIdToMetadata.get(nodeId);
         return readNodeByPosition(metadata.getPosition());
     }
 
-    Map<Integer, BTreeNodeData> readAll() {
+    public Map<Integer, BTreeNodeData> readAll() {
         Map<Integer, BTreeNodeData> result = new HashMap<>();
         BTreeNodeData root = readNodeByPosition(flushedHeader.rootPosition);
         result.put(root.getNodeId(), root);

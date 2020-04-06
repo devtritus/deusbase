@@ -1,12 +1,12 @@
-package com.devtritus.edu.database.node.tree;
+package com.devtritus.edu.database.node.utils;
 
 import java.util.Objects;
 
-class Pair<T, T1> {
-    final T first;
-    final T1 second;
+public class Pair<T, T1> {
+    public final T first;
+    public final T1 second;
 
-    Pair(T first, T1 second) {
+    public Pair(T first, T1 second) {
         this.first = first;
         this.second = second;
     }

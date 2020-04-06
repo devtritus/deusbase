@@ -1,4 +1,4 @@
-package com.devtritus.edu.database.node;
+package com.devtritus.edu.database.node.server;
 
 import com.devtritus.edu.database.core.RequestBody;
 import com.devtritus.edu.database.core.RequestBodyHandler;
@@ -15,11 +15,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Scanner;
 
-public class DatabaseRequestHandler extends AbstractHandler {
+public class RequestHandler extends AbstractHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RequestBodyHandler requestBodyHandler;
 
-    public DatabaseRequestHandler(RequestBodyHandler requestBodyHandler) {
+    public RequestHandler(RequestBodyHandler requestBodyHandler) {
         this.requestBodyHandler = requestBodyHandler;
     }
 
