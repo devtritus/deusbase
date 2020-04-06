@@ -38,7 +38,8 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List
         if(cachedChildNode != null) {
             return cachedChildNode;
         } else {
-            BTreeNode childNode = fromNodeData(loader.readNodeByNodeId(nodeId));
+            BTreeNodeData data = loader.readNodeByNodeId(nodeId);
+            BTreeNode childNode = fromNodeData(data);
             cache.put(childNode);
             return childNode;
         }
@@ -66,27 +67,29 @@ class BTreeNodeDiskProvider implements BTreeNodeProvider<BTreeNode, String, List
     public void flush() {
         List<BTreeNode> modifiedNodes = cache.getModifiedNodes();
 
-        BTreeNode updatedRootNode = null;
+        if(root.isModified()) {
+            modifiedNodes.add(root);
+        }
+
+        BTreeNode currentRoot = root;
         List<BTreeNodeData> modifiesNodeDataList = new ArrayList<>();
         for(BTreeNode node : modifiedNodes) {
             modifiesNodeDataList.add(toNodeData(node));
             if(node.isRoot()) {
-                updatedRootNode = node;
+                currentRoot = node;
             }
         }
 
-        int rootNodeId;
-        if(updatedRootNode != null) {
-            root = updatedRootNode;
-            rootNodeId = updatedRootNode.getNodeId();
-        } else {
-            rootNodeId = root.getNodeId();
-        }
+        int rootNodeId = currentRoot.getNodeId();
 
         loader.flush(modifiesNodeDataList, rootNodeId);
 
         for(BTreeNode modifiedNode : modifiedNodes) {
             modifiedNode.markAsNotModified();
+        }
+
+        if(currentRoot != root) {
+            root = currentRoot;
         }
 
         cache.clearToLimit();

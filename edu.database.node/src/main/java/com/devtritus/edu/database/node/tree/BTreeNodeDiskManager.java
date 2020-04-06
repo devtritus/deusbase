@@ -9,9 +9,15 @@ public class BTreeNodeDiskManager {
     private final File file;
 
     private BTreeNodeDiskProvider provider;
+    private int m;
 
     public BTreeNodeDiskManager(String fileName) {
+        this(fileName, DEFAULT_M);
+    }
+
+    public BTreeNodeDiskManager(String fileName, int m) {
         this.file = new File(fileName);
+        this.m = m;
     }
 
     public BTreeNodeDiskProvider getNodeProvider() {
@@ -23,7 +29,6 @@ public class BTreeNodeDiskManager {
     }
 
     public int initialize() {
-        int m;
         BTreeIndexLoader loader;
         try {
             if (file.exists() && file.length() != 0) {
@@ -31,8 +36,7 @@ public class BTreeNodeDiskManager {
                 m = loader.getM();
             } else {
                 file.createNewFile();
-                loader = BTreeIndexLoader.initIndex(DEFAULT_M, file);
-                m = DEFAULT_M;
+                loader = BTreeIndexLoader.initIndex(m, file);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

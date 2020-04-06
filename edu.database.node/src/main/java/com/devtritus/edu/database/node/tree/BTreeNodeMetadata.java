@@ -4,8 +4,6 @@ class BTreeNodeMetadata {
     private Integer blocksCount;
     private Integer position;
 
-    private Integer parentNodeId;
-
     Integer getBlockCount() {
         return blocksCount;
     }
@@ -20,13 +18,5 @@ class BTreeNodeMetadata {
 
     void setPosition(Integer position) {
         this.position = position;
-    }
-
-    public Integer getParentNodeId() {
-        return parentNodeId;
-    }
-
-    public void setParentNodeId(Integer parentNodeId) {
-        this.parentNodeId = parentNodeId;
     }
 }

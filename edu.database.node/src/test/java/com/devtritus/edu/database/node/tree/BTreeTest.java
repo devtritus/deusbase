@@ -15,7 +15,7 @@ class BTreeTest {
     void add_then_serialize_then_search_by_keys_test() {
         String fileName = "test.index";
         clearFile(fileName);
-        BTreeNodeDiskManager manager = new BTreeNodeDiskManager(fileName);
+        BTreeNodeDiskManager manager = new BTreeNodeDiskManager(fileName, 3);
         int m = manager.initialize();
 
         BTreeNodeDiskProvider provider = manager.getNodeProvider();
@@ -25,16 +25,11 @@ class BTreeTest {
         List<String> toAdd = getRandomStrings(50, 250, 10000);
 
         Map<String, Long> toAddMap = new HashMap<>();
-        for(int i = 0; i < toAdd.size(); i++) {
-            toAddMap.put(toAdd.get(i), (long)i);
+        for (int i = 0; i < toAdd.size(); i++) {
+            toAddMap.put(toAdd.get(i), (long) i);
         }
 
-        try {
-            add(tree, toAddMap, provider);
-        } catch (Exception e) {
-            System.out.println("to add: " + toAddMap);
-            throw e;
-        }
+        add(tree, toAddMap, provider);
 
         provider.clearCache();
 

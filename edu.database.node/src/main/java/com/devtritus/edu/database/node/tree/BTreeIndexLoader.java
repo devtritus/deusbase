@@ -33,7 +33,7 @@ class BTreeIndexLoader {
 
         try(SeekableByteChannel channel = openWriteChannel(file)) {
 
-            BTreeIndexHeader header = new BTreeIndexHeader(blockSize, m, 1, 1, 1);
+            BTreeIndexHeader header = new BTreeIndexHeader(blockSize, m, 1, 2, 1);
             updateHeader(channel, header);
 
             BTreeNodeData rootData = new BTreeNodeData();
@@ -75,20 +75,19 @@ class BTreeIndexLoader {
     void flush(List<BTreeNodeData> nodesToFlush, int rootNodeId) {
         final int blockSize = flushedHeader.blockSize;
 
-        try(SeekableByteChannel channel = openWriteChannel(file)) {
+        List<BTreeNodeData> sortedNodesToFlush = nodesToFlush.stream()
+                .sorted(Comparator.comparingInt(BTreeNodeData::getLevel))
+                .collect(Collectors.toList());
 
-            List<BTreeNodeData> sortedNodesToFlush = nodesToFlush.stream()
-                    .sorted(Comparator.comparingInt(BTreeNodeData::getLevel))
-                    .collect(Collectors.toList());
+        try(SeekableByteChannel channel = openWriteChannel(file)) {
 
             ByteBuffer singleBlockBuffer = ByteBuffer.allocate(blockSize);
 
-            int endPosition = flushedHeader.lastPosition + 1;
+            int endPosition = flushedHeader.endPosition;
             for(BTreeNodeData data : sortedNodesToFlush) {
                 List<Integer> childrenPosition = new ArrayList<>();
                 for(Integer childNodeId : data.getChildrenNodeIds()) {
                     BTreeNodeMetadata metadata = nodeIdToMetadata.get(childNodeId);
-                    metadata.setParentNodeId(data.getNodeId());
                     childrenPosition.add(metadata.getPosition());
                 }
 
@@ -154,6 +153,23 @@ class BTreeIndexLoader {
         return readNodeByPosition(metadata.getPosition());
     }
 
+    Map<Integer, BTreeNodeData> readAll() {
+        Map<Integer, BTreeNodeData> result = new HashMap<>();
+        BTreeNodeData root = readNodeByPosition(flushedHeader.rootPosition);
+        result.put(root.getNodeId(), root);
+        readAll(root, result);
+
+        return result;
+    }
+
+    private void readAll(BTreeNodeData root, Map<Integer, BTreeNodeData> result) {
+        for(int i = 0; i < root.getChildrenNodeIds().size(); i++) {
+            BTreeNodeData data = readNodeByPosition(root.getChildrenPositions().get(i));
+            result.put(data.getNodeId(), data);
+            readAll(data, result);
+        }
+    }
+
     private BTreeNodeData readNodeByPosition(int position) {
         try(SeekableByteChannel channel = openReadChannel(file)) {
             ByteBuffer firstBlockBuffer = ByteBuffer.allocate(flushedHeader.blockSize);
@@ -189,15 +205,17 @@ class BTreeIndexLoader {
 
             List<Integer> childrenNodeIds = data.getChildrenNodeIds();
             List<Integer> childrenPositions = data.getChildrenPositions();
-            int childrenSize = data.getChildrenPositions().size();
+            int childrenSize = childrenNodeIds.size();
             for(int i = 0; i < childrenSize; i++) {
-                BTreeNodeMetadata childMetadata = nodeIdToMetadata.get(childrenNodeIds.get(i));
+                Integer childNodeId = childrenNodeIds.get(i);
+                Integer childPosition = childrenPositions.get(i);
+
+                BTreeNodeMetadata childMetadata = nodeIdToMetadata.get(childNodeId);
                 if(childMetadata == null) {
                     childMetadata = new BTreeNodeMetadata();
-                    childMetadata.setPosition(childrenPositions.get(i));
-                    childMetadata.setParentNodeId(data.getNodeId());
+                    childMetadata.setPosition(childPosition);
 
-                    nodeIdToMetadata.put(childrenNodeIds.get(i), childMetadata);
+                    nodeIdToMetadata.put(childNodeId, childMetadata);
                 }
             }
 
@@ -240,7 +258,7 @@ class BTreeIndexLoader {
                 .putInt(header.blockSize)
                 .putInt(header.m)
                 .putInt(header.rootPosition)
-                .putInt(header.lastPosition)
+                .putInt(header.endPosition)
                 .putInt(header.lastNodeId)
                 .rewind();
 
