@@ -1,25 +1,42 @@
 package com.devtritus.deusbase.node;
 
+import com.devtritus.deusbase.api.ProgramArgs;
+import com.devtritus.deusbase.api.ProgramArgsParser;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.server.RequestHandler;
 import com.devtritus.deusbase.node.server.JettyServer;
 
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
 public class Main {
-    private final static String LOCALHOST = "127.0.0.1";
-    private final static String DEFAULT_KEY_FILE_NAME = "node.index";
-    private final static String DEFAULT_VALUE_STORAGE_FILE_NAME = "value.storage";
+    private final static String DEFAULT_HOST = "127.0.0.1";
+    private final static String DEFAULT_SCHEME_NAME = "default";
+    private final static int DEFAULT_PORT = 7599;
+
+    private final static String INDEX_POSTFIX = ".index";
+    private final static String STORAGE_POSTFIX = ".storage";
 
     public static void main(String[] args) throws Exception {
-        String keyFileName = DEFAULT_KEY_FILE_NAME;
-        String valueStorageFileName = DEFAULT_VALUE_STORAGE_FILE_NAME;
-        int port = 7599;//getRandomPort();
+        ProgramArgs programArgs = ProgramArgsParser.parse(args);
+        String schemeName = programArgs.getOrDefault("scheme", DEFAULT_SCHEME_NAME);
+        String host = programArgs.getOrDefault("host", DEFAULT_HOST);
 
-        NodeApi api = new NodeApi(keyFileName, valueStorageFileName);
+        int port;
+        if(programArgs.contains("port")) {
+            port = programArgs.getInteger("port");
+        } else {
+            port = DEFAULT_PORT;
+        }
+
+        NodeApi api = new NodeApi(schemeName + INDEX_POSTFIX, schemeName + STORAGE_POSTFIX);
 
         RequestBodyHandler requestBodyHandler = new RequestBodyHandler(api);
         RequestHandler requestHandler = new RequestHandler(requestBodyHandler);
 
-        new JettyServer(requestHandler).start(LOCALHOST, port, () -> successCallback(port));
+        new JettyServer(requestHandler).start(host, port, () -> successCallback(host + ":" + port));
     }
 
     private final static int MIN_PORT = 7000;
@@ -29,7 +46,17 @@ public class Main {
         return (int)(MIN_PORT + (Math.random() * (MAX_PORT - MIN_PORT)));
     }
 
-    private static void successCallback(int port) {
-        System.out.println("Node was started on port " + port);
+    private static void successCallback(String address) {
+        try {
+            URI uri = Main.class.getClassLoader().getResource("banner.txt").toURI();
+            List<String> bannerLines = Files.readAllLines(Paths.get(uri));
+            for (String line : bannerLines) {
+                System.out.println(line);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        System.out.println("\nNode was started on " + address);
     }
 }
