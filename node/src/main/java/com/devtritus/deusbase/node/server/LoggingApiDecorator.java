@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.node.utils;
+package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.Api;
 

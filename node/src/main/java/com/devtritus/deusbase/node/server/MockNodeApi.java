@@ -1,9 +1,9 @@
-package com.devtritus.deusbase.node;
+package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.Api;
 import java.util.*;
 
-public class MockApi implements Api<String, String> {
+public class MockNodeApi implements Api<String, String> {
     private final Map<String, List<String>> data = new HashMap<>();
 
     @Override

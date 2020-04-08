@@ -15,11 +15,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Scanner;
 
-public class RequestHandler extends AbstractHandler {
+public class HttpRequestHandler extends AbstractHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RequestBodyHandler requestBodyHandler;
 
-    public RequestHandler(RequestBodyHandler requestBodyHandler) {
+    public HttpRequestHandler(RequestBodyHandler requestBodyHandler) {
         this.requestBodyHandler = requestBodyHandler;
     }
 

@@ -19,9 +19,9 @@ public enum Command {
         this.maxTokensNumber = maxTokensNumber;
     }
 
-    public void assertTokensNumber(int tokensNumber) throws WrongArgumentsCountException {
+    public void assertTokensNumber(int tokensNumber) throws WrongArgumentException {
         if(tokensNumber < minTokensNumber || maxTokensNumber < tokensNumber) {
-            throw new WrongArgumentsCountException(minTokensNumber, maxTokensNumber, tokensNumber);
+            throw new WrongArgumentException(minTokensNumber, maxTokensNumber, tokensNumber);
         }
     }
 

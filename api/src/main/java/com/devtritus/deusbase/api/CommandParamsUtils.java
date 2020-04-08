@@ -3,7 +3,7 @@ package com.devtritus.deusbase.api;
 import java.util.Arrays;
 
 public class CommandParamsUtils {
-    public static String[] handleParams(Command command, String[] params) throws WrongArgumentsCountException {
+    public static String[] handleParams(Command command, String[] params) throws WrongArgumentException {
         command.assertTokensNumber(params.length);
 
         switch (command) {

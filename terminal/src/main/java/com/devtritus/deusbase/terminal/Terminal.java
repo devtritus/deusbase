@@ -84,7 +84,7 @@ class Terminal {
         } catch(HttpHostConnectException e) {
             print(SERVICE_UNAVAILABLE);
             print(e.getMessage());
-        } catch (WrongArgumentsCountException e) {
+        } catch (WrongArgumentException e) {
             print(WRONG_ARGS_COUNT);
             print(e.getMessage());
         } catch (Exception e) {

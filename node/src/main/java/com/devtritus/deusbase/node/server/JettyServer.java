@@ -4,9 +4,9 @@ import org.eclipse.jetty.server.Server;
 import java.net.InetSocketAddress;
 
 public class JettyServer {
-    private RequestHandler handler;
+    private HttpRequestHandler handler;
 
-    public JettyServer(RequestHandler handler) {
+    public JettyServer(HttpRequestHandler handler) {
         this.handler = handler;
     }
 

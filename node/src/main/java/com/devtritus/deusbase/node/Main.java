@@ -1,13 +1,12 @@
 package com.devtritus.deusbase.node;
 
+import com.devtritus.deusbase.api.Api;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
 import com.devtritus.deusbase.api.RequestBodyHandler;
-import com.devtritus.deusbase.node.server.RequestHandler;
-import com.devtritus.deusbase.node.server.JettyServer;
+import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.utils.ActorsLoader;
 import com.devtritus.deusbase.node.utils.NodeMode;
-
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -25,31 +24,45 @@ public class Main {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
         String schemeName = programArgs.getOrDefault("scheme", DEFAULT_SCHEME_NAME);
 
-        NodeApi api = new NodeApi(schemeName + INDEX_POSTFIX, schemeName + STORAGE_POSTFIX);
-
-        RequestBodyHandler requestBodyHandler = new RequestBodyHandler(api);
-        RequestHandler requestHandler = new RequestHandler(requestBodyHandler);
+        NodeApi nodeApi = new NodeApi(schemeName + INDEX_POSTFIX, schemeName + STORAGE_POSTFIX);
 
         String textMode = programArgs.getOrDefault("mode", "master");
         NodeMode mode = NodeMode.fromText(textMode);
 
-        switch(mode) {
-            case LOAD_DATA:
-                ActorsLoader.load(programArgs, requestBodyHandler);
-                break;
-            case SLAVE:
-            case MASTER:
-                String host = programArgs.getOrDefault("host", DEFAULT_HOST);
+        if(mode == NodeMode.LOAD_DATA) {
+            RequestBodyHandler requestBodyHandler = new CrudRequestHandler(nodeApi);
+            ActorsLoader.load(programArgs, requestBodyHandler);
+        } else {
+            String host = programArgs.getOrDefault("host", DEFAULT_HOST);
 
-                int port;
-                if(programArgs.contains("port")) {
-                    port = programArgs.getInteger("port");
-                } else {
-                    port = DEFAULT_PORT;
-                }
+            int port;
+            if(programArgs.contains("port")) {
+                port = programArgs.getInteger("port");
+            } else {
+                port = DEFAULT_PORT;
+            }
 
-                new JettyServer(requestHandler).start(host, port, () -> successCallback(host + ":" + port));
-                break;
+            ServiceApi serviceApi = new ServiceApi();
+
+            Api<String, String> api;
+            RequestBodyHandler nextHandler;
+            if(mode == NodeMode.MASTER) {
+                api = new MasterApiDecorator<>(nodeApi);
+                nextHandler = new MasterRequestHandler(serviceApi);
+            } else if(mode == NodeMode.SLAVE) {
+                api = new SlaveApiDecorator<>(nodeApi);
+                nextHandler = new SlaveRequestHandler(serviceApi);
+            } else {
+                throw new IllegalArgumentException(String.format("Unhandled server mode %s", mode));
+            }
+
+            CrudRequestHandler requestBodyHandler = new CrudRequestHandler(api);
+
+            requestBodyHandler.setNextHandler(nextHandler);
+
+            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestBodyHandler);
+
+            new JettyServer(httpRequestHandler).start(host, port, () -> successCallback(host + ":" + port));
         }
     }
 

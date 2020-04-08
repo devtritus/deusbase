@@ -16,6 +16,7 @@
     </properties>
 
     <artifactId>deusbase.node</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -30,4 +31,5 @@
             <version>9.4.25.v20191220</version>
         </dependency>
     </dependencies>
+
 </project>

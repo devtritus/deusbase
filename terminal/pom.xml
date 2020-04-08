@@ -16,6 +16,7 @@
     </properties>
 
     <artifactId>deusbase.terminal</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
