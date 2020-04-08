@@ -5,6 +5,8 @@ import com.devtritus.deusbase.api.ProgramArgsParser;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.server.RequestHandler;
 import com.devtritus.deusbase.node.server.JettyServer;
+import com.devtritus.deusbase.node.utils.ActorsLoader;
+import com.devtritus.deusbase.node.utils.NodeMode;
 
 import java.net.URI;
 import java.nio.file.Files;
@@ -22,21 +24,33 @@ public class Main {
     public static void main(String[] args) throws Exception {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
         String schemeName = programArgs.getOrDefault("scheme", DEFAULT_SCHEME_NAME);
-        String host = programArgs.getOrDefault("host", DEFAULT_HOST);
-
-        int port;
-        if(programArgs.contains("port")) {
-            port = programArgs.getInteger("port");
-        } else {
-            port = DEFAULT_PORT;
-        }
 
         NodeApi api = new NodeApi(schemeName + INDEX_POSTFIX, schemeName + STORAGE_POSTFIX);
 
         RequestBodyHandler requestBodyHandler = new RequestBodyHandler(api);
         RequestHandler requestHandler = new RequestHandler(requestBodyHandler);
 
-        new JettyServer(requestHandler).start(host, port, () -> successCallback(host + ":" + port));
+        String textMode = programArgs.getOrDefault("mode", "master");
+        NodeMode mode = NodeMode.fromText(textMode);
+
+        switch(mode) {
+            case LOAD_DATA:
+                ActorsLoader.load(programArgs, requestBodyHandler);
+                break;
+            case SLAVE:
+            case MASTER:
+                String host = programArgs.getOrDefault("host", DEFAULT_HOST);
+
+                int port;
+                if(programArgs.contains("port")) {
+                    port = programArgs.getInteger("port");
+                } else {
+                    port = DEFAULT_PORT;
+                }
+
+                new JettyServer(requestHandler).start(host, port, () -> successCallback(host + ":" + port));
+                break;
+        }
     }
 
     private final static int MIN_PORT = 7000;

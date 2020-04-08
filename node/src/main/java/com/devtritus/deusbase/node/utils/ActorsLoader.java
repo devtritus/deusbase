@@ -1,27 +1,28 @@
 package com.devtritus.deusbase.node.utils;
 
-import com.devtritus.deusbase.api.Command;
-import com.devtritus.deusbase.api.RequestBody;
-import com.devtritus.deusbase.api.RequestBodyHandler;
-import com.devtritus.deusbase.node.NodeApi;
+import com.devtritus.deusbase.api.*;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 public class ActorsLoader {
-    public static void main(String[] args) throws Exception {
-        ActorsLoader loader = new ActorsLoader();
-        loader.load(10_000_000);
-    }
+    private final static int DEFAULT_ROW_COUNT = 10_000_000;
 
-    void load(int count) throws Exception {
-        RequestBodyHandler handler = new RequestBodyHandler(new NodeApi("node.index", "value.storage"));
+    public static void load(ProgramArgs programArgs, RequestBodyHandler requestBodyHandler) throws Exception {
+        int rowCount;
+        if(programArgs.contains("rowcount")) {
+            rowCount = programArgs.getInteger("rowcount");
+        } else {
+            rowCount = DEFAULT_ROW_COUNT;
+        }
 
-        try(Scanner scanner = new Scanner(new File("data.tsv"), StandardCharsets.UTF_8.name())) {
+        String dataFilePath = programArgs.get("datafilepath");
+
+        try(Scanner scanner = new Scanner(new File(dataFilePath), StandardCharsets.UTF_8.name())) {
             scanner.nextLine();
 
             int i = 0;
-            while(scanner.hasNextLine() && i < count) {
+            while(scanner.hasNextLine() && i < rowCount) {
                 i++;
                 String line = scanner.nextLine();
                 String[] tokens = line.split("\t");
@@ -31,7 +32,7 @@ public class ActorsLoader {
                 RequestBody body = new RequestBody();
                 body.setCommand(Command.CREATE.toString());
                 body.setArgs(args);
-                handler.handle(body);
+                requestBodyHandler.handle(body);
             }
         }
     }
