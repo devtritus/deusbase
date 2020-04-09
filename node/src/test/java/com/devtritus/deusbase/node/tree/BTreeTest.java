@@ -1,7 +1,10 @@
 package com.devtritus.deusbase.node.tree;
 
 import org.junit.jupiter.api.Test;
-import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -11,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BTreeTest {
 
     @Test
-    void add_then_serialize_then_search_by_keys_test() {
-        String fileName = "test.index";
-        clearFile(fileName);
-        BTreeImpl tree = (BTreeImpl)BTreeInitializer.init(fileName);
+    void add_then_serialize_then_search_by_keys_test() throws IOException {
+        Path filePath = Paths.get("test_index.storage");
+        clearFile(filePath);
+        BTreeImpl tree = (BTreeImpl)BTreeInitializer.init(filePath, 100, 1000);
         BTreeNodePersistenceProvider provider = (BTreeNodePersistenceProvider)tree.getProvider();
 
         List<String> toAdd = getRandomStrings(50, 250, 10000);
@@ -32,6 +35,8 @@ class BTreeTest {
             List<Long> valueList = tree.searchByKey(entry.getKey());
             assertThat(valueList).containsExactly(entry.getValue());
         }
+
+        Files.delete(filePath);
     }
 
     @Test
@@ -252,9 +257,9 @@ class BTreeTest {
         }
     }
 
-    private void clearFile(String name) {
-        try(FileOutputStream writer = new FileOutputStream(name)) {
-            writer.write(("").getBytes());
+    private void clearFile(Path path) {
+        try {
+            Files.write(path, new byte[0]);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -1,10 +1,10 @@
 package com.devtritus.deusbase.node.index;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,26 +12,26 @@ import java.util.stream.Collectors;
 public class BTreeIndexLoader {
     private final static int MIN_BLOCK_BYTE_SIZE = 512;
 
-    private final File file;
+    private final Path path;
     private final Map<Integer, BTreeNodeMetadata> nodeIdToMetadata = new HashMap<>();
 
     private BTreeIndexHeader flushedHeader;
     private int lastNodeId;
 
-    private BTreeIndexLoader(File file, BTreeIndexHeader header) {
-        this.file = file;
+    private BTreeIndexLoader(Path path, BTreeIndexHeader header) {
+        this.path = path;
         this.flushedHeader = header;
         this.lastNodeId = flushedHeader.lastNodeId;
     }
 
-    public static BTreeIndexLoader initIndex(int m, File file) throws IOException {
+    public static BTreeIndexLoader initIndex(int m, Path path) throws IOException {
         if(m > 255) {
             throw new IllegalArgumentException("Size of keys can't be more then byte(255). m: " + m);
         }
 
         int blockSize = calculateBlockSize(m);
 
-        try(SeekableByteChannel channel = openWriteChannel(file)) {
+        try(SeekableByteChannel channel = openWriteChannel(path)) {
 
             BTreeIndexHeader header = new BTreeIndexHeader(blockSize, m, 1, 2, 1);
             updateHeader(channel, header);
@@ -44,14 +44,14 @@ public class BTreeIndexLoader {
             byte[] bytes = BTreeNodeDataConverter.toBytes(rootData);
             writeNode(channel, bytes, blockSize, 1, blockBuffer);
 
-            return new BTreeIndexLoader(file, header);
+            return new BTreeIndexLoader(path, header);
         }
     }
 
-    public static BTreeIndexLoader readIndex(File file) throws IOException {
-        BTreeIndexHeader header = readHeader(file);
+    public static BTreeIndexLoader readIndex(Path path) throws IOException {
+        BTreeIndexHeader header = readHeader(path);
 
-        return new BTreeIndexLoader(file, header);
+        return new BTreeIndexLoader(path, header);
     }
 
     public int getM() {
@@ -79,7 +79,7 @@ public class BTreeIndexLoader {
                 .sorted(Comparator.comparingInt(BTreeNodeData::getLevel))
                 .collect(Collectors.toList());
 
-        try(SeekableByteChannel channel = openWriteChannel(file)) {
+        try(SeekableByteChannel channel = openWriteChannel(path)) {
 
             ByteBuffer singleBlockBuffer = ByteBuffer.allocate(blockSize);
 
@@ -171,7 +171,7 @@ public class BTreeIndexLoader {
     }
 
     private BTreeNodeData readNodeByPosition(int position) {
-        try(SeekableByteChannel channel = openReadChannel(file)) {
+        try(SeekableByteChannel channel = openReadChannel(path)) {
             ByteBuffer firstBlockBuffer = ByteBuffer.allocate(flushedHeader.blockSize);
             channel.position(position * flushedHeader.blockSize);
             channel.read(firstBlockBuffer);
@@ -235,8 +235,8 @@ public class BTreeIndexLoader {
         channel.write(blockBuffer);
     }
 
-    private static BTreeIndexHeader readHeader(File file) throws IOException {
-        try (SeekableByteChannel channel = openReadChannel(file)) {
+    private static BTreeIndexHeader readHeader(Path path) throws IOException {
+        try (SeekableByteChannel channel = openReadChannel(path)) {
             ByteBuffer headerBuffer = ByteBuffer.allocate(20);
             channel.read(headerBuffer);
             headerBuffer.flip();
@@ -265,12 +265,12 @@ public class BTreeIndexLoader {
         channel.write(blockBuffer);
     }
 
-    private static SeekableByteChannel openReadChannel(File file) throws IOException {
-        return Files.newByteChannel(file.toPath(), StandardOpenOption.READ);
+    private static SeekableByteChannel openReadChannel(Path path) throws IOException {
+        return Files.newByteChannel(path, StandardOpenOption.READ);
     }
 
-    private static SeekableByteChannel openWriteChannel(File file) throws IOException {
-        return Files.newByteChannel(file.toPath(), StandardOpenOption.WRITE);
+    private static SeekableByteChannel openWriteChannel(Path path) throws IOException {
+        return Files.newByteChannel(path, StandardOpenOption.WRITE);
     }
 
     private static int calculateBlockSize(int m) {

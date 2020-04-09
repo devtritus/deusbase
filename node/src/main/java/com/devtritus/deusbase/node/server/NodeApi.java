@@ -1,21 +1,19 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.Api;
-import com.devtritus.deusbase.node.storage.ValueDiskStorage;
-import com.devtritus.deusbase.node.storage.ValueStorage;
+import com.devtritus.deusbase.node.storage.Storage;
 import com.devtritus.deusbase.node.tree.*;
 
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class NodeApi implements Api<String, String> {
     private BTree<String, List<Long>> tree;
-    private ValueStorage valueStorage;
+    private Storage storage;
 
-    public NodeApi(String keyFileName, String valueStorageFileName) {
-        tree = BTreeInitializer.init(keyFileName);
-        valueStorage = new ValueDiskStorage(Paths.get(valueStorageFileName));
+    public NodeApi(BTree<String, List<Long>> tree, Storage storage) {
+        this.tree = tree;
+        this.storage = storage;
     }
 
     @Override
@@ -23,7 +21,7 @@ public class NodeApi implements Api<String, String> {
         List<Long> addresses = tree.searchByKey(key);
 
         if(addresses != null) {
-            Map<Long, String> addressToValueMap = valueStorage.read(addresses);
+            Map<Long, String> addressToValueMap = storage.read(addresses);
 
             List<String> values = addresses.stream()
                     .map(addressToValueMap::get)
@@ -44,7 +42,7 @@ public class NodeApi implements Api<String, String> {
                 .sorted()
                 .collect(Collectors.toList());
 
-        Map<Long, String> addressToValueMap = valueStorage.read(allAddresses);
+        Map<Long, String> addressToValueMap = storage.read(allAddresses);
 
         Map<String, List<String>> result = new HashMap<>();
         for (Map.Entry<String, List<Long>> entry : fetchResult.entrySet()) {
@@ -70,7 +68,7 @@ public class NodeApi implements Api<String, String> {
     @Override
     public Map<String, List<String>> create(String key, String value) {
         List<Long> addresses = tree.searchByKey(key);
-        long address = valueStorage.write(value);
+        long address = storage.write(value);
 
         if (addresses != null) { //if addresses is not null then addresses collection must contains at least one element
             addresses.add(address);
@@ -87,7 +85,7 @@ public class NodeApi implements Api<String, String> {
         List<Long> addresses = tree.searchByKey(key);
 
         if(addresses != null) {
-            long address = valueStorage.write(value);
+            long address = storage.write(value);
             addresses.set(valueIndex, address);
             tree.add(key, addresses);
         } else {

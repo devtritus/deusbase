@@ -1,89 +1,42 @@
 package com.devtritus.deusbase.node;
 
-import com.devtritus.deusbase.api.Api;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
 import com.devtritus.deusbase.api.RequestBodyHandler;
+import com.devtritus.deusbase.node.env.NodeEnvironment;
+import com.devtritus.deusbase.node.env.NodeEnvironmentProvider;
 import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.utils.ActorsLoader;
 import com.devtritus.deusbase.node.utils.NodeMode;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
+
+import java.io.InputStream;
+import java.util.Scanner;
 
 public class Main {
-    private final static String DEFAULT_HOST = "127.0.0.1";
-    private final static String DEFAULT_SCHEME_NAME = "default";
-    private final static int DEFAULT_PORT = 7599;
-
-    private final static String INDEX_POSTFIX = ".index";
-    private final static String STORAGE_POSTFIX = ".storage";
-
     public static void main(String[] args) throws Exception {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
-        String schemeName = programArgs.getOrDefault("scheme", DEFAULT_SCHEME_NAME);
 
-        NodeApi nodeApi = new NodeApi(schemeName + INDEX_POSTFIX, schemeName + STORAGE_POSTFIX);
+        NodeEnvironmentProvider envProvider = new NodeEnvironmentProvider();
+        NodeEnvironment env = envProvider.getEnv(programArgs, "./");
 
-        String textMode = programArgs.getOrDefault("mode", "master");
-        NodeMode mode = NodeMode.fromText(textMode);
-
+        NodeMode mode = NodeMode.fromText(programArgs.getOrDefault("mode", "master"));
         if(mode == NodeMode.LOAD_DATA) {
-            RequestBodyHandler requestBodyHandler = new CrudRequestHandler(nodeApi);
+            RequestBodyHandler requestBodyHandler = new CrudRequestHandler(env.getNodeApi());
             ActorsLoader.load(programArgs, requestBodyHandler);
         } else {
-            String host = programArgs.getOrDefault("host", DEFAULT_HOST);
-
-            int port;
-            if(programArgs.contains("port")) {
-                port = programArgs.getInteger("port");
-            } else {
-                port = DEFAULT_PORT;
-            }
-
-            ServiceApi serviceApi = new ServiceApi();
-
-            Api<String, String> api;
-            RequestBodyHandler nextHandler;
-            if(mode == NodeMode.MASTER) {
-                api = new MasterApiDecorator<>(nodeApi);
-                nextHandler = new MasterRequestHandler(serviceApi);
-            } else if(mode == NodeMode.SLAVE) {
-                api = new SlaveApiDecorator<>(nodeApi);
-                nextHandler = new SlaveRequestHandler(serviceApi);
-            } else {
-                throw new IllegalArgumentException(String.format("Unhandled server mode %s", mode));
-            }
-
-            CrudRequestHandler requestBodyHandler = new CrudRequestHandler(api);
-
-            requestBodyHandler.setNextHandler(nextHandler);
-
-            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestBodyHandler);
-
-            new JettyServer(httpRequestHandler).start(host, port, () -> successCallback(host + ":" + port));
+            new NodeServer().start(mode, env, programArgs, Main::printBanner);
         }
     }
 
-    private final static int MIN_PORT = 7000;
-    private final static int MAX_PORT = 8000;
-
-    private static int getRandomPort() {
-        return (int)(MIN_PORT + (Math.random() * (MAX_PORT - MIN_PORT)));
-    }
-
-    private static void successCallback(String address) {
+    private static void printBanner() {
         try {
-            URI uri = Main.class.getClassLoader().getResource("banner.txt").toURI();
-            List<String> bannerLines = Files.readAllLines(Paths.get(uri));
-            for (String line : bannerLines) {
-                System.out.println(line);
+            InputStream in = Main.class.getClassLoader().getResourceAsStream("banner.txt");
+            Scanner scanner = new Scanner(in);
+            while(scanner.hasNextLine()) {
+                System.out.println(scanner.nextLine());
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        System.out.println("\nNode was started on " + address);
     }
 }

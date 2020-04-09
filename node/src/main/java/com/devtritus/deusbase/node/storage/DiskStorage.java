@@ -11,19 +11,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ValueDiskStorage implements ValueStorage {
+public class DiskStorage implements Storage {
     private final Path path;
 
-    public ValueDiskStorage(Path path) {
+    public DiskStorage(Path path) {
         this.path = path;
-
-        try {
-            if (!Files.exists(path)) {
-                Files.createFile(path);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

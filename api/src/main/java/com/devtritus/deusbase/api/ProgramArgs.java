@@ -18,6 +18,11 @@ public class ProgramArgs {
         return value != null ? value : defaultValue;
     }
 
+    public Integer getIntegerOrDefault(String key, Integer defaultValue) {
+        String value = data.get(key);
+        return value != null ? Integer.parseInt(value) : defaultValue;
+    }
+
     public String get(String key) {
         return getOrThrow(key);
     }

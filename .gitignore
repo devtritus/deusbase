@@ -2,5 +2,4 @@
 .idea/**
 target/
 *.tsv
-*.index
-*.storage
+*.bin

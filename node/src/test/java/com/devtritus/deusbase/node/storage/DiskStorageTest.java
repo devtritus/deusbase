@@ -1,5 +1,6 @@
 package com.devtritus.deusbase.node.storage;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,18 +13,20 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ValueDiskStorageTest {
+class DiskStorageTest {
 
-    private ValueDiskStorage storage;
+    private DiskStorage storage;
+    private Path path;
 
     @BeforeEach
     void init() throws IOException {
-        Path path = Paths.get("test.storage");
-        if(Files.exists(path)) {
-            Files.delete(path);
-        }
+        Files.createFile(Paths.get("test_storage.bin"));
+        storage = new DiskStorage(path);
+    }
 
-        storage = new ValueDiskStorage(path);
+    @AfterEach
+    void after() throws IOException {
+        Files.delete(path);
     }
 
     @Test

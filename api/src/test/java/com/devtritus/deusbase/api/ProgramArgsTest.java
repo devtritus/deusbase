@@ -22,6 +22,16 @@ class ProgramArgsTest {
     }
 
     @Test
+    void get_integer_or_default_test() {
+        Map<String, String> keyValue = new HashMap<>();
+        keyValue.put("test", "1000");
+        ProgramArgs programArgs = new ProgramArgs(keyValue);
+
+        assertThat(programArgs.getIntegerOrDefault("test", 2000)).isEqualTo(1000);
+        assertThat(programArgs.getIntegerOrDefault("not_exist", 2000)).isEqualTo(2000);
+    }
+
+    @Test
     void get_or_default_test() {
         Map<String, String> keyValue = new HashMap<>();
         keyValue.put("test", "value");

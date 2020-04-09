@@ -1,34 +1,29 @@
 package com.devtritus.deusbase.node.tree;
 
 import com.devtritus.deusbase.node.index.BTreeIndexLoader;
-import java.io.File;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public abstract class BTreeInitializer {
-    private final static int DEFAULT_M = 100;
-    private final static int DEFAULT_CACHE_LIMIT = 5000;
-
-    public static BTree<String, List<Long>> init(String fileName) {
-        return init(fileName, DEFAULT_M);
-    }
-
-    static BTree<String, List<Long>> init(String fileName, int m) {
+    public static BTree<String, List<Long>> init(Path path, int m, int cacheLimit) {
         BTreeIndexLoader loader;
-        File file = new File(fileName);
         try {
-            if (file.exists() && file.length() != 0) {
-                loader = BTreeIndexLoader.readIndex(file);
-                m = loader.getM();
+            if (Files.size(path) != 0) {
+                loader = BTreeIndexLoader.readIndex(path);
+                int loaderM = loader.getM();
+                if(loaderM != m) {
+                    throw new IllegalStateException(String.format("M = %s of index is different then argument M = %s", loader, m));
+                }
             } else {
-                file.createNewFile();
-
-                loader = BTreeIndexLoader.initIndex(m, file);
+                loader = BTreeIndexLoader.initIndex(m, path);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
-        BTreeNodeCache cache = new BTreeNodeCache(DEFAULT_CACHE_LIMIT);
+        BTreeNodeCache cache = new BTreeNodeCache(cacheLimit);
 
         BTreeNodePersistenceProvider provider = new BTreeNodePersistenceProvider(loader, cache);
 
