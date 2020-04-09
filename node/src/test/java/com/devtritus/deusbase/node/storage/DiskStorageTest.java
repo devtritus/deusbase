@@ -20,7 +20,8 @@ class DiskStorageTest {
 
     @BeforeEach
     void init() throws IOException {
-        Files.createFile(Paths.get("test_storage.bin"));
+        path = Paths.get("test_storage.bin");
+        Files.createFile(path);
         storage = new DiskStorage(path);
     }
 

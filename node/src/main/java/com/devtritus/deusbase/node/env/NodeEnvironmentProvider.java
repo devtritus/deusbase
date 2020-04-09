@@ -5,14 +5,21 @@ import com.devtritus.deusbase.node.server.NodeApi;
 import com.devtritus.deusbase.node.storage.DiskStorage;
 import com.devtritus.deusbase.node.tree.BTree;
 import com.devtritus.deusbase.node.tree.BTreeInitializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.devtritus.deusbase.node.env.Settings.*;
 
 public class NodeEnvironmentProvider {
+    private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
     public NodeEnvironment getEnv(ProgramArgs programArgs, String rootPath) {
         Path nodePath = Paths.get(rootPath).toAbsolutePath();
@@ -36,8 +43,20 @@ public class NodeEnvironmentProvider {
         nodePath = appendToPath(nodePath, schemeName);
         createDirectoryIfNotExist(nodePath);
 
-        Path indexFilePath = appendToPath(nodePath, DEFAULT_INDEX_FILE_NAME);
-        Path storageFilePath = appendToPath(nodePath, DEFAULT_STORAGE_FILE_NAME);
+        NodeEnvironment env = new NodeEnvironment();
+
+        Path configPath = appendToPath(nodePath, CONFIG_FILE_NAME);
+        NodeConfig config;
+        if(Files.exists(configPath)) {
+            config = readConfig(configPath);
+        } else {
+            config = initConfig(configPath);
+        }
+
+        env.setConfig(config);
+
+        Path indexFilePath = appendToPath(nodePath, INDEX_FILE_NAME);
+        Path storageFilePath = appendToPath(nodePath, STORAGE_FILE_NAME);
 
         boolean indexFileExists = Files.exists(indexFilePath);
         boolean storageFileExists = Files.exists(storageFilePath);
@@ -57,7 +76,6 @@ public class NodeEnvironmentProvider {
         BTree<String, List<Long>> tree = BTreeInitializer.init(indexFilePath, treeM, treeCacheLimit);
         DiskStorage storage = new DiskStorage(storageFilePath);
 
-        NodeEnvironment env = new NodeEnvironment();
 
         NodeApi nodeApi = new NodeApi(tree, storage);
 
@@ -69,6 +87,34 @@ public class NodeEnvironmentProvider {
     private Path appendToPath(Path path, String childPathString) {
         String pathString = path.toAbsolutePath().toString();
         return Paths.get(pathString, childPathString);
+    }
+
+    private NodeConfig initConfig(Path configPath) {
+        final NodeConfig config = new NodeConfig();
+
+        Map<String, String> properties = new HashMap<>();
+        properties.put("uuid", UUID.randomUUID().toString());
+        config.setProperties(properties);
+
+        writeConfig(configPath, config);
+
+        return config;
+    }
+
+    private void writeConfig(Path configPath, NodeConfig config) {
+        try {
+            objectMapper.writeValue(configPath.toFile(), config);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private NodeConfig readConfig(Path configPath) {
+        try {
+            return objectMapper.readValue(configPath.toFile(), NodeConfig.class);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Path createFile(Path path) {
@@ -90,4 +136,5 @@ public class NodeEnvironmentProvider {
         }
         return path;
     }
+
 }
