@@ -6,12 +6,26 @@ import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.utils.NodeMode;
 
+import static com.devtritus.deusbase.api.ProgramArgNames.HOST;
+import static com.devtritus.deusbase.api.ProgramArgNames.PORT;
 import static com.devtritus.deusbase.node.env.Settings.*;
 
-public class NodeServer {
-    public void start(NodeMode mode, NodeEnvironment env, ProgramArgs programArgs, Runnable successCallback) throws Exception {
-        String host = programArgs.getOrDefault("host", DEFAULT_HOST);
-        int port = programArgs.getIntegerOrDefault("port", DEFAULT_PORT);
+public class NodeServer implements Runnable {
+    private final NodeMode mode;
+    private final NodeEnvironment env;
+    private final ProgramArgs programArgs;
+    private final Runnable successCallback;
+
+    public NodeServer(NodeMode mode, NodeEnvironment env, ProgramArgs programArgs, Runnable successCallback) {
+        this.mode = mode;
+        this.env = env;
+        this.programArgs = programArgs;
+        this.successCallback = successCallback;
+    }
+
+    public void run() {
+        String host = programArgs.getOrDefault(HOST, DEFAULT_HOST);
+        int port = programArgs.getIntegerOrDefault(PORT, DEFAULT_PORT);
 
         ServiceApi serviceApi = new ServiceApi();
 
@@ -33,10 +47,14 @@ public class NodeServer {
 
         HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestBodyHandler);
 
-        new JettyServer(httpRequestHandler).start(host, port, () -> {
-            successCallback.run();
-            System.out.format("\nNode was started on %s:%s", host, port);
-        });
+        try {
+            new JettyServer(httpRequestHandler).start(host, port, () -> {
+                successCallback.run();
+                System.out.format("\nNode was started on %s:%s", host, port);
+            });
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     private final static int MIN_PORT = 7000;

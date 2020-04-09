@@ -1,6 +1,8 @@
 package com.devtritus.deusbase.node.env;
 
 public interface Settings {
+    String DEFAULT_NODE_MODE = "master";
+    String DEFAULT_ROOT_PATH = "./";
     String DATA_DIRECTORY_NAME = "data";
     String DEFAULT_SCHEME_NAME = "default";
     String CONFIG_FILE_NAME = "config.json";

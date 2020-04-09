@@ -4,14 +4,17 @@ import com.devtritus.deusbase.api.Client;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
 
+import static com.devtritus.deusbase.api.ProgramArgNames.DEBUG;
+import static com.devtritus.deusbase.api.ProgramArgNames.URL;
+
 public class Main {
-    private final static String DEFAULT_URL = "http://127.0.0.1:7599";
+    private final static String DEFAULT_CLIENT_URL = "http://127.0.0.1:7599";
 
     public static void main(String[] args) {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
 
-        final String url = programArgs.getOrDefault("url", DEFAULT_URL);
-        final TerminalMode terminalMode = programArgs.contains("debug") ? TerminalMode.DEBUG : TerminalMode.PROD;
+        final String url = programArgs.getOrDefault(URL, DEFAULT_CLIENT_URL);
+        final TerminalMode terminalMode = programArgs.contains(DEBUG) ? TerminalMode.DEBUG : TerminalMode.PROD;
 
         Client client = new Client(url);
         new Terminal(System.in, System.out, terminalMode, client).run();

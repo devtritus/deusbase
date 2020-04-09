@@ -17,28 +17,30 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.devtritus.deusbase.node.env.Settings.*;
+import static com.devtritus.deusbase.api.ProgramArgNames.*;
 
 public class NodeEnvironmentProvider {
     private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    public NodeEnvironment getEnv(ProgramArgs programArgs, String rootPath) {
-        Path nodePath = Paths.get(rootPath).toAbsolutePath();
+    public NodeEnvironment getEnv(ProgramArgs programArgs) {
+        String rootPath = programArgs.getOrDefault(ROOT_PATH, DEFAULT_ROOT_PATH);
 
+        Path nodePath = Paths.get(rootPath).toAbsolutePath();
         nodePath = appendToPath(nodePath, DATA_DIRECTORY_NAME);
         createDirectoryIfNotExist(nodePath);
 
-        if(programArgs.contains("shard")) {
-            nodePath = Paths.get(rootPath, programArgs.get("shard"));
+        if(programArgs.contains(SHARD)) {
+            nodePath = Paths.get(rootPath, programArgs.get(SHARD));
             createDirectoryIfNotExist(nodePath);
         }
 
-        if(programArgs.contains("id")) {
-            String nodeName = "node_" + programArgs.get("id");
+        if(programArgs.contains(ID)) {
+            String nodeName = "node_" + programArgs.get(ID);
             nodePath = appendToPath(nodePath, nodeName);
             createDirectoryIfNotExist(nodePath);
         }
 
-        String schemeName = programArgs.getOrDefault("scheme", DEFAULT_SCHEME_NAME);
+        String schemeName = programArgs.getOrDefault(SCHEME, DEFAULT_SCHEME_NAME);
 
         nodePath = appendToPath(nodePath, schemeName);
         createDirectoryIfNotExist(nodePath);
@@ -70,8 +72,8 @@ public class NodeEnvironmentProvider {
             createFile(storageFilePath);
         }
 
-        int treeM = programArgs.getIntegerOrDefault("m", DEFAULT_TREE_M);
-        int treeCacheLimit = programArgs.getIntegerOrDefault("tree_cache_limit", DEFAULT_TREE_CACHE_LIMIT);
+        int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
+        int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
 
         BTree<String, List<Long>> tree = BTreeInitializer.init(indexFilePath, treeM, treeCacheLimit);
         DiskStorage storage = new DiskStorage(storageFilePath);
