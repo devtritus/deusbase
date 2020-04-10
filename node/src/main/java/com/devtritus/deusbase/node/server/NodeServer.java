@@ -8,22 +8,11 @@ import com.devtritus.deusbase.node.utils.NodeMode;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.HOST;
 import static com.devtritus.deusbase.api.ProgramArgNames.PORT;
-import static com.devtritus.deusbase.node.env.Settings.*;
+import static com.devtritus.deusbase.node.env.NodeSettings.*;
 
-public class NodeServer implements Runnable {
-    private final NodeMode mode;
-    private final NodeEnvironment env;
-    private final ProgramArgs programArgs;
-    private final Runnable successCallback;
+public class NodeServer {
 
-    public NodeServer(NodeMode mode, NodeEnvironment env, ProgramArgs programArgs, Runnable successCallback) {
-        this.mode = mode;
-        this.env = env;
-        this.programArgs = programArgs;
-        this.successCallback = successCallback;
-    }
-
-    public void run() {
+    public void start(NodeMode mode, NodeEnvironment env, ProgramArgs programArgs, Runnable successCallback) {
         String host = programArgs.getOrDefault(HOST, DEFAULT_HOST);
         int port = programArgs.getIntegerOrDefault(PORT, DEFAULT_PORT);
 

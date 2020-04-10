@@ -16,13 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.devtritus.deusbase.node.env.Settings.*;
+import static com.devtritus.deusbase.node.env.NodeSettings.*;
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 
-public class NodeEnvironmentProvider {
+class NodeEnvironmentManager {
     private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    public NodeEnvironment getEnv(ProgramArgs programArgs) {
+    NodeEnvironment getEnv(ProgramArgs programArgs) {
         String rootPath = programArgs.getOrDefault(ROOT_PATH, DEFAULT_ROOT_PATH);
 
         Path nodePath = Paths.get(rootPath).toAbsolutePath();
@@ -45,7 +45,7 @@ public class NodeEnvironmentProvider {
         nodePath = appendToPath(nodePath, schemeName);
         createDirectoryIfNotExist(nodePath);
 
-        NodeEnvironment env = new NodeEnvironment();
+        NodeEnvironment env = new NodeEnvironment(this);
 
         Path configPath = appendToPath(nodePath, CONFIG_FILE_NAME);
         NodeConfig config;
@@ -56,6 +56,7 @@ public class NodeEnvironmentProvider {
         }
 
         env.setConfig(config);
+        env.setConfigPath(configPath);
 
         Path indexFilePath = appendToPath(nodePath, INDEX_FILE_NAME);
         Path storageFilePath = appendToPath(nodePath, STORAGE_FILE_NAME);
@@ -103,7 +104,7 @@ public class NodeEnvironmentProvider {
         return config;
     }
 
-    private void writeConfig(Path configPath, NodeConfig config) {
+    void writeConfig(Path configPath, NodeConfig config) {
         try {
             objectMapper.writeValue(configPath.toFile(), config);
         } catch(Exception e) {
@@ -138,5 +139,4 @@ public class NodeEnvironmentProvider {
         }
         return path;
     }
-
 }
