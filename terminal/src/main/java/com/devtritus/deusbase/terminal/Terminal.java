@@ -21,13 +21,13 @@ class Terminal {
     private final InputStream in;
     private final PrintStream out;
     private final TerminalMode mode;
-    private final Client client;
+    private final NodeClient nodeClient;
 
-    Terminal(InputStream in, PrintStream out, TerminalMode mode, Client client) {
+    Terminal(InputStream in, PrintStream out, TerminalMode mode, NodeClient nodeClient) {
         this.in = in;
         this.out = out;
         this.mode = mode;
-        this.client = client;
+        this.nodeClient = nodeClient;
     }
 
     void run() {
@@ -70,7 +70,7 @@ class Terminal {
 
             Instant start = Instant.now();
 
-            ResponseBody responseBody = client.request(command, args);
+            ResponseBody responseBody = nodeClient.request(command, args);
 
             Instant finish = Instant.now();
 

@@ -5,7 +5,9 @@ public enum Command {
     SEARCH("search", CommandType.READ, 1, 1),
     CREATE("create", CommandType.WRITE, 2, 2),
     DELETE("delete", CommandType.WRITE, 1, 2),
-    UPDATE("update", CommandType.WRITE, 2, 3);
+    UPDATE("update", CommandType.WRITE, 2, 3),
+
+    HANDSHAKE("handshake", CommandType.WRITE, 2, 2);
 
     private final String text;
     private final CommandType type;

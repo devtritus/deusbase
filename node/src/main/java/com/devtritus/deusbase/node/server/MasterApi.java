@@ -1,5 +1,5 @@
 package com.devtritus.deusbase.node.server;
 
-interface MasterApi {
-    String receiveSlaveHandshake(String slaveUuid);
+public interface MasterApi {
+    String receiveSlaveHandshake(String slaveAddress, String slaveUuid);
 }

@@ -23,6 +23,14 @@ public class NodeEnvironment {
         this.nodeApi = nodeApi;
     }
 
+    public String getPropertyOrThrowException(String key) {
+        String property = getProperty(key);
+        if(property == null) {
+            throw new RuntimeException(String.format("Key %s wasn't found", key));
+        }
+        return property;
+    }
+
     public String getProperty(String key) {
         return config.getProperties().get(key);
     }

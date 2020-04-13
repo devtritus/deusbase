@@ -14,4 +14,5 @@ public interface ProgramArgNames {
     String DATA_FILE_PATH = "data_file_path";
     String URL = "url";
     String DEBUG = "debug";
+    String MASTER_ADDRESS = "master_address";
 }

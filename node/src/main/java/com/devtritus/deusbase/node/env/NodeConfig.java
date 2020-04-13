@@ -2,14 +2,14 @@ package com.devtritus.deusbase.node.env;
 
 import java.util.Map;
 
-class NodeConfig {
+public class NodeConfig {
     private Map<String, String> properties;
 
-    Map<String, String> getProperties() {
+    public Map<String, String> getProperties() {
         return properties;
     }
 
-    void setProperties(Map<String, String> properties) {
+    public void setProperties(Map<String, String> properties) {
         this.properties = properties;
     }
 }

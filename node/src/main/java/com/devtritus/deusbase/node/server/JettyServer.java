@@ -1,6 +1,8 @@
 package com.devtritus.deusbase.node.server;
 
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.log.Log;
+
 import java.net.InetSocketAddress;
 
 class JettyServer {

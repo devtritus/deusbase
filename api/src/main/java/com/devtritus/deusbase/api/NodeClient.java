@@ -11,17 +11,29 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
-public class Client {
+public class NodeClient {
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
     private final String url;
 
-    public Client(String url) {
+    public NodeClient(String url) {
         this.url = url;
     }
 
-    public ResponseBody request(Command command, String[] params) throws Exception {
+    public ResponseBody sneakyRequest(Command command, String... params) {
+        try {
+            return doRequest(command, params);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ResponseBody request(Command command, String... params) throws Exception {
+        return doRequest(command, params);
+    }
+
+    private ResponseBody doRequest(Command command, String[] params) throws Exception {
         RequestBody requestBody = new RequestBody();
         requestBody.setCommand(command.toString());
         requestBody.setArgs(params);
