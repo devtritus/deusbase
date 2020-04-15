@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.node.server;
+package com.devtritus.deusbase.node.role;
 
 import java.util.Map;
 

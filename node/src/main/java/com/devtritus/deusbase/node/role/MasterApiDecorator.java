@@ -1,15 +1,16 @@
-package com.devtritus.deusbase.node.server;
+package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.api.Api;
-
 import java.util.List;
 import java.util.Map;
 
 public class MasterApiDecorator<K, V> implements Api<K, V> {
     private Api<K, V> api;
+    private MasterNode masterNode;
 
-    public MasterApiDecorator(Api<K, V> api) {
+    public MasterApiDecorator(Api<K, V> api, MasterNode masterNode) {
         this.api = api;
+        this.masterNode = masterNode;
     }
 
     @Override

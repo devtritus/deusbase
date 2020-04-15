@@ -4,7 +4,9 @@ import com.devtritus.deusbase.api.Api;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
+import com.devtritus.deusbase.node.role.MasterApiDecorator;
 import com.devtritus.deusbase.node.role.MasterNode;
+import com.devtritus.deusbase.node.role.SlaveApiDecorator;
 import com.devtritus.deusbase.node.role.SlaveNode;
 import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.utils.NodeMode;
@@ -41,7 +43,7 @@ class Node {
             MasterNode masterNode = new MasterNode(env);
             masterNode.init();
 
-            api = new MasterApiDecorator<>(env.getNodeApi());
+            api = new MasterApiDecorator<>(env.getNodeApi(), masterNode);
             nextHandler = new MasterRequestHandler(masterNode);
 
         } else if(mode == NodeMode.SLAVE) {
@@ -49,7 +51,7 @@ class Node {
             SlaveNode slaveNode = new SlaveNode(env);
             slaveNode.init(nodeAddress, masterAddress);
 
-            api = new SlaveApiDecorator<>(env.getNodeApi());
+            api = new SlaveApiDecorator<>(env.getNodeApi(), slaveNode);
             nextHandler = new SlaveRequestHandler(slaveNode);
         } else {
             throw new IllegalStateException();

@@ -4,7 +4,6 @@ import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeClient;
 import com.devtritus.deusbase.api.ResponseBody;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
-import com.devtritus.deusbase.node.server.SlaveApi;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

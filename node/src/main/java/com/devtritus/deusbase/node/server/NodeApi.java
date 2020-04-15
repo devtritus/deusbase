@@ -1,7 +1,7 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.Api;
-import com.devtritus.deusbase.node.storage.Storage;
+import com.devtritus.deusbase.node.storage.StringStorage;
 import com.devtritus.deusbase.node.tree.*;
 
 import java.util.*;
@@ -9,9 +9,9 @@ import java.util.stream.Collectors;
 
 public class NodeApi implements Api<String, String> {
     private BTree<String, List<Long>> tree;
-    private Storage storage;
+    private StringStorage storage;
 
-    public NodeApi(BTree<String, List<Long>> tree, Storage storage) {
+    public NodeApi(BTree<String, List<Long>> tree, StringStorage storage) {
         this.tree = tree;
         this.storage = storage;
     }

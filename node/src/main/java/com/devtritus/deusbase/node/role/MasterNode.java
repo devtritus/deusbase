@@ -1,7 +1,6 @@
 package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.node.env.NodeEnvironment;
-import com.devtritus.deusbase.node.server.MasterApi;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;

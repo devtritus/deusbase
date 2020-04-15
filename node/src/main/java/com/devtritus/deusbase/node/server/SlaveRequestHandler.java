@@ -4,6 +4,7 @@ import com.devtritus.deusbase.api.RequestBody;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.api.ResponseBody;
 import com.devtritus.deusbase.api.WrongArgumentException;
+import com.devtritus.deusbase.node.role.SlaveApi;
 
 public class SlaveRequestHandler implements RequestBodyHandler {
     private SlaveApi slaveApi;

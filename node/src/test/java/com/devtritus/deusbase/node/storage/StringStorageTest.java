@@ -1,9 +1,7 @@
 package com.devtritus.deusbase.node.storage;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,25 +11,24 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DiskStorageTest {
+class StringStorageTest {
+    private final static String TEST_FILE_NAME = "test_storage.bin";
 
-    private DiskStorage storage;
-    private Path path;
+    private StringStorage storage;
 
     @BeforeEach
     void init() throws IOException {
-        path = Paths.get("test_storage.bin");
-        Files.createFile(path);
-        storage = new DiskStorage(path);
-    }
+        Path path = Paths.get(TEST_FILE_NAME);
+        if(Files.exists(path)) {
+            Files.delete(path);
+        }
 
-    @AfterEach
-    void after() throws IOException {
-        Files.delete(path);
+        Files.createFile(path);
+        storage = new StringStorage(path);
     }
 
     @Test
-    void test() {
+    void write_test() {
         long position = storage.write("aaa");
         assertThatStorageContains(position, "aaa");
 

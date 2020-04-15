@@ -1,6 +1,5 @@
 package com.devtritus.deusbase.node.storage;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
@@ -11,21 +10,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DiskStorage implements Storage {
+public class ByteStorage {
     private final Path path;
 
-    public DiskStorage(Path path) {
+    ByteStorage(Path path) {
         this.path = path;
     }
 
-    @Override
-    public long write(String value) {
+    long write(byte[] bytes) {
         try(SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.APPEND)) {
-            byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
-            int valueSize = valueBytes.length;
+            int valueSize = bytes.length;
             ByteBuffer buffer = ByteBuffer.allocate(8 + valueSize)
                     .putInt(valueSize)
-                    .put(valueBytes);
+                    .put(bytes);
 
             buffer.rewind();
 
@@ -38,10 +35,9 @@ public class DiskStorage implements Storage {
         }
     }
 
-    @Override
-    public Map<Long, String> read(List<Long> addresses) {
+    Map<Long, byte[]> read(List<Long> addresses) {
         try(SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
-            Map<Long, String> result = new HashMap<>();
+            Map<Long, byte[]> result = new HashMap<>();
             for(Long address : addresses) {
                 channel.position(address);
                 ByteBuffer buffer = ByteBuffer.allocate(4);
@@ -50,8 +46,7 @@ public class DiskStorage implements Storage {
                 int valueSize = buffer.getInt();
                 ByteBuffer valueBuffer = ByteBuffer.allocate(valueSize);
                 channel.read(valueBuffer);
-                String value = new String(valueBuffer.array(), StandardCharsets.UTF_8);
-                result.put(address, value);
+                result.put(address, valueBuffer.array());
             }
 
             return result;
