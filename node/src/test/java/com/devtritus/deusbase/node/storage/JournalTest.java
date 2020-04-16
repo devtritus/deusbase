@@ -65,5 +65,25 @@ class JournalTest {
 
     @Test
     void delete_first_batch_test() {
+        String text1 = text + " dddd";
+
+        journal.write(text.getBytes(StandardCharsets.UTF_8));
+        journal.write(text1.getBytes(StandardCharsets.UTF_8));
+
+        byte[] batch = journal.getFirstBatch();
+        String actualText = new String(batch, StandardCharsets.UTF_8);
+        assertThat(actualText).isEqualTo(text);
+
+        journal.removeFirstBatch();
+
+        batch = journal.getFirstBatch();
+        actualText = new String(batch, StandardCharsets.UTF_8);
+        assertThat(actualText).isEqualTo(text1);
+
+        journal.truncate();
+
+        batch = journal.getFirstBatch();
+        actualText = new String(batch, StandardCharsets.UTF_8);
+        assertThat(actualText).isEqualTo(text1);
     }
 }

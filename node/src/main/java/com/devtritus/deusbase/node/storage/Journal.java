@@ -63,7 +63,7 @@ public class Journal {
             channel.position(firstBatchStartPosition);
             ByteBuffer buffer = ByteBuffer.allocate(8);
             channel.read(buffer);
-            buffer.flip();
+            buffer.rewind();
             long endOfBuffer = buffer.getLong();
             int batchSize = (int)(endOfBuffer - firstBatchStartPosition - 8);
             byte[] bytes = new byte[batchSize];
@@ -81,14 +81,30 @@ public class Journal {
     public void truncate() {
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
             long size = channel.size();
-            if(firstBatchStartPosition > 257) {
-                long delta = size - firstBatchStartPosition;
+            if(firstBatchStartPosition > 256) {
+                long delta = firstBatchStartPosition - 256;
+                long nextPosition = firstBatchStartPosition;
+                while(nextPosition != -1) {
+                    channel.position(nextPosition);
+                    ByteBuffer buffer1 = ByteBuffer.allocate(8);
+                    channel.read(buffer1);
+                    buffer1.rewind();
+                    channel.position(nextPosition);
+                    nextPosition = buffer1.getLong();
+                    if(nextPosition != -1) {
+                        long newPosition = nextPosition - delta;
+                        buffer1.clear();
+                        buffer1.putLong(newPosition);
+                        buffer1.rewind();
+                        channel.write(buffer1);
+                    }
+                }
                 channel.position(firstBatchStartPosition);
                 ByteBuffer buffer = ByteBuffer.allocate(4096);
                 long cursor = firstBatchStartPosition;
-                long cursor1 = 257;
+                long cursor1 = 256;
                 int i = 0;
-                while((i = channel.read(buffer)) != -1) {
+                while((i = channel.read(buffer)) > 0) {
                     cursor += i;
                     buffer.flip();
                     channel.position(cursor1);
@@ -97,7 +113,22 @@ public class Journal {
                     channel.write(buffer);
                 }
 
-                channel.truncate(delta);
+                firstBatchStartPosition = 256;
+                lastBatchStartPosition = lastBatchStartPosition - delta;
+
+                channel.position(0);
+
+                buffer = ByteBuffer.allocate(256)
+                        .putLong(firstBatchStartPosition)
+                        .putLong(lastBatchStartPosition);
+
+                buffer.rewind();
+                channel.write(buffer);
+
+                channel.position(lastBatchStartPosition);
+
+                long ddd = size - delta;
+                channel.truncate(ddd);
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
