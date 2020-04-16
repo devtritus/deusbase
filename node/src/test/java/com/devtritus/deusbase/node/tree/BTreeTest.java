@@ -6,9 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+import static com.devtritus.deusbase.node.TestUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BTreeTest {
@@ -16,7 +15,7 @@ class BTreeTest {
     @Test
     void add_then_serialize_then_search_by_keys_test() throws IOException {
         Path filePath = Paths.get("test_index.storage");
-        clearFile(filePath);
+        Files.createFile(filePath);
         BTreeImpl tree = (BTreeImpl)BTreeInitializer.init(filePath, 100, 1000);
         BTreeNodePersistenceProvider provider = (BTreeNodePersistenceProvider)tree.getProvider();
 
@@ -210,33 +209,6 @@ class BTreeTest {
         }
     }
 
-    private List<String> getRandomStrings(int minLength, int maxLength, int count) {
-
-        int leftLimit = 97; // 'a'
-        int rightLimit = 122; // 'z'
-
-        List<String> strings = new ArrayList<>();
-        Random random = new Random();
-        for(int i = 0; i < count; i++) {
-            String generatedString = random.ints(leftLimit, rightLimit + 1)
-                    .limit(minLength + random.nextInt(maxLength - minLength))
-                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                    .toString();
-
-            strings.add(generatedString);
-        }
-
-        return strings;
-    }
-
-    private List<Integer> getShuffledIntegerStream(int count) {
-        List<Integer> integers = IntStream.range(0, count)
-                .boxed()
-                .collect(Collectors.toList());
-        Collections.shuffle(integers);
-        return integers;
-    }
-
     private void printTree(BTreeNodeProvider<BTreeNode, String, List<Long>, Integer> provider) {
         Map<Integer, List<List<String>>> map = new LinkedHashMap<>();
         flatTree(provider.getRootNode(), map, provider);
@@ -257,14 +229,6 @@ class BTreeTest {
         }
     }
 
-    private void clearFile(Path path) {
-        try {
-            Files.write(path, new byte[0]);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static <T> Map<String, Long> createKeyValueMap(List<T> list) {
         Map<String, Long> map = new HashMap<>();
         for(int i = 0; i < list.size(); i++) {
@@ -272,11 +236,5 @@ class BTreeTest {
         }
 
         return map;
-    }
-
-    private static <T> List<String> mapToStrings(List<T> list) {
-        return list.stream()
-                .map(Object::toString)
-                .collect(Collectors.toList());
     }
 }
