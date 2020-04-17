@@ -3,8 +3,9 @@ package com.devtritus.deusbase.node.index;
 import com.devtritus.deusbase.node.utils.Pair;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
+import static com.devtritus.deusbase.node.utils.Utils.bytesToUtf8String;
+import static com.devtritus.deusbase.node.utils.Utils.utf8StringToBytes;
 
 abstract class BTreeNodeDataConverter {
 
@@ -18,7 +19,7 @@ abstract class BTreeNodeDataConverter {
         out.write(data.getKeys().size());
 
         for(String key : data.getKeys()) {
-            byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+            byte[] keyBytes = utf8StringToBytes(key);
             if(keyBytes.length > 254) { //size is 254 because children = (keySize + 1) and that value must be write to one byte
                 throw new IllegalArgumentException("Key " + key + " is too long. Max size of key is 254 bytes");
             }
@@ -140,7 +141,7 @@ abstract class BTreeNodeDataConverter {
 
         in.read(bytes);
 
-        return new String(bytes, StandardCharsets.UTF_8);
+        return bytesToUtf8String(bytes);
     }
 
     private static long readLong(InputStream in) throws IOException {

@@ -14,7 +14,7 @@ public class CrudRequestHandler implements RequestBodyHandler {
     }
 
     public ResponseBody handle(RequestBody requestBody) throws WrongArgumentException {
-        Command command = Command.getCommand(requestBody.getCommand());
+        Command command = Command.getCommandByName(requestBody.getCommand());
         String[] args = requestBody.getArgs();
 
         args = CommandParamsUtils.handleParams(command, args);

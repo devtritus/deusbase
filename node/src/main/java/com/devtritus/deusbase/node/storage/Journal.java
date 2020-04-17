@@ -7,30 +7,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-public class Journal {
+class Journal {
     private final static int HEADER_SIZE = 256;
     private final static int LONG_SIZE = 8;
     private final static int COPY_BUFFER_SIZE = 4096;
+    private final static int MIN_FILE_SIZE = HEADER_SIZE + LONG_SIZE;
 
     private Path path;
-    private int size;
+    private int batchSize;
     private int minSizeToTruncate;
 
     private boolean initialized;
     private long firstBatchStartPosition;
     private long lastBatchStartPosition;
 
-    public Journal(Path path, int size, int minSizeToTruncate) {
+    Journal(Path path, int batchSize, int minSizeToTruncate) {
         this.path = path;
-        this.size = size;
+        this.batchSize = batchSize;
         this.minSizeToTruncate = minSizeToTruncate;
     }
 
-    public void setMinSizeToTruncate(int minSizeToTruncate) {
-        this.minSizeToTruncate = minSizeToTruncate;
-    }
-
-    public void init() {
+    void init() {
         try {
             long fileSize = Files.size(path);
             if (fileSize == 0) {
@@ -45,14 +42,14 @@ public class Journal {
         }
     }
 
-    public void write(byte[] bytes) {
+    void write(byte[] bytes) {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
             channel.position(channel.size());
             channel.write(ByteBuffer.wrap(bytes));
             long endPosition = channel.position();
-            if(endPosition - lastBatchStartPosition > size) {
+            if(endPosition - lastBatchStartPosition > batchSize) {
                 writeLong(channel, endPosition, lastBatchStartPosition);
                 updateHeader(channel, firstBatchStartPosition, endPosition);
                 writeLong(channel, -1, endPosition);
@@ -62,7 +59,7 @@ public class Journal {
         }
     }
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
             return isEmpty(channel);
         } catch(Exception e) {
@@ -70,7 +67,7 @@ public class Journal {
         }
     }
 
-    public byte[] getFirstBatch() {
+    byte[] getFirstBatch() {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
@@ -95,7 +92,7 @@ public class Journal {
         }
     }
 
-    public void removeFirstBatch() {
+    void removeFirstBatch() {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
@@ -104,13 +101,15 @@ public class Journal {
                 updateHeader(channel, batchEnd, lastBatchStartPosition);
 
                 truncate(channel);
+            } else if(channel.size() > MIN_FILE_SIZE) {
+                channel.truncate(MIN_FILE_SIZE);
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void truncate() {
+    void truncate() {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
@@ -120,7 +119,7 @@ public class Journal {
         }
     }
 
-    public void forceTruncate() {
+    void forceTruncate() {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
@@ -128,6 +127,10 @@ public class Journal {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    void setMinSizeToTruncate(int minSizeToTruncate) {
+        this.minSizeToTruncate = minSizeToTruncate;
     }
 
     private void truncate(SeekableByteChannel channel) throws IOException {
@@ -230,18 +233,4 @@ public class Journal {
             throw new RuntimeException("Journal must be initialized");
         }
     }
-
-/*
-        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_LONG_SIZE);
-        byte[] valueBytes = key.getBytes(StandardCharsets.UTF_LONG_SIZE);
-
-        ByteBuffer buffer = ByteBuffer.allocate(LONG_SIZE + keyBytes.length + valueBytes.length)
-                .putInt(keyBytes.length)
-                .put(keyBytes)
-                .putInt(valueBytes.length)
-                .put(valueBytes);
-
-
-        buffer.flip();
-*/
 }

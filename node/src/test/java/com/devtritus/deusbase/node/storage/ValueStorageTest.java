@@ -11,10 +11,10 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class StringStorageTest {
+class ValueStorageTest {
     private final static String TEST_FILE_NAME = "test_storage.bin";
 
-    private StringStorage storage;
+    private ValueStorage storage;
 
     @BeforeEach
     void init() throws IOException {
@@ -24,7 +24,7 @@ class StringStorageTest {
         }
 
         Files.createFile(path);
-        storage = new StringStorage(path);
+        storage = new ValueStorage(path);
     }
 
     @Test

@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static com.devtritus.deusbase.node.TestUtils.*;
+import static com.devtritus.deusbase.node.utils.Utils.*;
 import static org.assertj.core.api.Assertions.*;
 
 class JournalTest {
@@ -55,64 +56,80 @@ class JournalTest {
     }
 
     @Test
+    void remove_single_first_batch_test() {
+        final String shortString = "test_string";
+
+        journal.write(utf8StringToBytes(shortString));
+        byte[] batch = journal.getFirstBatch();
+
+        assertThat(bytesToUtf8String(batch)).isEqualTo(shortString);
+
+        journal.removeFirstBatch();
+
+        assertThatThrownBy(() -> journal.getFirstBatch()).isInstanceOf(RuntimeException.class);
+        assertThat(journal.isEmpty()).isTrue();
+    }
+
+    @Test
     void get_batch_when_journal_is_empty_test() {
-        assertThatThrownBy(() -> journal.getFirstBatch()).isInstanceOf(Exception.class);
+        assertThatThrownBy(() -> journal.getFirstBatch()).isInstanceOf(RuntimeException.class);
     }
 
     @Test
     void get_batch_when_journal_contains_single_batch() {
         final String shortString = "test_string";
-        journal.write(toBytes(shortString));
+        journal.write(utf8StringToBytes(shortString));
+
         byte[] batch = journal.getFirstBatch();
-        String actualString = fromBytes(batch);
+        String actualString = bytesToUtf8String(batch);
         assertThat(actualString).isEqualTo(shortString);
     }
 
     @Test
     void write_then_get_batch_test() {
-        journal.write(toBytes(test_text_1));
-        journal.write(toBytes(test_text_2));
+        journal.write(utf8StringToBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_2));
 
         byte[] batch = journal.getFirstBatch();
-        String actualText = fromBytes(batch);
+        String actualText = bytesToUtf8String(batch);
         assertThat(actualText).isEqualTo(test_text_1);
     }
 
     @Test
     void remove_first_batch_test() {
-        journal.write(toBytes(test_text_1));
-        journal.write(toBytes(test_text_2));
+        journal.write(utf8StringToBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_2));
 
         byte[] batch = journal.getFirstBatch();
-        String actualText = fromBytes(batch);
+        String actualText = bytesToUtf8String(batch);
         assertThat(actualText).isEqualTo(test_text_1);
 
         journal.removeFirstBatch();
 
         batch = journal.getFirstBatch();
-        actualText = fromBytes(batch);
+        actualText = bytesToUtf8String(batch);
         assertThat(actualText).isEqualTo(test_text_2);
     }
 
     @Test
     void delete_first_batch_test() {
-        journal.write(toBytes(test_text_1));
-        journal.write(toBytes(test_text_2));
+        journal.write(utf8StringToBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_2));
 
         byte[] batch = journal.getFirstBatch();
-        String actualText = fromBytes(batch);
+        String actualText = bytesToUtf8String(batch);
         assertThat(actualText).isEqualTo(test_text_1);
 
         journal.removeFirstBatch();
 
         batch = journal.getFirstBatch();
-        actualText = fromBytes(batch);
+        actualText = bytesToUtf8String(batch);
         assertThat(actualText).isEqualTo(test_text_2);
 
         journal.forceTruncate();
 
         batch = journal.getFirstBatch();
-        actualText = fromBytes(batch);
+        actualText = bytesToUtf8String(batch);
         assertThat(actualText).isEqualTo(test_text_2);
     }
 
@@ -120,7 +137,7 @@ class JournalTest {
     void complex_is_empty_test() {
         assertThat(journal.isEmpty()).isTrue();
 
-        journal.write(toBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_1));
 
         assertThat(journal.isEmpty()).isFalse();
 
@@ -129,7 +146,7 @@ class JournalTest {
 
         assertThat(journal.isEmpty()).isTrue();
 
-        journal.write(toBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_1));
         journal.removeFirstBatch();
 
         assertThat(journal.isEmpty()).isTrue();
@@ -141,12 +158,12 @@ class JournalTest {
         List<String> strings = getRandomStrings(100, 150, 1000);
 
         for (String string : getShuffledList(strings)) {
-            journal.write(toBytes(string));
+            journal.write(utf8StringToBytes(string));
         }
 
         while (!journal.isEmpty()) {
             byte[] batch = journal.getFirstBatch();
-            String actualText = fromBytes(batch);
+            String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
             strings.remove(actualText);
             journal.removeFirstBatch();
@@ -161,12 +178,12 @@ class JournalTest {
         journal.setMinSizeToTruncate(1024);
 
         for (String string : getShuffledList(strings)) {
-            journal.write(toBytes(string));
+            journal.write(utf8StringToBytes(string));
         }
 
         while (!journal.isEmpty()) {
             byte[] batch = journal.getFirstBatch();
-            String actualText = fromBytes(batch);
+            String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
             strings.remove(actualText);
             journal.removeFirstBatch();
@@ -180,12 +197,12 @@ class JournalTest {
         List<String> strings = getRandomStrings(100, 150, 1000);
 
         for (String string : getShuffledList(strings)) {
-            journal.write(toBytes(string));
+            journal.write(utf8StringToBytes(string));
         }
 
         while (!journal.isEmpty()) {
             byte[] batch = journal.getFirstBatch();
-            String actualText = fromBytes(batch);
+            String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
             strings.remove(actualText);
             journal.removeFirstBatch();

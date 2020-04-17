@@ -64,7 +64,7 @@ class Terminal {
 
     private void handleSystemCommand(String message, String[] args) {
         try {
-            Command command = Command.getCommand(message);
+            Command command = Command.getCommandByName(message);
 
             CommandParamsUtils.handleParams(command, args);
 

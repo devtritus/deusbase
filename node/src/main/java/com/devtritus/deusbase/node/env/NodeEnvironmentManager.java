@@ -2,7 +2,7 @@ package com.devtritus.deusbase.node.env;
 
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.node.server.NodeApi;
-import com.devtritus.deusbase.node.storage.StringStorage;
+import com.devtritus.deusbase.node.storage.ValueStorage;
 import com.devtritus.deusbase.node.tree.BTree;
 import com.devtritus.deusbase.node.tree.BTreeInitializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,7 +77,7 @@ class NodeEnvironmentManager {
         int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
 
         BTree<String, List<Long>> tree = BTreeInitializer.init(indexFilePath, treeM, treeCacheLimit);
-        StringStorage storage = new StringStorage(storageFilePath);
+        ValueStorage storage = new ValueStorage(storageFilePath);
 
         NodeApi nodeApi = new NodeApi(tree, storage);
 

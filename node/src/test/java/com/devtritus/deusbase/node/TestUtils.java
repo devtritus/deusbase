@@ -50,12 +50,4 @@ public abstract class TestUtils {
                 .map(Object::toString)
                 .collect(Collectors.toList());
     }
-
-    public static byte[] toBytes(String value) {
-        return value.getBytes(StandardCharsets.UTF_8);
-    }
-
-    public static String fromBytes(byte[] bytes) {
-        return new String(bytes, StandardCharsets.UTF_8);
-    }
 }

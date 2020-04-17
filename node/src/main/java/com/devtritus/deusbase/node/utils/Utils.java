@@ -1,5 +1,6 @@
 package com.devtritus.deusbase.node.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public abstract class Utils {
@@ -26,5 +27,13 @@ public abstract class Utils {
         list.remove(list.size() - 1);
 
         return list;
+    }
+
+    public static byte[] utf8StringToBytes(String value) {
+        return value.getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static String bytesToUtf8String(byte[] bytes) {
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }
