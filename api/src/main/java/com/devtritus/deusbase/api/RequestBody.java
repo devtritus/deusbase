@@ -1,18 +1,17 @@
 package com.devtritus.deusbase.api;
 
-import java.util.Arrays;
-import java.util.Objects;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class RequestBody {
-    private String command;
+    private String commandName;
     private String[] args;
 
-    public String getCommand() {
-        return command;
+    public String getCommandName() {
+        return commandName;
     }
 
-    public void setCommand(String command) {
-        this.command = command;
+    public void setCommandName(String commandName) {
+        this.commandName = commandName;
     }
 
     public String[] getArgs() {
@@ -23,27 +22,9 @@ public class RequestBody {
         this.args = args;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        RequestBody that = (RequestBody) o;
-        return Objects.equals(command, that.command) &&
-                Arrays.equals(args, that.args);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(command);
-        result = 31 * result + Arrays.hashCode(args);
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "RequestBody{" +
-                "command='" + command + '\'' +
-                ", args=" + Arrays.toString(args) +
-                '}';
+    @JsonIgnore
+    public NodeRequest getRequest() {
+        Command command = Command.getCommandByName(commandName);
+        return new NodeRequest(command, args);
     }
 }

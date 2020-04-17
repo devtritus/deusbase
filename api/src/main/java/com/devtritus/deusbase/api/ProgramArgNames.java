@@ -15,4 +15,7 @@ public interface ProgramArgNames {
     String URL = "url";
     String DEBUG = "debug";
     String MASTER_ADDRESS = "master_address";
+    String JOURNAL_PATH = "journal";
+    String JOURNAL_BATCH_SIZE = "journal_batch_size";
+    String JOURNAL_MIN_SIZE_TO_TRUNCATE = "journal_min_size_to_truncate";
 }

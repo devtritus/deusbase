@@ -13,11 +13,10 @@ public class CrudRequestHandler implements RequestBodyHandler {
         this.api = api;
     }
 
-    public ResponseBody handle(RequestBody requestBody) throws WrongArgumentException {
-        Command command = Command.getCommandByName(requestBody.getCommand());
-        String[] args = requestBody.getArgs();
+    public NodeResponse handle(NodeRequest request) throws WrongArgumentException {
+        final Command command = request.getCommand();
 
-        args = CommandParamsUtils.handleParams(command, args);
+        String[] args = CommandParamsUtils.handleParams(command, request.getArgs());
 
         Map<String, List<String>> data;
         ResponseStatus responseStatus = ResponseStatus.OK;
@@ -46,17 +45,17 @@ public class CrudRequestHandler implements RequestBodyHandler {
                 break;
             default:
                 if(nextHandler != null) {
-                    return nextHandler.handle(requestBody);
+                    return nextHandler.handle(request);
                 } else {
                     throw new IllegalArgumentException(String.format("Unhandled command %s", command));
                 }
         }
 
-        ResponseBody responseBody = new ResponseBody();
-        responseBody.setData(data);
-        responseBody.setCode(responseStatus.getCode());
+        NodeResponse response = new NodeResponse();
+        response.setData(data);
+        response.setCode(responseStatus.getCode());
 
-        return responseBody;
+        return response;
     }
 
     public void setNextHandler(RequestBodyHandler nextHandler){

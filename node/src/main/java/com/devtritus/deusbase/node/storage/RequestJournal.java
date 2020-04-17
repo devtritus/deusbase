@@ -1,9 +1,11 @@
 package com.devtritus.deusbase.node.storage;
 
 import com.devtritus.deusbase.api.Command;
-import com.devtritus.deusbase.api.RequestBody;
+import com.devtritus.deusbase.api.NodeRequest;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,13 +22,23 @@ public class RequestJournal {
         this.journal = journal;
     }
 
-    public static RequestJournal create(Path path, int batchSize, int minSizeToTruncate) {
+    public static RequestJournal init(Path path, int batchSize, int minSizeToTruncate) {
+        if(!Files.exists(path)) {
+            try {
+                Files.createFile(path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
         Journal journal = new Journal(path, batchSize, minSizeToTruncate);
         journal.init();
         return new RequestJournal(journal);
     }
 
-    public void putRequest(Command command, String[] args) {
+    public void putRequest(NodeRequest request) {
+        final Command command = request.getCommand();
+        final String[] args = request.getArgs();
+
         List<byte[]> argsBytes = new ArrayList<>();
         int size = 0;
         for(String arg : args) {
@@ -51,8 +63,8 @@ public class RequestJournal {
         journal.write(buffer.array());
     }
 
-    public List<RequestBody> getRequestsBatch() {
-        List<RequestBody> requests = new ArrayList<>();
+    public List<NodeRequest> getRequestsBatch() {
+        List<NodeRequest> requests = new ArrayList<>();
 
         byte[] batch = journal.getFirstBatch();
 
@@ -72,11 +84,9 @@ public class RequestJournal {
 
             Command command = Command.getCommandById(commandId);
 
-            RequestBody requestBody = new RequestBody();
-            requestBody.setCommand(command.toString());
-            requestBody.setArgs(args);
+            NodeRequest request = new NodeRequest(command, args);
 
-            requests.add(requestBody);
+            requests.add(request);
         }
 
         return requests;

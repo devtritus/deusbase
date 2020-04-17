@@ -14,4 +14,8 @@ public interface NodeSettings {
 
     String DEFAULT_HOST = "127.0.0.1";
     int DEFAULT_PORT = 7599;
+
+    String DEFAULT_JOURNAL_PATH = "journal.bin";
+    int DEFAULT_JOURNAL_BATCH_SIZE = 512 * 1024; //bytes
+    int DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE = 8 * 1024 * 1024;
 }

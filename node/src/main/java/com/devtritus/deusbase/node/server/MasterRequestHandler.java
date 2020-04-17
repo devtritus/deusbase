@@ -1,34 +1,35 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.api.RequestBody;
-import com.devtritus.deusbase.api.RequestBodyHandler;
-import com.devtritus.deusbase.api.ResponseBody;
-import com.devtritus.deusbase.api.WrongArgumentException;
+import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.role.MasterApi;
+import com.devtritus.deusbase.node.storage.RequestJournal;
 
 import java.util.*;
 
 public class MasterRequestHandler implements RequestBodyHandler {
-    private MasterApi masterApi;
+    private final MasterApi masterApi;
+    private final RequestJournal journal;
     private RequestBodyHandler nextHandler;
 
-    public MasterRequestHandler(MasterApi masterApi) {
+    public MasterRequestHandler(MasterApi masterApi, RequestJournal journal) {
         this.masterApi = masterApi;
+        this.journal = journal;
     }
 
     @Override
-    public ResponseBody handle(RequestBody requestBody) throws WrongArgumentException {
-        String[] args = requestBody.getArgs();
-        if(requestBody.getCommand().equals("handshake")) {
+    public NodeResponse handle(NodeRequest request) throws WrongArgumentException {
+        String[] args = request.getArgs();
+        if(request.getCommand() == Command.HANDSHAKE) {
             String masterUuid = masterApi.receiveSlaveHandshake(args[0], args[1]);
-            ResponseBody responseBody = new ResponseBody();
+            NodeResponse response = new NodeResponse();
             Map<String, List<String>> result = new HashMap<>();
             result.put("result", Collections.singletonList(masterUuid));
-            responseBody.setData(result);
+            response.setData(result);
 
-            return responseBody;
+            return response;
+        } else {
+            return nextHandler.handle(request);
         }
-        return null;
     }
 
     @Override

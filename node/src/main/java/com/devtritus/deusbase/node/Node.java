@@ -1,21 +1,19 @@
 package com.devtritus.deusbase.node;
 
-import com.devtritus.deusbase.api.Api;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
-import com.devtritus.deusbase.node.role.MasterApiDecorator;
 import com.devtritus.deusbase.node.role.MasterNode;
-import com.devtritus.deusbase.node.role.SlaveApiDecorator;
 import com.devtritus.deusbase.node.role.SlaveNode;
 import com.devtritus.deusbase.node.server.*;
+import com.devtritus.deusbase.node.storage.RequestJournal;
 import com.devtritus.deusbase.node.utils.NodeMode;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
-import static com.devtritus.deusbase.node.env.NodeSettings.DEFAULT_HOST;
-import static com.devtritus.deusbase.node.env.NodeSettings.DEFAULT_PORT;
+import static com.devtritus.deusbase.node.env.NodeSettings.*;
 
 class Node {
     private final NodeServer nodeServer = new NodeServer();
@@ -36,28 +34,34 @@ class Node {
 
         final String nodeAddress = host + ":" + port;
 
-        Api<String, String> api;
-        RequestBodyHandler nextHandler;
+        CrudRequestHandler crudRequestHandler = new CrudRequestHandler(env.getNodeApi());
+
+        RequestBodyHandler requestBodyHandler;
 
         if(mode == NodeMode.MASTER) {
+            String pathToJournal = programArgs.getOrDefault(JOURNAL_PATH, DEFAULT_JOURNAL_PATH);
+            int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
+            int journalMinSizeToTruncate = programArgs.getIntegerOrDefault(JOURNAL_MIN_SIZE_TO_TRUNCATE, DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE);
+            RequestJournal journal = RequestJournal.init(Paths.get(pathToJournal), journalBatchSize, journalMinSizeToTruncate);
             MasterNode masterNode = new MasterNode(env);
-            masterNode.init();
 
-            api = new MasterApiDecorator<>(env.getNodeApi(), masterNode);
-            nextHandler = new MasterRequestHandler(masterNode);
+            requestBodyHandler = new MasterRequestHandler(masterNode, journal);
+            masterNode.init();
 
         } else if(mode == NodeMode.SLAVE) {
             String masterAddress = programArgs.get(MASTER_ADDRESS);
             SlaveNode slaveNode = new SlaveNode(env);
+
+            requestBodyHandler = new SlaveRequestHandler(slaveNode);
             slaveNode.init(nodeAddress, masterAddress);
 
-            api = new SlaveApiDecorator<>(env.getNodeApi(), slaveNode);
-            nextHandler = new SlaveRequestHandler(slaveNode);
         } else {
-            throw new IllegalStateException();
+            throw new IllegalStateException(String.format("Unexpected mode: %s", mode));
         }
 
-        nodeServer.start(host, port, api, nextHandler, Node::printBanner);
+        requestBodyHandler.setNextHandler(crudRequestHandler);
+
+        nodeServer.start(host, port, requestBodyHandler, Node::printBanner);
     }
 
     private static void printBanner() {

@@ -8,7 +8,7 @@ import static com.devtritus.deusbase.api.ProgramArgNames.DEBUG;
 import static com.devtritus.deusbase.api.ProgramArgNames.URL;
 
 public class Main {
-    private final static String DEFAULT_CLIENT_URL = "http://127.0.0.1:7599";
+    private final static String DEFAULT_CLIENT_URL = "http://127.0.0.1:3334";
 
     public static void main(String[] args) {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);

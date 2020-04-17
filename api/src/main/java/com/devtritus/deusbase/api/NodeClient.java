@@ -21,27 +21,27 @@ public class NodeClient {
         this.url = url;
     }
 
-    public ResponseBody sneakyRequest(Command command, String... params) {
+    public NodeResponse sneakyRequest(Command command, String... args) {
         try {
-            return doRequest(command, params);
+            return doRequest(command, args);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public ResponseBody request(Command command, String... params) throws Exception {
-        return doRequest(command, params);
+    public NodeResponse request(Command command, String... args) throws Exception {
+        return doRequest(command, args);
     }
 
-    private ResponseBody doRequest(Command command, String[] params) throws Exception {
+    private NodeResponse doRequest(Command command, String[] args) throws Exception {
         RequestBody requestBody = new RequestBody();
-        requestBody.setCommand(command.toString());
-        requestBody.setArgs(params);
+        requestBody.setCommandName(command.toString());
+        requestBody.setArgs(args);
 
-        String body = objectMapper.writeValueAsString(requestBody);
+        String jsonBody = objectMapper.writeValueAsString(requestBody);
 
         HttpPost httpPost = new HttpPost(url);
-        httpPost.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+        httpPost.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             int status = response.getStatusLine().getStatusCode();
@@ -54,7 +54,7 @@ public class NodeClient {
             }
 
             if (status == 200) {
-                return objectMapper.readValue(entityMessage, ResponseBody.class);
+                return objectMapper.readValue(entityMessage, NodeResponse.class);
             } else {
                 throw new ClientProtocolException(String.format("Unexpected response status: %s, details: %s", status, entityMessage));
             }

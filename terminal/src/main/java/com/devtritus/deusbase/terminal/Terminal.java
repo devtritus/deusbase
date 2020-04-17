@@ -70,15 +70,15 @@ class Terminal {
 
             Instant start = Instant.now();
 
-            ResponseBody responseBody = nodeClient.request(command, args);
+            NodeResponse response = nodeClient.request(command, args);
 
             Instant finish = Instant.now();
 
-            ResponseStatus status = ResponseStatus.ofCode(responseBody.getCode());
+            ResponseStatus status = ResponseStatus.ofCode(response.getCode());
             if(status != ResponseStatus.OK) {
                 print(status.getMessage());
             } else {
-                print(responseBody.getData());
+                print(response.getData());
                 print(Duration.between(start, finish).toMillis() + " ms");
             }
         } catch(HttpHostConnectException e) {

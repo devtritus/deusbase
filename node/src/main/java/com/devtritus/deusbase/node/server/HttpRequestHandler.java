@@ -1,8 +1,6 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.api.RequestBody;
-import com.devtritus.deusbase.api.RequestBodyHandler;
-import com.devtritus.deusbase.api.ResponseBody;
+import com.devtritus.deusbase.api.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -48,11 +46,9 @@ public class HttpRequestHandler extends AbstractHandler {
         try {
             String bodyMesssage = stringBuilder.toString();
 
-            RequestBody body = objectMapper.readValue(bodyMesssage, RequestBody.class);
-
-            ResponseBody responseBody = requestBodyHandler.handle(body);
-
-            String responseBodyJson = objectMapper.writeValueAsString(responseBody);
+            RequestBody requestBody = objectMapper.readValue(bodyMesssage, RequestBody.class);
+            NodeResponse response = requestBodyHandler.handle(requestBody.getRequest());
+            String responseBodyJson = objectMapper.writeValueAsString(response);
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
             httpServletResponse.getWriter().println(responseBodyJson);

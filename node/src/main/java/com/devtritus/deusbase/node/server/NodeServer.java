@@ -1,12 +1,9 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.api.Api;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 
 public class NodeServer {
-    public void start(String host, int port,Api<String, String> api, RequestBodyHandler nextHandler, Runnable successCallback) {
-        CrudRequestHandler requestBodyHandler = new CrudRequestHandler(api);
-        requestBodyHandler.setNextHandler(nextHandler);
+    public void start(String host, int port, RequestBodyHandler requestBodyHandler, Runnable successCallback) {
         HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestBodyHandler);
 
         try {

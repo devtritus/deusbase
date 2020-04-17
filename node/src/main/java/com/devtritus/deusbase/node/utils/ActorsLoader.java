@@ -32,10 +32,8 @@ public class ActorsLoader {
                 String[] args = new String[2];
                 args[0] = tokens[1];
                 args[1] = tokens[4];
-                RequestBody body = new RequestBody();
-                body.setCommand(Command.CREATE.toString());
-                body.setArgs(args);
-                requestBodyHandler.handle(body);
+
+                requestBodyHandler.handle(new NodeRequest(Command.CREATE, args));
             }
         }
     }

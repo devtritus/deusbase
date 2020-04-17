@@ -3,7 +3,7 @@ package com.devtritus.deusbase.api;
 import java.util.List;
 import java.util.Map;
 
-public class ResponseBody {
+public class NodeResponse {
     private Map<String, List<String>> data;
     private int code;
 

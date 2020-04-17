@@ -2,7 +2,7 @@ package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeClient;
-import com.devtritus.deusbase.api.ResponseBody;
+import com.devtritus.deusbase.api.NodeResponse;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
@@ -32,9 +32,9 @@ public class SlaveNode implements SlaveApi {
         NodeClient client = new NodeClient("http://" + masterAddress);
         String slaveUuid = env.getPropertyOrThrowException("uuid");
 
-        ResponseBody responseBody;
+        NodeResponse response;
         try {
-            responseBody = client.request(Command.HANDSHAKE, slaveAddress, slaveUuid);
+            response = client.request(Command.HANDSHAKE, slaveAddress, slaveUuid);
         } catch (HttpHostConnectException e) {
             logger.error("Master node through address {} is unavailable. Only READ mode is permitted", masterAddress);
             return;
@@ -42,7 +42,7 @@ public class SlaveNode implements SlaveApi {
             throw new RuntimeException(e);
         }
 
-        String actualMasterUuid = responseBody.getData().get("result").get(0);
+        String actualMasterUuid = response.getData().get("result").get(0);
         String writtenMasterUuid = env.getProperty("masterUuid");
         if(writtenMasterUuid == null) { //first connection
             env.setProperty("masterUuid", actualMasterUuid);
