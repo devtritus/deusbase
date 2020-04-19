@@ -69,13 +69,13 @@ class JournalTest {
 
         journal.removeFirstBatch();
 
-        assertThatThrownBy(() -> journal.getFirstBatch()).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> journal.getBatch(0)).isInstanceOf(RuntimeException.class);
         assertThat(journal.isEmpty()).isTrue();
     }
 
     @Test
     void get_batch_when_journal_is_empty_test() {
-        assertThatThrownBy(() -> journal.getFirstBatch()).isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> journal.getBatch(0)).isInstanceOf(RuntimeException.class);
     }
 
     @Test
@@ -92,6 +92,27 @@ class JournalTest {
         journal.write(utf8StringToBytes(test_text_2));
 
         assertFirstBatchContains(test_text_1);
+    }
+
+    @Test
+    void get_size_test() {
+        assertThat(journal.size()).isEqualTo(0);
+
+        journal.write(utf8StringToBytes(test_text_1));
+
+        assertThat(journal.size()).isEqualTo(1);
+
+        journal.write(utf8StringToBytes(test_text_2));
+
+        assertThat(journal.size()).isEqualTo(2);
+
+        journal.removeFirstBatch();
+
+        assertThat(journal.size()).isEqualTo(1);
+
+        journal.removeFirstBatch();
+
+        assertThat(journal.size()).isEqualTo(0);
     }
 
     @Test
@@ -185,7 +206,7 @@ class JournalTest {
 
         while (!journal.isEmpty()) {
 
-            byte[] batch = journal.getFirstBatch();
+            byte[] batch = journal.getBatch(0);
             String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
             strings.remove(actualText);
@@ -205,7 +226,7 @@ class JournalTest {
         }
 
         while (!journal.isEmpty()) {
-            byte[] batch = journal.getFirstBatch();
+            byte[] batch = journal.getBatch(0);
             String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
             strings.remove(actualText);
@@ -224,7 +245,7 @@ class JournalTest {
         }
 
         while (!journal.isEmpty()) {
-            byte[] batch = journal.getFirstBatch();
+            byte[] batch = journal.getBatch(0);
             String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
             strings.remove(actualText);
@@ -236,9 +257,7 @@ class JournalTest {
     }
 
     private void assertFirstBatchContains(String expectedText) {
-        byte[] batch = journal.getFirstBatch();
-        String actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(expectedText);
+        assertBatchContains(0, expectedText);
     }
 
     private void assertBatchContains(int position, String expectedText) {

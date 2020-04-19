@@ -36,7 +36,7 @@ class RequestJournalTest {
 
         requestJournal.putRequest(expected);
 
-        List<NodeRequest> requests = requestJournal.getRequestsBatch();
+        List<NodeRequest> requests = requestJournal.getRequestsBatch(0);
         assertThat(requests).containsOnlyOnce(expected);
 
         assertThat(requestJournal.isEmpty()).isFalse();
@@ -67,24 +67,24 @@ class RequestJournalTest {
 
         requestJournal.putRequest(expected1);
 
-        List<NodeRequest> requests1 = requestJournal.getRequestsBatch();
+        List<NodeRequest> requests1 = requestJournal.getRequestsBatch(0);
         assertThat(requests1).containsOnly(expected1);
 
         requestJournal.putRequest(expected2);
 
-        List<NodeRequest> requests2 = requestJournal.getRequestsBatch();
+        List<NodeRequest> requests2 = requestJournal.getRequestsBatch(0);
         assertThat(requests2).containsOnly(expected1, expected2);
 
         requestJournal.putRequest(expected3);
 
-        List<NodeRequest> requests3 = requestJournal.getRequestsBatch();
+        List<NodeRequest> requests3 = requestJournal.getRequestsBatch(0);
         assertThat(requests3).containsOnly(expected1, expected2);
 
         assertThat(requestJournal.isEmpty()).isFalse();
 
         requestJournal.removeFirstRequestsBatch();
 
-        List<NodeRequest> requests4 = requestJournal.getRequestsBatch();
+        List<NodeRequest> requests4 = requestJournal.getRequestsBatch(0);
         assertThat(requests4).containsOnly(expected3);
 
         requestJournal.removeFirstRequestsBatch();

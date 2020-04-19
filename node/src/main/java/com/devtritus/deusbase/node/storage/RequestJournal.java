@@ -63,10 +63,10 @@ public class RequestJournal {
         journal.write(buffer.array());
     }
 
-    public List<NodeRequest> getRequestsBatch() {
+    public List<NodeRequest> getRequestsBatch(int position) {
         List<NodeRequest> requests = new ArrayList<>();
 
-        byte[] batch = journal.getFirstBatch();
+        byte[] batch = journal.getBatch(position);
 
         ByteBuffer buffer = ByteBuffer.wrap(batch);
         while(buffer.remaining() != 0) {
@@ -94,6 +94,10 @@ public class RequestJournal {
 
     public void removeFirstRequestsBatch() {
         journal.removeFirstBatch();
+    }
+
+    public int size() {
+        return journal.size();
     }
 
     public boolean isEmpty() {

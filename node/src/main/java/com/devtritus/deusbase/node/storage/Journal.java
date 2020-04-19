@@ -70,10 +70,6 @@ class Journal {
         }
     }
 
-    byte[] getFirstBatch() {
-        return getBatch(0);
-    }
-
     byte[] getBatch(int position) {
         assertJournalInitialized();
 
@@ -140,6 +136,13 @@ class Journal {
 
     void setMinSizeToTruncate(int minSizeToTruncate) {
         this.minSizeToTruncate = minSizeToTruncate;
+    }
+
+    int size() {
+        if(isEmpty()) {
+            return 0;
+        }
+        return batchPositions.size() - 1;
     }
 
     private void truncate(SeekableByteChannel channel) throws IOException {
@@ -245,7 +248,7 @@ class Journal {
 
     private boolean isEmpty(SeekableByteChannel channel) throws IOException {
         long fileSize = channel.size();
-        return Objects.equals(getFirstBatchPosition(),getLastBatchPosition())  && fileSize - LONG_SIZE == getLastBatchPosition();
+        return Objects.equals(getFirstBatchPosition(), getLastBatchPosition()) && fileSize - LONG_SIZE == getLastBatchPosition();
     }
 
     private Long getFirstBatchPosition() {
