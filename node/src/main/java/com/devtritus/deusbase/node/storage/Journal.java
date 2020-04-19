@@ -16,14 +16,13 @@ class Journal {
     private final static int COPY_BUFFER_SIZE = 4096;
     private final static int MIN_FILE_SIZE = HEADER_SIZE + LONG_SIZE;
 
-    private final List<Long> batchPositions = new ArrayList<>();
+    private List<Long> batchPositions;
 
     private Path path;
     private int batchSize;
     private int minSizeToTruncate;
 
     private boolean initialized;
-    private long firstBatchStartPosition;
 
     Journal(Path path, int batchSize, int minSizeToTruncate) {
         this.path = path;
@@ -55,9 +54,7 @@ class Journal {
             long endPosition = channel.position();
             if(endPosition - getLastBatchPosition() > batchSize) {
                 writeLong(channel, endPosition, getLastBatchPosition());
-                updateHeader(channel, firstBatchStartPosition);
                 writeLong(channel, -1, endPosition);
-
                 batchPositions.add(endPosition);
             }
         } catch (Exception e) {
@@ -108,7 +105,7 @@ class Journal {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
-            long batchEnd = readLong(channel, firstBatchStartPosition);
+            long batchEnd = readLong(channel, batchPositions.get(0));
             if(batchEnd != -1) {
                 updateHeader(channel, batchEnd);
                 truncate(channel);
@@ -146,7 +143,7 @@ class Journal {
     }
 
     private void truncate(SeekableByteChannel channel) throws IOException {
-        long delta = firstBatchStartPosition - HEADER_SIZE;
+        long delta = batchPositions.get(0) - HEADER_SIZE;
         if(minSizeToTruncate != -1 && delta > minSizeToTruncate) {
             forceTruncate(channel);
         }
@@ -156,9 +153,9 @@ class Journal {
         assertJournalInitialized();
 
         long size = channel.size();
-        if(firstBatchStartPosition > HEADER_SIZE) {
-            long delta = firstBatchStartPosition - HEADER_SIZE;
-            long lastPosition = firstBatchStartPosition;
+        if(batchPositions.get(0) > HEADER_SIZE) {
+            long delta = batchPositions.get(0) - HEADER_SIZE;
+            long lastPosition = batchPositions.get(0);
             long nextPosition;
             while((nextPosition = readLong(channel, lastPosition)) != -1) {
                 long nextNewPosition = nextPosition - delta;
@@ -168,7 +165,7 @@ class Journal {
 
             ByteBuffer buffer = ByteBuffer.allocate(COPY_BUFFER_SIZE);
             long cursor1 = HEADER_SIZE;
-            long cursor2 = firstBatchStartPosition;
+            long cursor2 = batchPositions.get(0);
             channel.position(cursor2);
             int bytesSize;
             while((bytesSize = channel.read(buffer)) > 0) {
@@ -195,6 +192,8 @@ class Journal {
     }
 
     private void initJournal() throws IOException {
+        batchPositions = new ArrayList<>();
+
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
             updateHeader(channel, HEADER_SIZE);
             writeLong(channel, -1, channel.position());
@@ -203,19 +202,19 @@ class Journal {
     }
 
     private void readJournal() throws IOException {
+        batchPositions = new ArrayList<>();
+
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
             ByteBuffer buffer = ByteBuffer.allocate(HEADER_SIZE);
             channel.read(buffer);
             buffer.rewind();
 
-            firstBatchStartPosition = buffer.getLong();
-
-            long lastPosition = firstBatchStartPosition;
+            long lastPosition = buffer.getLong();
             batchPositions.add(lastPosition);
             long nextPosition;
             while((nextPosition = readLong(channel, lastPosition)) != -1) {
-                batchPositions.add(nextPosition);
                 lastPosition = nextPosition;
+                batchPositions.add(nextPosition);
             }
         }
     }
@@ -227,8 +226,6 @@ class Journal {
 
         buffer.rewind();
         channel.write(buffer);
-
-        firstBatchStartPosition = newFirstBatchStartPosition;
     }
 
     private long readLong(SeekableByteChannel channel, long position) throws IOException {
