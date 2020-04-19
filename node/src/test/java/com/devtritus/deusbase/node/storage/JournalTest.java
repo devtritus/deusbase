@@ -21,7 +21,11 @@ class JournalTest {
             "cabin table and doing nothing but discuss life, literature, and the universe, the while Thomas Mugridge" +
             "fumed and raged and did my work as well as his own.";
 
-    private final String test_text_2 = new StringBuilder(test_text_1).reverse().toString();
+    private final String test_text_2 = "Coming now to the other qualities mentioned above, I say that every prince ought" +
+            "to desire to be considered clement and not cruel. Nevertheless he ought to take care not to misuse this clemency.";
+
+    private final String test_text_3 = "“Have you a couple of days to spare? Have just been wired for from the west of England" +
+            "in connection with Boscombe Valley tragedy. Shall be glad if you will come with me. Air and scenery perfect. Leave Paddington by the 11.15.”";
 
     private Journal journal;
 
@@ -60,9 +64,8 @@ class JournalTest {
         final String shortString = "test_string";
 
         journal.write(utf8StringToBytes(shortString));
-        byte[] batch = journal.getFirstBatch();
 
-        assertThat(bytesToUtf8String(batch)).isEqualTo(shortString);
+        assertFirstBatchContains(shortString);
 
         journal.removeFirstBatch();
 
@@ -80,9 +83,7 @@ class JournalTest {
         final String shortString = "test_string";
         journal.write(utf8StringToBytes(shortString));
 
-        byte[] batch = journal.getFirstBatch();
-        String actualString = bytesToUtf8String(batch);
-        assertThat(actualString).isEqualTo(shortString);
+        assertFirstBatchContains(shortString);
     }
 
     @Test
@@ -90,9 +91,7 @@ class JournalTest {
         journal.write(utf8StringToBytes(test_text_1));
         journal.write(utf8StringToBytes(test_text_2));
 
-        byte[] batch = journal.getFirstBatch();
-        String actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(test_text_1);
+        assertFirstBatchContains(test_text_1);
     }
 
     @Test
@@ -100,15 +99,11 @@ class JournalTest {
         journal.write(utf8StringToBytes(test_text_1));
         journal.write(utf8StringToBytes(test_text_2));
 
-        byte[] batch = journal.getFirstBatch();
-        String actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(test_text_1);
+        assertFirstBatchContains(test_text_1);
 
         journal.removeFirstBatch();
 
-        batch = journal.getFirstBatch();
-        actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(test_text_2);
+        assertFirstBatchContains(test_text_2);
     }
 
     @Test
@@ -116,21 +111,15 @@ class JournalTest {
         journal.write(utf8StringToBytes(test_text_1));
         journal.write(utf8StringToBytes(test_text_2));
 
-        byte[] batch = journal.getFirstBatch();
-        String actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(test_text_1);
+        assertFirstBatchContains(test_text_1);
 
         journal.removeFirstBatch();
 
-        batch = journal.getFirstBatch();
-        actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(test_text_2);
+        assertFirstBatchContains(test_text_2);
 
         journal.forceTruncate();
 
-        batch = journal.getFirstBatch();
-        actualText = bytesToUtf8String(batch);
-        assertThat(actualText).isEqualTo(test_text_2);
+        assertFirstBatchContains(test_text_2);
     }
 
     @Test
@@ -153,6 +142,39 @@ class JournalTest {
     }
 
     @Test
+    void get_batch_test() {
+        assertThat(journal.isEmpty()).isTrue();
+
+        journal.write(utf8StringToBytes(test_text_1));
+
+        assertBatchContains(0, test_text_1);
+
+        journal.write(utf8StringToBytes(test_text_2));
+
+        assertBatchContains(0, test_text_1);
+        assertBatchContains(1, test_text_2);
+
+        journal.write(utf8StringToBytes(test_text_3));
+
+        assertBatchContains(0, test_text_1);
+        assertBatchContains(1, test_text_2);
+        assertBatchContains(2, test_text_3);
+
+        journal.removeFirstBatch();
+
+        assertBatchContains(0, test_text_2);
+        assertBatchContains(1, test_text_3);
+
+        journal.removeFirstBatch();
+
+        assertBatchContains(0, test_text_3);
+
+        journal.removeFirstBatch();
+
+        assertThat(journal.isEmpty()).isTrue();
+    }
+
+    @Test
     void complex_test_without_truncate() {
         //BATCH_SIZE must be less than size of each string
         List<String> strings = getRandomStrings(100, 150, 1000);
@@ -162,6 +184,7 @@ class JournalTest {
         }
 
         while (!journal.isEmpty()) {
+
             byte[] batch = journal.getFirstBatch();
             String actualText = bytesToUtf8String(batch);
             assertThat(strings).contains(actualText);
@@ -210,5 +233,17 @@ class JournalTest {
         }
 
         assertThat(strings).isEmpty();
+    }
+
+    private void assertFirstBatchContains(String expectedText) {
+        byte[] batch = journal.getFirstBatch();
+        String actualText = bytesToUtf8String(batch);
+        assertThat(actualText).isEqualTo(expectedText);
+    }
+
+    private void assertBatchContains(int position, String expectedText) {
+        byte[] batch = journal.getBatch(position);
+        String actualText = bytesToUtf8String(batch);
+        assertThat(actualText).isEqualTo(expectedText);
     }
 }
