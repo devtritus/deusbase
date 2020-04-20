@@ -1,19 +1,25 @@
 package com.devtritus.deusbase.node;
 
+import com.devtritus.deusbase.api.NodeRequest;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.role.MasterNode;
 import com.devtritus.deusbase.node.role.SlaveNode;
 import com.devtritus.deusbase.node.server.*;
+import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 import com.devtritus.deusbase.node.utils.NodeMode;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
+import static com.devtritus.deusbase.node.utils.Utils.createFileIfNotExist;
+import static com.devtritus.deusbase.node.utils.Utils.isEmptyFile;
 
 class Node {
     private final NodeServer nodeServer = new NodeServer();
@@ -39,10 +45,27 @@ class Node {
         RequestBodyHandler requestBodyHandler;
 
         if(mode == NodeMode.MASTER) {
-            String pathToJournal = programArgs.getOrDefault(JOURNAL_PATH, DEFAULT_JOURNAL_PATH);
             int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
             int journalMinSizeToTruncate = programArgs.getIntegerOrDefault(JOURNAL_MIN_SIZE_TO_TRUNCATE, DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE);
-            RequestJournal journal = RequestJournal.init(Paths.get(pathToJournal), journalBatchSize, journalMinSizeToTruncate);
+
+            String pathToJournal = programArgs.getOrDefault(JOURNAL_PATH, DEFAULT_JOURNAL_PATH);
+            String pathToFlushContext = programArgs.getOrDefault(FLUSH_CONTEXT_PATH, DEFAULT_FLUSH_CONTEXT_PATH);
+
+            Path journalPath = Paths.get(pathToJournal);
+            Path flushContextPath = Paths.get(pathToFlushContext);
+
+            createFileIfNotExist(journalPath);
+            createFileIfNotExist(flushContextPath);
+
+            FlushContext flushContext = new FlushContext(flushContextPath);
+            if(!isEmptyFile(flushContextPath)) {
+                List<NodeRequest> unflushedRequests = flushContext.getAll();
+                if(!unflushedRequests.isEmpty()) {
+                    throw new IllegalStateException("Unflushed requests were found");
+                }
+            }
+
+            RequestJournal journal = RequestJournal.init(journalPath, flushContext, journalBatchSize, journalMinSizeToTruncate);
             MasterNode masterNode = new MasterNode(env);
 
             requestBodyHandler = new MasterRequestHandler(masterNode, journal);

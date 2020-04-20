@@ -1,6 +1,9 @@
 package com.devtritus.deusbase.node.utils;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public abstract class Utils {
@@ -35,5 +38,61 @@ public abstract class Utils {
 
     public static String bytesToUtf8String(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    public static void createFileIfNotExist(Path path) {
+        if(!Files.exists(path)) {
+            try {
+                Files.createFile(path);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static Path createDirectoryIfNotExist(Path path) {
+        try {
+            if(!Files.exists(path)) {
+                Files.createDirectory(path);
+            }
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        return path;
+    }
+
+    public static void deleteFileIfExists(Path path) {
+        try {
+            if (Files.exists(path)) {
+                Files.delete(path);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Path createFile(Path path) {
+        try {
+            Files.createFile(path);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        return path;
+    }
+
+    public static void deleteFile(Path path) {
+        try {
+            Files.delete(path);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean isEmptyFile(Path path) {
+        try {
+            return Files.size(path) == 0;
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

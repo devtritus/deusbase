@@ -10,18 +10,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static com.devtritus.deusbase.node.utils.Utils.isEmptyFile;
+
 class Journal {
     private final static int HEADER_SIZE = 256;
     private final static int LONG_SIZE = 8;
     private final static int COPY_BUFFER_SIZE = 4096;
     private final static int MIN_FILE_SIZE = HEADER_SIZE + LONG_SIZE;
 
-    private List<Long> batchPositions;
+    private final Path path;
+    private final int batchSize;
 
-    private Path path;
-    private int batchSize;
     private int minSizeToTruncate;
 
+    private List<Long> batchPositions;
     private boolean initialized;
 
     Journal(Path path, int batchSize, int minSizeToTruncate) {
@@ -32,8 +34,7 @@ class Journal {
 
     void init() {
         try {
-            long fileSize = Files.size(path);
-            if (fileSize == 0) {
+            if (isEmptyFile(path)) {
                 initJournal();
             } else {
                 readJournal();

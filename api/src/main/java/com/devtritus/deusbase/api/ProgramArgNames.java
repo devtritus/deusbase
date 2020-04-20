@@ -18,4 +18,5 @@ public interface ProgramArgNames {
     String JOURNAL_PATH = "journal";
     String JOURNAL_BATCH_SIZE = "journal_batch_size";
     String JOURNAL_MIN_SIZE_TO_TRUNCATE = "journal_min_size_to_truncate";
+    String FLUSH_CONTEXT_PATH = "flush_context";
 }

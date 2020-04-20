@@ -1,21 +1,22 @@
 package com.devtritus.deusbase.node.tree;
 
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 import static com.devtritus.deusbase.node.TestUtils.*;
+import static com.devtritus.deusbase.node.utils.Utils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class BTreeTest {
 
     @Test
-    void add_then_serialize_then_search_by_keys_test() throws IOException {
+    void add_then_serialize_then_search_by_keys_test() {
         Path filePath = Paths.get("test_index.storage");
-        Files.createFile(filePath);
+        deleteFileIfExists(filePath);
+        createFile(filePath);
+
         BTreeImpl tree = (BTreeImpl)BTreeInitializer.init(filePath, 100, 1000);
         BTreeNodePersistenceProvider provider = (BTreeNodePersistenceProvider)tree.getProvider();
 
@@ -35,7 +36,7 @@ class BTreeTest {
             assertThat(valueList).containsExactly(entry.getValue());
         }
 
-        Files.delete(filePath);
+        deleteFile(filePath);
     }
 
     @Test

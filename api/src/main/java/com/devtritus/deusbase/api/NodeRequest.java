@@ -1,5 +1,8 @@
 package com.devtritus.deusbase.api;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -7,7 +10,8 @@ public class NodeRequest {
     private Command command;
     private String[] args;
 
-    public NodeRequest(Command command, String[] args) {
+    @JsonCreator
+    public NodeRequest(@JsonProperty("command") Command command, @JsonProperty("args") String[] args) {
         this.command = command;
         this.args = args;
     }

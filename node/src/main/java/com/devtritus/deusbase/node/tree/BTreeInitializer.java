@@ -2,15 +2,16 @@ package com.devtritus.deusbase.node.tree;
 
 import com.devtritus.deusbase.node.index.BTreeIndexLoader;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+
+import static com.devtritus.deusbase.node.utils.Utils.isEmptyFile;
 
 public abstract class BTreeInitializer {
     public static BTree<String, List<Long>> init(Path path, int m, int cacheLimit) {
         BTreeIndexLoader loader;
         try {
-            if (Files.size(path) != 0) {
+            if (!isEmptyFile(path)) {
                 loader = BTreeIndexLoader.readIndex(path);
                 int loaderM = loader.getM();
                 if(loaderM != m) {

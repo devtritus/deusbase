@@ -18,6 +18,7 @@ import java.util.UUID;
 
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
+import static com.devtritus.deusbase.node.utils.Utils.*;
 
 class NodeEnvironmentManager {
     private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -117,25 +118,5 @@ class NodeEnvironmentManager {
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Path createFile(Path path) {
-        try {
-            Files.createFile(path);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
-        return path;
-    }
-
-    private Path createDirectoryIfNotExist(Path path) {
-        try {
-            if(!Files.exists(path)) {
-                Files.createDirectory(path);
-            }
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
-        return path;
     }
 }

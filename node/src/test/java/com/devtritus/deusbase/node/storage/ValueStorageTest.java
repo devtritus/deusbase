@@ -2,13 +2,12 @@ package com.devtritus.deusbase.node.storage;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.devtritus.deusbase.node.utils.Utils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ValueStorageTest {
@@ -17,13 +16,11 @@ class ValueStorageTest {
     private ValueStorage storage;
 
     @BeforeEach
-    void init() throws IOException {
+    void init() {
         Path path = Paths.get(TEST_FILE_NAME);
-        if(Files.exists(path)) {
-            Files.delete(path);
-        }
+        deleteFileIfExists(path);
+        createFile(path);
 
-        Files.createFile(path);
         storage = new ValueStorage(path);
     }
 

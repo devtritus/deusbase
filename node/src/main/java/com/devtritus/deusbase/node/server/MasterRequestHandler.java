@@ -28,7 +28,10 @@ public class MasterRequestHandler implements RequestBodyHandler {
 
             return response;
         } else {
-            return nextHandler.handle(request);
+            journal.putRequest(request);
+            NodeResponse result = nextHandler.handle(request);
+            journal.flush(request);
+            return result;
         }
     }
 
