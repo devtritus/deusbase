@@ -35,12 +35,11 @@ public class NodeClient {
 
     private NodeResponse doRequest(Command command, String[] args) throws Exception {
         RequestBody requestBody = new RequestBody();
-        requestBody.setCommandName(command.toString());
         requestBody.setArgs(args);
 
         String jsonBody = objectMapper.writeValueAsString(requestBody);
 
-        HttpPost httpPost = new HttpPost(url);
+        HttpPost httpPost = new HttpPost(url + "/" + command.toString());
         httpPost.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {

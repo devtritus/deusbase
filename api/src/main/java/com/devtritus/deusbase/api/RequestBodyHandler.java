@@ -1,7 +1,9 @@
 package com.devtritus.deusbase.api;
 
+import java.nio.channels.ReadableByteChannel;
+
 public interface RequestBodyHandler {
-    NodeResponse handle(NodeRequest request) throws WrongArgumentException;
+    byte[] handle(Command command, ReadableByteChannel data) throws WrongArgumentException;
 
     void setNextHandler(RequestBodyHandler nextHandler);
 }

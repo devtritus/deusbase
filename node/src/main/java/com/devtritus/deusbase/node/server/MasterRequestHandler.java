@@ -20,10 +20,10 @@ public class MasterRequestHandler implements RequestBodyHandler {
     public NodeResponse handle(NodeRequest request) throws WrongArgumentException {
         String[] args = request.getArgs();
         if(request.getCommand() == Command.HANDSHAKE) {
-            String masterUuid = masterApi.receiveSlaveHandshake(args[0], args[1]);
+            List<String> responsesValues = masterApi.receiveSlaveHandshake(args);
             NodeResponse response = new NodeResponse();
             Map<String, List<String>> result = new HashMap<>();
-            result.put("result", Collections.singletonList(masterUuid));
+            result.put("result", responsesValues);
             response.setData(result);
 
             return response;

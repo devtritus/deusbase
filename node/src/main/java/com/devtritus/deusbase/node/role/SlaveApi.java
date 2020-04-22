@@ -1,7 +1,10 @@
 package com.devtritus.deusbase.node.role;
 
-import java.util.Map;
+import com.devtritus.deusbase.api.NodeRequest;
+
+import java.util.List;
 
 public interface SlaveApi {
-    void receiveLog(Map<String, byte[]> logPart);
+    List<NodeRequest> receiveLogBatch(byte[] bytes);
+    Long getLastBatchId();
 }

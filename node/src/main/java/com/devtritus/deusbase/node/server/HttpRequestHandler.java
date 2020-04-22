@@ -1,20 +1,17 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.*;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Scanner;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 public class HttpRequestHandler extends AbstractHandler {
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final RequestBodyHandler requestBodyHandler;
 
     public HttpRequestHandler(RequestBodyHandler requestBodyHandler) {
@@ -34,24 +31,15 @@ public class HttpRequestHandler extends AbstractHandler {
             return;
         }
 
-        BufferedReader reader = request.getReader();
+        ReadableByteChannel channel = Channels.newChannel(request.getInputStream());
 
-        StringBuilder stringBuilder = new StringBuilder();
-        Scanner scanner = new Scanner(reader);
-        while(scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            stringBuilder.append(line);
-        }
+        Command command = Command.getCommandByName(s.substring(1));
 
         try {
-            String bodyMesssage = stringBuilder.toString();
-
-            RequestBody requestBody = objectMapper.readValue(bodyMesssage, RequestBody.class);
-            NodeResponse response = requestBodyHandler.handle(requestBody.getRequest());
-            String responseBodyJson = objectMapper.writeValueAsString(response);
+            byte[] response = requestBodyHandler.handle(command, channel);
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-            httpServletResponse.getWriter().println(responseBodyJson);
+            httpServletResponse.getOutputStream().write(response);
 
             request.setHandled(true);
         } catch (Exception e) {

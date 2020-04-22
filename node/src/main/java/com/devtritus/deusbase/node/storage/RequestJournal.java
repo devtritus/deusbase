@@ -55,6 +55,12 @@ public class RequestJournal {
         journal.removeFirstBatch();
     }
 
+    public byte[] getBatch(int position) {
+        List<NodeRequest> requests = new ArrayList<>();
+
+        return journal.getBatch(position);
+    }
+
     public List<NodeRequest> getRequestsBatch(int position) {
         List<NodeRequest> requests = new ArrayList<>();
 

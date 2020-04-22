@@ -1,6 +1,9 @@
 package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.node.env.NodeEnvironment;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -21,9 +24,24 @@ public class MasterNode implements MasterApi {
     }
 
     @Override
-    public String receiveSlaveHandshake(String slaveAddress, String slaveUuid) {
+    public List<String> receiveSlaveHandshake(String[] slaveArgs) {
+        String slaveAddress = slaveArgs[0];
+        String slaveUuid = slaveArgs[1];
+        String slaveState = slaveArgs[2];
+
+        List<String> result = new ArrayList<>();
+        String masterUuid = env.getPropertyOrThrowException("uuid");
+        result.add(masterUuid);
+
+        if(slaveState.equals("init")) {
+
+        } else if(slaveState.equals("connect")) {
+            String slaveBatchIdString = slaveArgs[3];
+            Long slaveBatchId = Long.parseLong(slaveBatchIdString);
+        }
+        //TODO: get address from request url
         slaves.put(slaveAddress, slaveUuid);
-        return env.getPropertyOrThrowException("uuid");
+        return result;
     }
 
     private void uploadBatch() {

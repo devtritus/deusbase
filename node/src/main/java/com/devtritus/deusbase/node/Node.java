@@ -9,6 +9,9 @@ import com.devtritus.deusbase.node.role.SlaveNode;
 import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
+import com.devtritus.deusbase.node.storage.ValueStorage;
+import com.devtritus.deusbase.node.tree.BTree;
+import com.devtritus.deusbase.node.tree.BTreeInitializer;
 import com.devtritus.deusbase.node.utils.NodeMode;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -25,24 +28,23 @@ class Node {
     private final NodeServer nodeServer = new NodeServer();
 
     private NodeMode mode;
-    private NodeEnvironment env;
     private ProgramArgs programArgs;
 
-    Node(NodeMode mode, NodeEnvironment env, ProgramArgs programArgs) {
+    Node(NodeMode mode, ProgramArgs programArgs) {
         this.mode = mode;
-        this.env = env;
         this.programArgs = programArgs;
     }
 
     void start() {
+
         String host = programArgs.getOrDefault(HOST, DEFAULT_HOST);
         int port = programArgs.getIntegerOrDefault(PORT, DEFAULT_PORT);
 
         final String nodeAddress = host + ":" + port;
 
-        CrudRequestHandler crudRequestHandler = new CrudRequestHandler(env.getNodeApi());
-
         RequestBodyHandler requestBodyHandler;
+
+        NodeEnvironment env = NodeEnvironment.getEnv(programArgs);
 
         if(mode == NodeMode.MASTER) {
             int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
@@ -65,6 +67,7 @@ class Node {
                 }
             }
 
+
             RequestJournal journal = RequestJournal.init(journalPath, flushContext, journalBatchSize, journalMinSizeToTruncate);
             MasterNode masterNode = new MasterNode(env);
 
@@ -81,6 +84,16 @@ class Node {
         } else {
             throw new IllegalStateException(String.format("Unexpected mode: %s", mode));
         }
+
+        int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
+        int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
+
+        BTree<String, List<Long>> tree = BTreeInitializer.init(env.getIndexFilePath(), treeM, treeCacheLimit);
+        ValueStorage storage = new ValueStorage(env.getStorageFilePath());
+
+        NodeApi nodeApi = new NodeApi(tree, storage);
+
+        CrudRequestHandler crudRequestHandler = new CrudRequestHandler(nodeApi);
 
         requestBodyHandler.setNextHandler(crudRequestHandler);
 

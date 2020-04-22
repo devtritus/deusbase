@@ -1,5 +1,7 @@
 package com.devtritus.deusbase.node.role;
 
+import java.util.List;
+
 public interface MasterApi {
-    String receiveSlaveHandshake(String slaveAddress, String slaveUuid);
+    List<String> receiveSlaveHandshake(String args[]);
 }

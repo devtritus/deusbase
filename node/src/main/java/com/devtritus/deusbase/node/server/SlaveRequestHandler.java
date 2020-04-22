@@ -1,10 +1,12 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.api.NodeRequest;
-import com.devtritus.deusbase.api.RequestBodyHandler;
-import com.devtritus.deusbase.api.NodeResponse;
-import com.devtritus.deusbase.api.WrongArgumentException;
+import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.role.SlaveApi;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SlaveRequestHandler implements RequestBodyHandler {
     private SlaveApi slaveApi;
@@ -16,7 +18,26 @@ public class SlaveRequestHandler implements RequestBodyHandler {
 
     @Override
     public NodeResponse handle(NodeRequest request) throws WrongArgumentException {
-        return nextHandler.handle(request);
+        //TODO:
+        if(request.getCommand() == Command.BATCH) {
+            List<NodeRequest> requests = slaveApi.receiveLogBatch(new byte[0]);
+
+            for(NodeRequest request1 : requests) {
+                nextHandler.handle(request1);
+            }
+
+            Long batchId = slaveApi.getLastBatchId();
+            NodeResponse response = new NodeResponse();
+            Map<String, List<String>> result = new HashMap<>();
+            result.put("batchId", Collections.singletonList(batchId.toString()));
+            response.setData(result);
+            return response;
+        } else if(request.getCommand().getType() == CommandType.WRITE) {
+            throwSlaveException();
+            return null;
+        } else {
+            return nextHandler.handle(request);
+        }
     }
 
     @Override

@@ -1,10 +1,6 @@
 package com.devtritus.deusbase.node.env;
 
 import com.devtritus.deusbase.api.ProgramArgs;
-import com.devtritus.deusbase.node.server.NodeApi;
-import com.devtritus.deusbase.node.storage.ValueStorage;
-import com.devtritus.deusbase.node.tree.BTree;
-import com.devtritus.deusbase.node.tree.BTreeInitializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
@@ -12,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -74,15 +69,8 @@ class NodeEnvironmentManager {
             createFile(storageFilePath);
         }
 
-        int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
-        int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
-
-        BTree<String, List<Long>> tree = BTreeInitializer.init(indexFilePath, treeM, treeCacheLimit);
-        ValueStorage storage = new ValueStorage(storageFilePath);
-
-        NodeApi nodeApi = new NodeApi(tree, storage);
-
-        env.setNodeApi(nodeApi);
+        env.setIndexFilePath(indexFilePath);
+        env.setStorageFilePath(storageFilePath);
 
         return env;
     }

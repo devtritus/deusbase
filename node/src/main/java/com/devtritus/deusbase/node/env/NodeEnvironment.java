@@ -1,26 +1,34 @@
 package com.devtritus.deusbase.node.env;
 
 import com.devtritus.deusbase.api.ProgramArgs;
-import com.devtritus.deusbase.node.server.NodeApi;
 import java.nio.file.Path;
 
 public class NodeEnvironment {
     private final NodeEnvironmentManager envManager;
 
+    private Path indexFilePath;
+    private Path storageFilePath;
     private Path configPath;
-    private NodeApi nodeApi;
     private NodeConfig config;
 
     NodeEnvironment(NodeEnvironmentManager envManager) {
         this.envManager = envManager;
     }
 
-    public NodeApi getNodeApi() {
-        return nodeApi;
+    public Path getIndexFilePath() {
+        return indexFilePath;
     }
 
-    void setNodeApi(NodeApi nodeApi) {
-        this.nodeApi = nodeApi;
+    void setIndexFilePath(Path indexFilePath) {
+        this.indexFilePath = indexFilePath;
+    }
+
+    public Path getStorageFilePath() {
+        return storageFilePath;
+    }
+
+    void setStorageFilePath(Path storageFilePath) {
+        this.storageFilePath = storageFilePath;
     }
 
     public String getPropertyOrThrowException(String key) {

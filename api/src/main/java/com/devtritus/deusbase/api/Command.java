@@ -7,7 +7,8 @@ public enum Command {
     DELETE(4, "delete", CommandType.WRITE, 1, 2),
     UPDATE(5,"update", CommandType.WRITE, 2, 3),
 
-    HANDSHAKE(6,"handshake", CommandType.WRITE, 2, 2);
+    HANDSHAKE(6,"handshake", CommandType.WRITE, 2, 2),
+    BATCH(7, "batch", CommandType.WRITE, 2, 2);
 
     private final int id;
     private final String text;
