@@ -71,6 +71,14 @@ class Journal {
         }
     }
 
+    boolean isLastBatchEmpty() {
+        try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
+            return isLastBatchEmpty(channel);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     byte[] getBatch(int position) {
         assertJournalInitialized();
 
@@ -102,13 +110,14 @@ class Journal {
         assertJournalInitialized();
 
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
-            long batchEnd = readLong(channel, batchPositions.get(0));
+            long batchStart = batchPositions.get(0);
+            long batchEnd = readLong(channel, batchStart);
             if(batchEnd != -1) {
                 updateHeader(channel, batchEnd);
                 truncate(channel);
                 batchPositions.remove(0);
-            } else if(channel.size() > MIN_FILE_SIZE) {
-                channel.truncate(MIN_FILE_SIZE);
+            } else if(channel.size() > batchStart + LONG_SIZE) {
+                channel.truncate(batchStart + LONG_SIZE);
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
@@ -142,8 +151,11 @@ class Journal {
     int size() {
         if(isEmpty()) {
             return 0;
+        } else if(isLastBatchEmpty()) {
+            return batchPositions.size() - 1;
+        } else {
+            return batchPositions.size();
         }
-        return batchPositions.size() - 1;
     }
 
     private void truncate(SeekableByteChannel channel) throws IOException {
@@ -248,8 +260,12 @@ class Journal {
     }
 
     private boolean isEmpty(SeekableByteChannel channel) throws IOException {
+        return Objects.equals(getFirstBatchPosition(), getLastBatchPosition()) && isLastBatchEmpty(channel);
+    }
+
+    private boolean isLastBatchEmpty(SeekableByteChannel channel) throws IOException {
         long fileSize = channel.size();
-        return Objects.equals(getFirstBatchPosition(), getLastBatchPosition()) && fileSize - LONG_SIZE == getLastBatchPosition();
+        return fileSize - LONG_SIZE == getLastBatchPosition();
     }
 
     private Long getFirstBatchPosition() {

@@ -2,13 +2,8 @@ package com.devtritus.deusbase.node.storage;
 
 import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeRequest;
-
 import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,47 +11,36 @@ import static com.devtritus.deusbase.node.utils.Utils.*;
 
 public class RequestJournal {
     private final static int INTEGER_SIZE = 4;
+    private final static int LONG_SIZE = 8;
 
     private final Journal journal;
     private final FlushContext flushContext;
-    private final Path batchIdPath;
-    private long id;
+    private long lastBatchId;
 
-    private RequestJournal(Journal journal, FlushContext flushContext, Path batchIdPath, long id) {
+    private RequestJournal(Journal journal, FlushContext flushContext, long lastBatchId) {
         this.journal = journal;
         this.flushContext = flushContext;
-        this.batchIdPath = batchIdPath;
-        this.id = id;
+        this.lastBatchId = lastBatchId;
     }
 
-    public long getFirstBatchId() {
-        return id;
+    public long getLastBatchId() {
+        return lastBatchId;
     }
 
     public static RequestJournal init(Path journalPath, FlushContext flushContext, int batchSize, int minSizeToTruncate) {
-        Path batchIdPath = Paths.get("batch.bin");
-        //TODO: store ids in the journal
-        createFileIfNotExist(batchIdPath);
         Journal journal = new Journal(journalPath, batchSize, minSizeToTruncate);
         journal.init();
-
-        long id = 0;
-        try {
-            if (Files.size(batchIdPath) == 0) {
-                ByteBuffer buffer = ByteBuffer.allocate(8);
-                buffer.putLong(0);
-                buffer.flip();
-                try (SeekableByteChannel channel = Files.newByteChannel(batchIdPath, StandardOpenOption.WRITE)) {
-                    channel.write(buffer);
-                }
-            } else {
-                writeBatchId(0, batchIdPath);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        long lastBatchId;
+        int journalSize = journal.size();
+        if(journalSize == 0) {
+            lastBatchId = -1;
+        } else {
+            byte[] lastBatch = journal.getBatch(journalSize - 1);
+            ByteBuffer buffer = ByteBuffer.wrap(lastBatch);
+            lastBatchId = buffer.getLong();
         }
 
-        return new RequestJournal(journal, flushContext, batchIdPath, id);
+        return new RequestJournal(journal, flushContext, lastBatchId);
     }
 
     public int size() {
@@ -77,15 +61,12 @@ public class RequestJournal {
 
     public void flush(NodeRequest request) {
         if(flushContext != null) {
-            flushRequest(request);
             flushContext.remove(request);
+            flushRequest(request);
         }
     }
 
     public void removeFirstRequestsBatch() {
-        //TODO:
-        //TODO: long overflow
-        writeBatchId(++id, batchIdPath);
         journal.removeFirstBatch();
     }
 
@@ -95,6 +76,7 @@ public class RequestJournal {
         byte[] batch = getBatch(position);
 
         ByteBuffer buffer = ByteBuffer.wrap(batch);
+        long batchId = buffer.getLong();
         while(buffer.remaining() != 0) {
             int commandId = buffer.getInt();
             int argsCount = buffer.getInt();
@@ -119,16 +101,19 @@ public class RequestJournal {
     }
 
     public byte[] getBatch(int position) {
-        byte[] batch = journal.getBatch(position);
-
-        ByteBuffer buffer = ByteBuffer.allocate(8 + batch.length);
-        buffer.putLong(id + position);
-        buffer.put(batch);
-        buffer.rewind();
-        return buffer.array();
+        return journal.getBatch(position);
     }
 
     private void flushRequest(NodeRequest request) {
+        if(journal.isLastBatchEmpty()) {
+            ByteBuffer longBuffer = ByteBuffer.allocate(LONG_SIZE)
+                    .putLong(++lastBatchId);
+
+            longBuffer.flip();
+
+            journal.write(longBuffer.array());
+        }
+
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
 
@@ -154,16 +139,5 @@ public class RequestJournal {
         buffer.flip();
 
         journal.write(buffer.array());
-    }
-
-    private static void writeBatchId(long id, Path path) {
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        buffer.putLong(id);
-        buffer.flip();
-        try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
-            channel.write(buffer);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

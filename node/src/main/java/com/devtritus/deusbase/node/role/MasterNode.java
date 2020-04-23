@@ -53,7 +53,7 @@ public class MasterNode implements MasterApi {
         } else if(slaveState.equals("connect")) {
             String slaveBatchIdString = slaveArgs[3];
             Long slaveBatchId = Long.parseLong(slaveBatchIdString);
-            Long firstBatchId = journal.getFirstBatchId();
+            Long firstBatchId = journal.getLastBatchId();
             if(slaveBatchId >= firstBatchId && slaveBatchId < firstBatchId + journal.size()) {
                 position = (int)(slaveBatchId - firstBatchId);
                 int successfullySentBatchesCount = sendBatch(slaveAddress, position);

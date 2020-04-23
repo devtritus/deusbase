@@ -36,6 +36,29 @@ class JournalTest {
     }
 
     @Test
+    void is_last_batch_empty_test() {
+        assertThat(journal.isLastBatchEmpty()).isTrue();
+
+        journal.write(utf8StringToBytes("test"));
+
+        assertThat(journal.isLastBatchEmpty()).isFalse();
+        assertThat(journal.size()).isEqualTo(1);
+
+        journal.write(utf8StringToBytes(test_text_1)); //first batch will be full so second batch is empty
+
+        assertThat(journal.size()).isEqualTo(1);
+        assertThat(journal.isLastBatchEmpty()).isTrue();
+
+        journal.removeFirstBatch();
+
+        assertThat(journal.isLastBatchEmpty()).isTrue();
+
+        journal.removeFirstBatch();
+
+        assertThat(journal.isLastBatchEmpty()).isTrue();
+    }
+
+    @Test
     void remove_batch_when_journal_is_empty_test() {
         assertThat(journal.isEmpty()).isTrue();
 
