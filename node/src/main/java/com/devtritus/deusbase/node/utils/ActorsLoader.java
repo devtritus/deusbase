@@ -1,6 +1,8 @@
 package com.devtritus.deusbase.node.utils;
 
 import com.devtritus.deusbase.api.*;
+import com.devtritus.deusbase.node.server.CrudRequestHandler;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
@@ -11,7 +13,7 @@ import static com.devtritus.deusbase.api.ProgramArgNames.ROW_COUNT;
 public class ActorsLoader {
     private final static int DEFAULT_ROW_COUNT = 10_000_000;
 
-    public static void load(ProgramArgs programArgs, RequestBodyHandler requestBodyHandler) throws Exception {
+    public static void load(ProgramArgs programArgs, CrudRequestHandler crudRequestHandler) throws Exception {
         int rowCount;
         if(programArgs.contains(ROW_COUNT)) {
             rowCount = programArgs.getInteger(ROW_COUNT);
@@ -33,7 +35,7 @@ public class ActorsLoader {
                 args[0] = tokens[1];
                 args[1] = tokens[4];
 
-                requestBodyHandler.handle(new NodeRequest(Command.CREATE, args));
+                crudRequestHandler.handle(new NodeRequest(Command.CREATE, args));
             }
         }
     }

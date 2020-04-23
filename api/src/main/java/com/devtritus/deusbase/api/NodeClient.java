@@ -6,10 +6,13 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+
+import java.io.InputStream;
 
 public class NodeClient {
     private final static ObjectMapper objectMapper = new ObjectMapper();
@@ -21,32 +24,30 @@ public class NodeClient {
         this.url = url;
     }
 
-    public NodeResponse sneakyRequest(Command command, String... args) {
-        try {
-            return doRequest(command, args);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public NodeResponse streamRequest(Command command, InputStream in) throws Exception {
+        InputStreamEntity inputStreamEntity = new InputStreamEntity(in, -1, ContentType.APPLICATION_OCTET_STREAM);
+
+        return doPost(command, inputStreamEntity);
     }
 
     public NodeResponse request(Command command, String... args) throws Exception {
-        return doRequest(command, args);
-    }
-
-    private NodeResponse doRequest(Command command, String[] args) throws Exception {
         RequestBody requestBody = new RequestBody();
         requestBody.setArgs(args);
-
         String jsonBody = objectMapper.writeValueAsString(requestBody);
+        StringEntity entity = new StringEntity(jsonBody, ContentType.APPLICATION_JSON);
 
+        return doPost(command, entity);
+    }
+
+    private NodeResponse doPost(Command command, HttpEntity entity) throws Exception {
         HttpPost httpPost = new HttpPost(url + "/" + command.toString());
-        httpPost.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+        httpPost.setEntity(entity);
 
         try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
             int status = response.getStatusLine().getStatusCode();
 
-            HttpEntity entity = response.getEntity();
-            String entityMessage = entity != null ? EntityUtils.toString(entity) : null;
+            HttpEntity responseEntity = response.getEntity();
+            String entityMessage = responseEntity != null ? EntityUtils.toString(responseEntity) : null;
 
             if(entityMessage == null) {
                 throw new IllegalStateException("Body is null");

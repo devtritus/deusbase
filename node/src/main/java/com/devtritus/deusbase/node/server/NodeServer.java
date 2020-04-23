@@ -1,10 +1,10 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.api.RequestBodyHandler;
+import com.devtritus.deusbase.api.RequestHandler;
 
 public class NodeServer {
-    public void start(String host, int port, RequestBodyHandler requestBodyHandler, Runnable successCallback) {
-        HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestBodyHandler);
+    public void start(String host, int port, RequestHandler requestHandler, Runnable successCallback) {
+        HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler);
 
         try {
             new JettyServer(httpRequestHandler).start(host, port, () -> {

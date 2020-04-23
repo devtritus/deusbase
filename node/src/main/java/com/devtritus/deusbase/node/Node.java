@@ -2,7 +2,7 @@ package com.devtritus.deusbase.node;
 
 import com.devtritus.deusbase.api.NodeRequest;
 import com.devtritus.deusbase.api.ProgramArgs;
-import com.devtritus.deusbase.api.RequestBodyHandler;
+import com.devtritus.deusbase.api.RequestHandler;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.role.MasterNode;
 import com.devtritus.deusbase.node.role.SlaveNode;
@@ -42,12 +42,22 @@ class Node {
 
         final String nodeAddress = host + ":" + port;
 
-        RequestBodyHandler requestBodyHandler;
+        RequestHandler requestHandler;
 
         NodeEnvironment env = NodeEnvironment.getEnv(programArgs);
 
+
+        int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
+        int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
+        BTree<String, List<Long>> tree = BTreeInitializer.init(env.getIndexFilePath(), treeM, treeCacheLimit);
+        ValueStorage storage = new ValueStorage(env.getStorageFilePath());
+
+        NodeApi nodeApi = new NodeApi(tree, storage);
+
+        CrudRequestHandler crudRequestHandler = new CrudRequestHandler(nodeApi, null);
+
+        int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
         if(mode == NodeMode.MASTER) {
-            int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
             int journalMinSizeToTruncate = programArgs.getIntegerOrDefault(JOURNAL_MIN_SIZE_TO_TRUNCATE, DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE);
 
             String pathToJournal = programArgs.getOrDefault(JOURNAL_PATH, DEFAULT_JOURNAL_PATH);
@@ -67,37 +77,30 @@ class Node {
                 }
             }
 
-
             RequestJournal journal = RequestJournal.init(journalPath, flushContext, journalBatchSize, journalMinSizeToTruncate);
-            MasterNode masterNode = new MasterNode(env);
+            MasterNode masterNode = new MasterNode(env, journal);
 
-            requestBodyHandler = new MasterRequestHandler(masterNode, journal);
+            MasterRequestHandler masterRequestHandler = new MasterRequestHandler(masterNode, journal);
+            masterRequestHandler.setNextHandler(crudRequestHandler);
+            requestHandler = masterRequestHandler;
             masterNode.init();
 
         } else if(mode == NodeMode.SLAVE) {
             String masterAddress = programArgs.get(MASTER_ADDRESS);
-            SlaveNode slaveNode = new SlaveNode(env);
+            SlaveNode slaveNode = new SlaveNode(env, journalBatchSize);
 
-            requestBodyHandler = new SlaveRequestHandler(slaveNode);
+            SlaveRequestHandler slaveRequestHandler = new SlaveRequestHandler(slaveNode);
+            slaveRequestHandler.setNextHandler(crudRequestHandler);
+            requestHandler = slaveRequestHandler;
             slaveNode.init(nodeAddress, masterAddress);
 
         } else {
             throw new IllegalStateException(String.format("Unexpected mode: %s", mode));
         }
 
-        int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
-        int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
 
-        BTree<String, List<Long>> tree = BTreeInitializer.init(env.getIndexFilePath(), treeM, treeCacheLimit);
-        ValueStorage storage = new ValueStorage(env.getStorageFilePath());
 
-        NodeApi nodeApi = new NodeApi(tree, storage);
-
-        CrudRequestHandler crudRequestHandler = new CrudRequestHandler(nodeApi);
-
-        requestBodyHandler.setNextHandler(crudRequestHandler);
-
-        nodeServer.start(host, port, requestBodyHandler, Node::printBanner);
+        nodeServer.start(host, port, requestHandler, Node::printBanner);
     }
 
     private static void printBanner() {

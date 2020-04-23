@@ -2,7 +2,6 @@ package com.devtritus.deusbase.node;
 
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
-import com.devtritus.deusbase.api.RequestBodyHandler;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.storage.ValueStorage;
@@ -31,8 +30,8 @@ public class Main {
             ValueStorage storage = new ValueStorage(env.getStorageFilePath());
 
             NodeApi nodeApi = new NodeApi(tree, storage);
-            RequestBodyHandler requestBodyHandler = new CrudRequestHandler(nodeApi);
-            ActorsLoader.load(programArgs, requestBodyHandler);
+            CrudRequestHandler requestHandler = new CrudRequestHandler(nodeApi, null);
+            ActorsLoader.load(programArgs, requestHandler);
         } else {
             new Node(mode, programArgs).start();
         }

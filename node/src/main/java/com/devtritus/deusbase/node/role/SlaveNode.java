@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,10 +24,12 @@ public class SlaveNode implements SlaveApi {
 
     private NodeEnvironment env;
     private Path path = Paths.get("slaveData.bin");
+    private int batchSize;
 
-    public SlaveNode(NodeEnvironment env) {
+    public SlaveNode(NodeEnvironment env, int batchSize) {
         this.env = env;
         createFileIfNotExist(path);
+        this.batchSize = batchSize;
     }
 
     public void init(String slaveAddress, String masterAddress) {
@@ -34,13 +37,20 @@ public class SlaveNode implements SlaveApi {
     }
 
     @Override
-    public List<NodeRequest> receiveLogBatch(byte[] bytes) {
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    public List<NodeRequest> receiveLogBatch(ReadableByteChannel channel) {
+        //TODO: make buffer less
+        ByteBuffer buffer = ByteBuffer.allocate(batchSize);
+        try {
+            channel.read(buffer);
+        } catch(Exception e)  {
+            throw new RuntimeException(e);
+        }
+        buffer.flip();
         Long batchId = buffer.getLong();
-        try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
+        try (SeekableByteChannel channel1 = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
             ByteBuffer buffer1 = ByteBuffer.allocate(8).putLong(batchId);
-            buffer.rewind();
-            channel.write(buffer1);
+            buffer1.rewind();
+            channel1.write(buffer1);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -98,6 +108,7 @@ public class SlaveNode implements SlaveApi {
             throw new RuntimeException(e);
         }
 
+        //TODO: handler response from master and run server
         String actualMasterUuid = response.getData().get("result").get(0);
         String writtenMasterUuid = env.getProperty("masterUuid");
         if(writtenMasterUuid == null) { //first connection

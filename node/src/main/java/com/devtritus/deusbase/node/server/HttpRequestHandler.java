@@ -12,10 +12,10 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 public class HttpRequestHandler extends AbstractHandler {
-    private final RequestBodyHandler requestBodyHandler;
+    private final RequestHandler requestHandler;
 
-    public HttpRequestHandler(RequestBodyHandler requestBodyHandler) {
-        this.requestBodyHandler = requestBodyHandler;
+    public HttpRequestHandler(RequestHandler requestHandler) {
+        this.requestHandler = requestHandler;
     }
 
     @Override
@@ -36,7 +36,7 @@ public class HttpRequestHandler extends AbstractHandler {
         Command command = Command.getCommandByName(s.substring(1));
 
         try {
-            byte[] response = requestBodyHandler.handle(command, channel);
+            byte[] response = requestHandler.handle(command, channel);
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
             httpServletResponse.getOutputStream().write(response);

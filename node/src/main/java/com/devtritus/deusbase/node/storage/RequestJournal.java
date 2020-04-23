@@ -4,7 +4,11 @@ import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeRequest;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,17 +19,44 @@ public class RequestJournal {
 
     private final Journal journal;
     private final FlushContext flushContext;
+    private final Path batchIdPath;
+    private long id;
 
-    private RequestJournal(Journal journal, FlushContext flushContext) {
+    private RequestJournal(Journal journal, FlushContext flushContext, Path batchIdPath, long id) {
         this.journal = journal;
         this.flushContext = flushContext;
+        this.batchIdPath = batchIdPath;
+        this.id = id;
+    }
+
+    public long getFirstBatchId() {
+        return id;
     }
 
     public static RequestJournal init(Path journalPath, FlushContext flushContext, int batchSize, int minSizeToTruncate) {
+        Path batchIdPath = Paths.get("batch.bin");
+        //TODO: store ids in the journal
+        createFileIfNotExist(batchIdPath);
         Journal journal = new Journal(journalPath, batchSize, minSizeToTruncate);
         journal.init();
 
-        return new RequestJournal(journal, flushContext);
+        long id = 0;
+        try {
+            if (Files.size(batchIdPath) == 0) {
+                ByteBuffer buffer = ByteBuffer.allocate(8);
+                buffer.putLong(0);
+                buffer.flip();
+                try (SeekableByteChannel channel = Files.newByteChannel(batchIdPath, StandardOpenOption.WRITE)) {
+                    channel.write(buffer);
+                }
+            } else {
+                writeBatchId(0, batchIdPath);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return new RequestJournal(journal, flushContext, batchIdPath, id);
     }
 
     public int size() {
@@ -46,25 +77,22 @@ public class RequestJournal {
 
     public void flush(NodeRequest request) {
         if(flushContext != null) {
-            flushContext.remove(request);
             flushRequest(request);
+            flushContext.remove(request);
         }
     }
 
     public void removeFirstRequestsBatch() {
+        //TODO:
+        //TODO: long overflow
+        writeBatchId(++id, batchIdPath);
         journal.removeFirstBatch();
-    }
-
-    public byte[] getBatch(int position) {
-        List<NodeRequest> requests = new ArrayList<>();
-
-        return journal.getBatch(position);
     }
 
     public List<NodeRequest> getRequestsBatch(int position) {
         List<NodeRequest> requests = new ArrayList<>();
 
-        byte[] batch = journal.getBatch(position);
+        byte[] batch = getBatch(position);
 
         ByteBuffer buffer = ByteBuffer.wrap(batch);
         while(buffer.remaining() != 0) {
@@ -88,6 +116,16 @@ public class RequestJournal {
         }
 
         return requests;
+    }
+
+    public byte[] getBatch(int position) {
+        byte[] batch = journal.getBatch(position);
+
+        ByteBuffer buffer = ByteBuffer.allocate(8 + batch.length);
+        buffer.putLong(id + position);
+        buffer.put(batch);
+        buffer.rewind();
+        return buffer.array();
     }
 
     private void flushRequest(NodeRequest request) {
@@ -116,5 +154,16 @@ public class RequestJournal {
         buffer.flip();
 
         journal.write(buffer.array());
+    }
+
+    private static void writeBatchId(long id, Path path) {
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        buffer.putLong(id);
+        buffer.flip();
+        try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
+            channel.write(buffer);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

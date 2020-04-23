@@ -4,12 +4,18 @@ import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.role.MasterApi;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 
+import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 
-public class MasterRequestHandler implements RequestBodyHandler {
+public class MasterRequestHandler implements RequestHandler {
     private final MasterApi masterApi;
     private final RequestJournal journal;
-    private RequestBodyHandler nextHandler;
+
+    public void setNextHandler(NodeRequestHandler nextHandler) {
+        this.nextHandler = nextHandler;
+    }
+
+    private NodeRequestHandler nextHandler;
 
     public MasterRequestHandler(MasterApi masterApi, RequestJournal journal) {
         this.masterApi = masterApi;
@@ -17,26 +23,29 @@ public class MasterRequestHandler implements RequestBodyHandler {
     }
 
     @Override
-    public NodeResponse handle(NodeRequest request) throws WrongArgumentException {
-        String[] args = request.getArgs();
-        if(request.getCommand() == Command.HANDSHAKE) {
-            List<String> responsesValues = masterApi.receiveSlaveHandshake(args);
-            NodeResponse response = new NodeResponse();
+    public byte[] handle(Command command, ReadableByteChannel channel) {
+        NodeResponse nodeResponse;
+        if(command == Command.HANDSHAKE) {
+            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
+            List<String> responsesValues = masterApi.receiveSlaveHandshake(requestBody.getArgs());
             Map<String, List<String>> result = new HashMap<>();
             result.put("result", responsesValues);
-            response.setData(result);
-
-            return response;
+            nodeResponse = new NodeResponse();
+            nodeResponse.setData(result);
+            nodeResponse.setCode(ResponseStatus.OK.getCode());
         } else {
-            journal.putRequest(request);
-            NodeResponse result = nextHandler.handle(request);
-            journal.flush(request);
-            return result;
-        }
-    }
+            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
+            NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());
+            if(command.getType() == CommandType.WRITE) {
+                journal.putRequest(nodeRequest);
+            }
 
-    @Override
-    public void setNextHandler(RequestBodyHandler nextHandler) {
-        this.nextHandler = nextHandler;
+            nodeResponse = nextHandler.handle(nodeRequest);
+
+            if(command.getType() == CommandType.WRITE) {
+                journal.flush(nodeRequest);
+            }
+        }
+        return JsonDataConverter.convertObjectToJsonBytes(nodeResponse);
     }
 }

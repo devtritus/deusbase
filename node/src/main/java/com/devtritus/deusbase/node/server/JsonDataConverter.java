@@ -8,7 +8,7 @@ import java.util.Scanner;
 public class JsonDataConverter {
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
-    public static <T> T readStringFromChannel(ReadableByteChannel channel, Class<T> object) {
+    public static <T> T readNodeRequest(ReadableByteChannel channel, Class<T> object) {
         try {
             StringBuilder stringBuilder = new StringBuilder();
             Scanner scanner = new Scanner(channel);
