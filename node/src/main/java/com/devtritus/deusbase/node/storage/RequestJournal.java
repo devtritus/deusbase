@@ -66,7 +66,11 @@ public class RequestJournal {
         }
     }
 
-    public void removeFirstRequestsBatch() {
+    public void removeBatches(int end) {
+        journal.removeBatches(end);
+    }
+
+    public void removeFirstBatch() {
         journal.removeFirstBatch();
     }
 

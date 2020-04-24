@@ -107,16 +107,28 @@ class Journal {
     }
 
     void removeFirstBatch() {
+        removeBatches( 1);
+    }
+
+    void removeBatches(int end) {
         assertJournalInitialized();
 
+        int journalSize = size();
+        if(end < 1 || end > journalSize) {
+            throw new IllegalArgumentException(String.format("Incorrect end of range to delete %s. Journal size: %s", end, journalSize));
+        }
+
+        int actualEnd = Math.min(batchPositions.size() - 1, end);
+
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
-            long batchStart = batchPositions.get(0);
+            long batchStart = batchPositions.get(end - 1);
             long batchEnd = readLong(channel, batchStart);
+            long fileSize = channel.size();
             if(batchEnd != -1) {
                 updateHeader(channel, batchEnd);
                 truncate(channel);
-                batchPositions.remove(0);
-            } else if(channel.size() > batchStart + LONG_SIZE) {
+                batchPositions.subList(0, actualEnd).clear();
+            } else if(fileSize > batchStart + LONG_SIZE) {
                 channel.truncate(batchStart + LONG_SIZE);
             }
         } catch(Exception e) {

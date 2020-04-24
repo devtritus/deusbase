@@ -36,6 +36,39 @@ class JournalTest {
     }
 
     @Test
+    void remove_batches_test() {
+        journal.write(utf8StringToBytes("test"));
+
+        journal.removeBatches(1);
+
+        assertThat(journal.size()).isEqualTo(0);
+
+        journal.write(utf8StringToBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_2));
+
+        assertThat(journal.size()).isEqualTo(2);
+        journal.removeBatches(2);
+
+        assertThat(journal.size()).isEqualTo(0);
+        assertThat(journal.isLastBatchEmpty()).isTrue();
+
+        journal.write(utf8StringToBytes(test_text_1));
+        journal.write(utf8StringToBytes(test_text_2));
+        journal.write(utf8StringToBytes(test_text_3));
+
+        assertThat(journal.size()).isEqualTo(3);
+
+        journal.removeBatches(2);
+
+        assertThat(journal.size()).isEqualTo(1);
+
+        journal.removeBatches(1);
+
+        assertThat(journal.size()).isEqualTo(0);
+        assertThat(journal.isLastBatchEmpty()).isTrue();
+    }
+
+    @Test
     void is_last_batch_empty_test() {
         assertThat(journal.isLastBatchEmpty()).isTrue();
 

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,7 +21,7 @@ public class MasterNode implements MasterApi {
     private final static Logger logger = LoggerFactory.getLogger(MasterNode.class);
 
     private NodeEnvironment env;
-    private Map<String, SlaveStatus> slaves = new ConcurrentHashMap<>();
+    private Map<String, SlaveParams> slaves = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final RequestJournal journal;
 
@@ -30,6 +31,16 @@ public class MasterNode implements MasterApi {
     }
 
     public void init() {
+        List<SlaveParams> slaveStatuses = env.getArray("slaves", SlaveParams.class);
+        if(slaveStatuses == null) {
+            slaveStatuses = new ArrayList<>();
+            writeSlavesToConfig(slaveStatuses);
+        }
+
+        for(SlaveParams slaveStatus : slaveStatuses) {
+            slaves.put(slaveStatus.getUuid(), slaveStatus);
+        }
+
         scheduler.scheduleAtFixedRate(this::uploadBatch, 0, 20, TimeUnit.SECONDS);
     }
 
@@ -43,8 +54,9 @@ public class MasterNode implements MasterApi {
         String masterUuid = env.getPropertyOrThrowException("uuid");
         result.add(masterUuid);
 
-        SlaveStatus slaveStatus = new SlaveStatus();
-        slaveStatus.address = "http://" + slaveAddress;
+        SlaveParams slaveStatus = new SlaveParams();
+        slaveStatus.setUuid(slaveUuid);
+        slaveStatus.setAddress("http://" + slaveAddress);
         int position = 0;
         if(slaveState.equals("init")) {
             if(journal.size() != 0) {
@@ -63,27 +75,28 @@ public class MasterNode implements MasterApi {
             }
         }
         //TODO: get address from request url
-        slaveStatus.position = position;
+        slaveStatus.setPosition(position);
         slaves.put(slaveUuid, slaveStatus);
+        writeSlavesToConfig(slaves.values());
+
         return result;
     }
 
     private void uploadBatch() {
-        //TODO: add slaveList.json
-        for(SlaveStatus slave : slaves.values()) {
-            int successfullySentBatchesCount = sendBatch(slave.address, slave.position);
-            slave.position += successfullySentBatchesCount;
+        //TODO: master may not be contained any data to replication. Check this
+        for(SlaveParams slave : slaves.values()) {
+            int successfullySentBatchesCount = sendBatch(slave.getAddress(), slave.getPosition());
+            slave.setPosition(slave.getPosition() + successfullySentBatchesCount);
         }
 
         int minPosition = slaves.values().stream()
-                .mapToInt(slave -> slave.position)
+                .mapToInt(SlaveParams::getPosition)
                 .min()
                 .orElse(0);
 
-        for(int i = 0; i < minPosition; i++) {
-            //TODO: add function in journal
-            journal.removeFirstRequestsBatch();
-        }
+        journal.removeBatches(minPosition + 1);
+
+        writeSlavesToConfig(slaves.values());
     }
 
     private int sendBatch(String slaveAddress, int startFromPosition) {
@@ -102,8 +115,11 @@ public class MasterNode implements MasterApi {
         return successfullySentBatchesCount;
     }
 
-    private static class SlaveStatus {
-        private String address;
-        private int position;
+    private List<SlaveParams> readSlavesFromConfig() {
+        return env.getArray("slaves", SlaveParams.class);
+    }
+
+    private void writeSlavesToConfig(Collection<SlaveParams> slaves) {
+        env.putArray("slaves", new ArrayList<>(slaves));
     }
 }

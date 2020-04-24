@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
@@ -44,8 +45,8 @@ class Node {
 
         RequestHandler requestHandler;
 
-        NodeEnvironment env = NodeEnvironment.getEnv(programArgs);
-
+        NodeEnvironment env = new NodeEnvironment();
+        env.setUp(programArgs);
 
         int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
         int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
@@ -56,10 +57,17 @@ class Node {
 
         CrudRequestHandler crudRequestHandler = new CrudRequestHandler(nodeApi, null);
 
+        String uuid = env.getProperty("uuid");
+        if(uuid == null) {
+            uuid = UUID.randomUUID().toString();
+            env.putProperty("uuid", uuid);
+        }
+
         int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
         if(mode == NodeMode.MASTER) {
             int journalMinSizeToTruncate = programArgs.getIntegerOrDefault(JOURNAL_MIN_SIZE_TO_TRUNCATE, DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE);
 
+            //TODO: move file's initialization to environment
             String pathToJournal = programArgs.getOrDefault(JOURNAL_PATH, DEFAULT_JOURNAL_PATH);
             String pathToFlushContext = programArgs.getOrDefault(FLUSH_CONTEXT_PATH, DEFAULT_FLUSH_CONTEXT_PATH);
 

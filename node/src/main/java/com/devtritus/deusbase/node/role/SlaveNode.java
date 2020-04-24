@@ -112,7 +112,7 @@ public class SlaveNode implements SlaveApi {
         String actualMasterUuid = response.getData().get("result").get(0);
         String writtenMasterUuid = env.getProperty("masterUuid");
         if(writtenMasterUuid == null) { //first connection
-            env.setProperty("masterUuid", actualMasterUuid);
+            env.putProperty("masterUuid", actualMasterUuid);
         } else if(!actualMasterUuid.equals(writtenMasterUuid)) {
             throw new IllegalStateException(String.format("Slave isn't owned to master located at %s", masterAddress));
         }

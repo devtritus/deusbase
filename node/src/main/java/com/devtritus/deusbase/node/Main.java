@@ -21,7 +21,8 @@ public class Main {
 
         NodeMode mode = NodeMode.fromText(programArgs.getOrDefault(MODE, DEFAULT_NODE_MODE));
         if(mode == NodeMode.LOAD_DATA) {
-            NodeEnvironment env = NodeEnvironment.getEnv(programArgs);
+            NodeEnvironment env = new NodeEnvironment();
+            env.setUp(programArgs);
 
             int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
             int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);

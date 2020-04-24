@@ -39,7 +39,7 @@ class RequestJournalTest {
 
         assertThat(requestJournal.isEmpty()).isFalse();
 
-        requestJournal.removeFirstRequestsBatch();
+        requestJournal.removeFirstBatch();
 
         assertThat(requestJournal.isEmpty()).isTrue();
     }
@@ -80,12 +80,12 @@ class RequestJournalTest {
 
         assertThat(requestJournal.isEmpty()).isFalse();
 
-        requestJournal.removeFirstRequestsBatch();
+        requestJournal.removeFirstBatch();
 
         List<NodeRequest> requests4 = requestJournal.getRequestsBatch(0);
         assertThat(requests4).containsOnly(expected3);
 
-        requestJournal.removeFirstRequestsBatch();
+        requestJournal.removeFirstBatch();
 
         assertThat(requestJournal.isEmpty()).isTrue();
     }
