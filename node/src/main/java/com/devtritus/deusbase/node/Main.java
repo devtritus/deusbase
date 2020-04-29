@@ -27,11 +27,12 @@ public class Main {
             int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
             int treeCacheLimit = programArgs.getIntegerOrDefault(TREE_CACHE_LIMIIT, DEFAULT_TREE_CACHE_LIMIT);
 
-            BTree<String, List<Long>> tree = BTreeInitializer.init(env.getIndexFilePath(), treeM, treeCacheLimit);
-            ValueStorage storage = new ValueStorage(env.getStorageFilePath());
+            BTree<String, List<Long>> tree = BTreeInitializer.init(env.getIndexPath(), treeM, treeCacheLimit);
+            ValueStorage storage = new ValueStorage(env.getStoragePath());
 
             NodeApi nodeApi = new NodeApi(tree, storage);
-            CrudRequestHandler requestHandler = new CrudRequestHandler(nodeApi, null);
+            CrudRequestHandler requestHandler = new CrudRequestHandler();
+            requestHandler.setApi(nodeApi);
             ActorsLoader.load(programArgs, requestHandler);
         } else {
             new Node(mode, programArgs).start();

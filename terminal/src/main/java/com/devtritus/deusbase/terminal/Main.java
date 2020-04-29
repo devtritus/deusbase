@@ -4,8 +4,7 @@ import com.devtritus.deusbase.api.NodeClient;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
 
-import static com.devtritus.deusbase.api.ProgramArgNames.DEBUG;
-import static com.devtritus.deusbase.api.ProgramArgNames.URL;
+import static com.devtritus.deusbase.api.ProgramArgNames.*;
 
 public class Main {
     private final static String DEFAULT_CLIENT_URL = "http://127.0.0.1:3334";
@@ -16,7 +15,10 @@ public class Main {
         final String url = programArgs.getOrDefault(URL, DEFAULT_CLIENT_URL);
         final TerminalMode terminalMode = programArgs.contains(DEBUG) ? TerminalMode.DEBUG : TerminalMode.PROD;
 
+        System.out.println("Connect to " + url);
+
         NodeClient nodeClient = new NodeClient(url);
         new Terminal(System.in, System.out, terminalMode, nodeClient).run();
+        //TODO: add connection checking query
     }
 }

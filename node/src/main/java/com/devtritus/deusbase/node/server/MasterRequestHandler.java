@@ -8,8 +8,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 
 public class MasterRequestHandler implements RequestHandler {
-    private final MasterApi masterApi;
     private final RequestJournal journal;
+
+    private MasterApi masterApi;
 
     public void setNextHandler(NodeRequestHandler nextHandler) {
         this.nextHandler = nextHandler;
@@ -17,8 +18,7 @@ public class MasterRequestHandler implements RequestHandler {
 
     private NodeRequestHandler nextHandler;
 
-    public MasterRequestHandler(MasterApi masterApi, RequestJournal journal) {
-        this.masterApi = masterApi;
+    public MasterRequestHandler(RequestJournal journal) {
         this.journal = journal;
     }
 
@@ -47,5 +47,9 @@ public class MasterRequestHandler implements RequestHandler {
             }
         }
         return JsonDataConverter.convertObjectToJsonBytes(nodeResponse);
+    }
+
+    public void setMasterApi(MasterApi masterApi) {
+        this.masterApi = masterApi;
     }
 }

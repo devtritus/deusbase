@@ -11,10 +11,10 @@ import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
-public class HttpRequestHandler extends AbstractHandler {
+class HttpRequestHandler extends AbstractHandler {
     private final RequestHandler requestHandler;
 
-    public HttpRequestHandler(RequestHandler requestHandler) {
+    HttpRequestHandler(RequestHandler requestHandler) {
         this.requestHandler = requestHandler;
     }
 

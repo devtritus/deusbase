@@ -2,6 +2,7 @@ package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
+import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,18 +23,27 @@ import static com.devtritus.deusbase.node.utils.Utils.createFileIfNotExist;
 public class SlaveNode implements SlaveApi {
     private final static Logger logger = LoggerFactory.getLogger(SlaveNode.class);
 
-    private NodeEnvironment env;
+    private String masterAddress;
     private Path path = Paths.get("slaveData.bin");
-    private int batchSize;
 
-    public SlaveNode(NodeEnvironment env, int batchSize) {
+    private final NodeEnvironment env;
+    private final int batchSize;
+    private final NodeApiInitializer nodeApiInitializer;
+
+    public SlaveNode(NodeEnvironment env, int batchSize, NodeApiInitializer nodeApiInitializer) {
         this.env = env;
         createFileIfNotExist(path);
         this.batchSize = batchSize;
+        this.nodeApiInitializer = nodeApiInitializer;
     }
 
     public void init(String slaveAddress, String masterAddress) {
-        handshake(slaveAddress, masterAddress);
+        String state = env.getProperty("state");
+        if(state != null && state.equals("connect")) {
+            nodeApiInitializer.init();
+        }
+
+        handshake(state, slaveAddress, masterAddress);
     }
 
     @Override
@@ -80,14 +90,13 @@ public class SlaveNode implements SlaveApi {
 
     }
 
-    private void handshake(String slaveAddress, String masterAddress) {
+    private void handshake(String state, String slaveAddress, String masterAddress) {
         NodeClient client = new NodeClient("http://" + masterAddress);
         String slaveUuid = env.getPropertyOrThrowException("uuid");
         List<String> argsList = new ArrayList<>();
         argsList.add(slaveAddress);
         argsList.add(slaveUuid);
 
-        String state = env.getProperty("state");
         if(state == null || state.equals("init")) {
             argsList.add("init");
         } else if(state.equals("connect")) {
@@ -116,6 +125,8 @@ public class SlaveNode implements SlaveApi {
         } else if(!actualMasterUuid.equals(writtenMasterUuid)) {
             throw new IllegalStateException(String.format("Slave isn't owned to master located at %s", masterAddress));
         }
+
+        this.masterAddress = "http://" + masterAddress;
     }
 
     public Long getLastBatchId() {
@@ -127,5 +138,15 @@ public class SlaveNode implements SlaveApi {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void handleSyncComplete() {
+        String state = env.getProperty("state");
+        if(state == null || state.equals("init")) {
+            env.putProperty("state", "connect");
+            nodeApiInitializer.init();
+        }
+        //TODO: connect state?
     }
 }

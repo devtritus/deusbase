@@ -3,5 +3,6 @@ package com.devtritus.deusbase.node.role;
 import java.util.List;
 
 public interface MasterApi {
-    List<String> receiveSlaveHandshake(String args[]);
+    List<String> receiveSlaveHandshake(String[] args);
+    void copyFinished(String[] args);
 }

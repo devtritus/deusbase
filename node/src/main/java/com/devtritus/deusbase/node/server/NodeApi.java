@@ -11,6 +11,8 @@ public class NodeApi implements Api<String, String> {
     private BTree<String, List<Long>> tree;
     private ValueStorage storage;
 
+    public NodeApi() {}
+
     public NodeApi(BTree<String, List<Long>> tree, ValueStorage storage) {
         this.tree = tree;
         this.storage = storage;
@@ -109,5 +111,13 @@ public class NodeApi implements Api<String, String> {
         }
 
         return Collections.singletonMap(key, null);
+    }
+
+    public void setTree(BTree<String, List<Long>> tree) {
+        this.tree = tree;
+    }
+
+    public void setStorage(ValueStorage storage) {
+        this.storage = storage;
     }
 }

@@ -10,7 +10,7 @@ import static com.devtritus.deusbase.node.utils.Utils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class FlushContextTest {
-    private final static String TEST_FILE_NAME = "test_flush_context.bin";
+    private final static String TEST_FILE_NAME = "test_flush_context.json";
 
     private FlushContext flushContext;
     private Path path;

@@ -19,5 +19,5 @@ public interface NodeSettings {
     int DEFAULT_JOURNAL_BATCH_SIZE = 512 * 1024; //bytes
     int DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE = 8 * 1024 * 1024;
 
-    String DEFAULT_FLUSH_CONTEXT_PATH = "flush_context.bin";
+    String DEFAULT_FLUSH_CONTEXT_PATH = "flush_context.json";
 }

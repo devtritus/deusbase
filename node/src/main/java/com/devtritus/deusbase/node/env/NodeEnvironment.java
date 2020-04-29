@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
@@ -22,18 +21,18 @@ import static com.devtritus.deusbase.node.utils.Utils.*;
 public class NodeEnvironment {
     private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    private Path indexFilePath;
-    private Path storageFilePath;
+    private Path indexPath;
+    private Path storagePath;
     private Path nodePath;
     private Path configPath;
     private ObjectNode configRoot;
 
-    public Path getIndexFilePath() {
-        return indexFilePath;
+    public Path getIndexPath() {
+        return indexPath;
     }
 
-    public Path getStorageFilePath() {
-        return storageFilePath;
+    public Path getStoragePath() {
+        return storagePath;
     }
 
     public void setUp(ProgramArgs programArgs) {
@@ -67,24 +66,24 @@ public class NodeEnvironment {
             configRoot = readConfig(configPath);
         }
 
-        Path indexFilePath = appendToPath(nodePath, INDEX_FILE_NAME);
-        Path storageFilePath = appendToPath(nodePath, STORAGE_FILE_NAME);
+        Path indexPath = appendToPath(nodePath, INDEX_FILE_NAME);
+        Path storagePath = appendToPath(nodePath, STORAGE_FILE_NAME);
 
-        boolean indexFileExists = Files.exists(indexFilePath);
-        boolean storageFileExists = Files.exists(storageFilePath);
+        boolean indexFileExists = Files.exists(indexPath);
+        boolean storageFileExists = Files.exists(storagePath);
 
         if((!indexFileExists && storageFileExists) || (indexFileExists && !storageFileExists)) {
             throw new IllegalStateException();
         }
 
         if(!indexFileExists) {
-            createFile(indexFilePath);
-            createFile(storageFilePath);
+            createFile(indexPath);
+            createFile(storagePath);
         }
 
         this.nodePath = nodePath;
-        this.indexFilePath = indexFilePath;
-        this.storageFilePath = storageFilePath;
+        this.indexPath = indexPath;
+        this.storagePath = storagePath;
         this.configPath = configPath;
         this.configRoot = configRoot;
     }
@@ -150,6 +149,14 @@ public class NodeEnvironment {
             }
         }
         return values;
+    }
+
+    public Path createOrGetNodeFile(String name) {
+        Path path = appendToPath(nodePath, name);
+
+        createFileIfNotExist(path);
+
+        return path;
     }
 
     private Path appendToPath(Path path, String childPathString) {

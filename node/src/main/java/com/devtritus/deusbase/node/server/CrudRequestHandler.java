@@ -8,11 +8,6 @@ public class CrudRequestHandler implements NodeRequestHandler {
     private Api<String, String> api;
     private NodeRequestHandler nextHandler;
 
-    public CrudRequestHandler(Api<String, String> api, NodeRequestHandler nextHandler) {
-        this.api = api;
-        this.nextHandler = nextHandler;
-    }
-
     public NodeResponse handle(NodeRequest request) {
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
@@ -54,5 +49,13 @@ public class CrudRequestHandler implements NodeRequestHandler {
         response.setCode(responseStatus.getCode());
 
         return response;
+    }
+
+    public void setApi(Api<String, String> api) {
+        this.api = api;
+    }
+
+    public void setNextHandler(NodeRequestHandler nextHandler) {
+        this.nextHandler = nextHandler;
     }
 }

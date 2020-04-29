@@ -4,10 +4,14 @@ import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeClient;
 import com.devtritus.deusbase.api.NodeResponse;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
+import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -16,22 +20,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class MasterNode implements MasterApi {
     private final static Logger logger = LoggerFactory.getLogger(MasterNode.class);
 
-    private NodeEnvironment env;
-    private Map<String, SlaveParams> slaves = new ConcurrentHashMap<>();
+    private final Map<String, SlaveParams> slaves = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final NodeEnvironment env;
     private final RequestJournal journal;
+    private final NodeApiInitializer nodeApiInitializer;
 
-    public MasterNode(NodeEnvironment env, RequestJournal journal) {
+    public MasterNode(NodeEnvironment env, RequestJournal journal, NodeApiInitializer nodeApiInitializer) {
         this.env = env;
         this.journal = journal;
+        this.nodeApiInitializer = nodeApiInitializer;
     }
 
     public void init() {
-        List<SlaveParams> slaveStatuses = env.getArray("slaves", SlaveParams.class);
+        nodeApiInitializer.init();
+
+        List<SlaveParams> slaveStatuses = readSlavesFromConfig();
         if(slaveStatuses == null) {
             slaveStatuses = new ArrayList<>();
             writeSlavesToConfig(slaveStatuses);
@@ -57,34 +66,67 @@ public class MasterNode implements MasterApi {
         SlaveParams slaveStatus = new SlaveParams();
         slaveStatus.setUuid(slaveUuid);
         slaveStatus.setAddress("http://" + slaveAddress);
+        int journalSize = journal.size();
         int position = 0;
         if(slaveState.equals("init")) {
-            if(journal.size() != 0) {
-                //do full copy
-            }
+            doFullNodeCopy("http://" + slaveAddress);
         } else if(slaveState.equals("connect")) {
-            String slaveBatchIdString = slaveArgs[3];
-            Long slaveBatchId = Long.parseLong(slaveBatchIdString);
-            Long firstBatchId = journal.getLastBatchId();
-            if(slaveBatchId >= firstBatchId && slaveBatchId < firstBatchId + journal.size()) {
-                position = (int)(slaveBatchId - firstBatchId);
+            Long slaveBatchId = Long.parseLong(slaveArgs[3]);
+            Long lastBatchId = journal.getLastBatchId();
+            if (lastBatchId == -1) {
+                position = 0;
+            } else if (slaveBatchId > lastBatchId - journalSize && slaveBatchId <= lastBatchId) {
+                position = (int) (slaveBatchId - lastBatchId);
                 int successfullySentBatchesCount = sendBatch(slaveAddress, position);
                 position += successfullySentBatchesCount;
             } else {
-                // do full copy
+                doFullNodeCopy("http://" + slaveAddress);
             }
+            //TODO: get address from request url
+            slaveStatus.setPosition(position);
+            slaves.put(slaveUuid, slaveStatus);
+            writeSlavesToConfig(slaves.values());
         }
-        //TODO: get address from request url
-        slaveStatus.setPosition(position);
-        slaves.put(slaveUuid, slaveStatus);
-        writeSlavesToConfig(slaves.values());
+
+        try {
+            NodeClient client = new NodeClient("http://" + slaveAddress);
+            client.request(Command.SYNC_COMPLETE);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return result;
     }
 
+    @Override
+    public void copyFinished(String[] slaveArgs) {
+        String slaveAddress = slaveArgs[0];
+        String slaveUuid = slaveArgs[1];
+
+        SlaveParams slaveStatus = new SlaveParams();
+        slaveStatus.setUuid(slaveUuid);
+        slaveStatus.setAddress("http://" + slaveAddress);
+
+        slaveStatus.setPosition(0);
+        slaveStatus.setOnline(true);
+        slaves.put(slaveUuid, slaveStatus);
+        writeSlavesToConfig(slaves.values());
+    }
+
     private void uploadBatch() {
-        //TODO: master may not be contained any data to replication. Check this
-        for(SlaveParams slave : slaves.values()) {
+        if(journal.isEmpty()) {
+            return;
+        }
+
+        List<SlaveParams> onlineSlaves = slaves.values().stream()
+                .filter(SlaveParams::isOnline)
+                .collect(Collectors.toList());
+
+        if(onlineSlaves.isEmpty()) {
+            return;
+        }
+
+        for(SlaveParams slave : onlineSlaves) {
             int successfullySentBatchesCount = sendBatch(slave.getAddress(), slave.getPosition());
             slave.setPosition(slave.getPosition() + successfullySentBatchesCount);
         }
@@ -101,10 +143,10 @@ public class MasterNode implements MasterApi {
 
     private int sendBatch(String slaveAddress, int startFromPosition) {
         int successfullySentBatchesCount = 0;
+        NodeClient client = new NodeClient(slaveAddress);
         try {
             for(int i = startFromPosition; i < journal.size(); i++) {
                 byte[] bytes = journal.getBatch(i);
-                NodeClient client = new NodeClient(slaveAddress);
                 NodeResponse nodeResponse = client.streamRequest(Command.BATCH, new ByteArrayInputStream(bytes));
                 successfullySentBatchesCount++;
             }
@@ -113,6 +155,17 @@ public class MasterNode implements MasterApi {
         }
 
         return successfullySentBatchesCount;
+    }
+
+    private void doFullNodeCopy(String slaveAddress) {
+        try(InputStream inIndex = Files.newInputStream(env.getIndexPath(), StandardOpenOption.READ);
+            InputStream inStorage = Files.newInputStream(env.getStoragePath(), StandardOpenOption.READ)) {
+            NodeClient client = new NodeClient(slaveAddress);
+            client.streamRequest(Command.COPY_INDEX, inIndex);
+            client.streamRequest(Command.COPY_STORAGE, inStorage);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private List<SlaveParams> readSlavesFromConfig() {
