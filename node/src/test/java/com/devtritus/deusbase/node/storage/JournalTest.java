@@ -85,19 +85,6 @@ class JournalTest {
         journal.removeFirstBatch();
 
         assertThat(journal.isLastBatchEmpty()).isTrue();
-
-        journal.removeFirstBatch();
-
-        assertThat(journal.isLastBatchEmpty()).isTrue();
-    }
-
-    @Test
-    void remove_batch_when_journal_is_empty_test() {
-        assertThat(journal.isEmpty()).isTrue();
-
-        assertThatCode(() -> journal.removeFirstBatch()).doesNotThrowAnyException();
-
-        assertThat(journal.isEmpty()).isTrue();
     }
 
     @Test

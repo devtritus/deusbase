@@ -70,22 +70,33 @@ public class MasterNode implements MasterApi {
         int position = 0;
         if(slaveState.equals("init")) {
             doFullNodeCopy("http://" + slaveAddress);
+            logger.info("Init");
         } else if(slaveState.equals("connect")) {
             Long slaveBatchId = Long.parseLong(slaveArgs[3]);
             Long lastBatchId = journal.getLastBatchId();
-            if (lastBatchId == -1) {
-                position = 0;
-            } else if (slaveBatchId > lastBatchId - journalSize && slaveBatchId <= lastBatchId) {
-                position = (int) (slaveBatchId - lastBatchId);
-                int successfullySentBatchesCount = sendBatch(slaveAddress, position);
-                position += successfullySentBatchesCount;
-            } else {
-                doFullNodeCopy("http://" + slaveAddress);
+            if (lastBatchId != -1) {
+                long firstBatchId = lastBatchId - journalSize;
+                logger.info("First batch id = {}, slave batch id = {}, last batch id = {}", firstBatchId, slaveBatchId, lastBatchId);
+                if(firstBatchId < slaveBatchId && slaveBatchId <= lastBatchId) {
+                    position = (int) (slaveBatchId - lastBatchId);
+                    try {
+                        int successfullySentBatchesCount = sendBatch("http://" + slaveAddress, position);
+                        position += successfullySentBatchesCount;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                } else{
+                    doFullNodeCopy("http://" + slaveAddress);
+                    logger.info("Init forgotten slave");
+                }
             }
             //TODO: get address from request url
             slaveStatus.setPosition(position);
             slaves.put(slaveUuid, slaveStatus);
             writeSlavesToConfig(slaves.values());
+
+            slaveStatus.setOnline(true);
+            logger.info("Slave {} is online after 'connect' state", slaveAddress);
         }
 
         try {
@@ -111,6 +122,7 @@ public class MasterNode implements MasterApi {
         slaveStatus.setOnline(true);
         slaves.put(slaveUuid, slaveStatus);
         writeSlavesToConfig(slaves.values());
+        logger.info("Slave {} is online after 'init' state", slaveAddress);
     }
 
     private void uploadBatch() {
@@ -127,7 +139,13 @@ public class MasterNode implements MasterApi {
         }
 
         for(SlaveParams slave : onlineSlaves) {
-            int successfullySentBatchesCount = sendBatch(slave.getAddress(), slave.getPosition());
+            int successfullySentBatchesCount = 0;
+            try {
+                successfullySentBatchesCount = sendBatch(slave.getAddress(), slave.getPosition());
+            } catch (Exception e) {
+                logger.error("Batch wasn't sent to {}", slave.getAddress(), e);
+                slave.setOnline(false); //TODO: set offline state only after a few retries
+            }
             slave.setPosition(slave.getPosition() + successfullySentBatchesCount);
         }
 
@@ -141,17 +159,15 @@ public class MasterNode implements MasterApi {
         writeSlavesToConfig(slaves.values());
     }
 
-    private int sendBatch(String slaveAddress, int startFromPosition) {
+    private int sendBatch(String slaveAddress, int startFromPosition) throws Exception {
         int successfullySentBatchesCount = 0;
         NodeClient client = new NodeClient(slaveAddress);
-        try {
-            for(int i = startFromPosition; i < journal.size(); i++) {
-                byte[] bytes = journal.getBatch(i);
-                NodeResponse nodeResponse = client.streamRequest(Command.BATCH, new ByteArrayInputStream(bytes));
-                successfullySentBatchesCount++;
-            }
-        } catch (Exception e) {
-            logger.error("Batch wasn't sent to {}", slaveAddress, e);
+
+        for(int i = startFromPosition; i < journal.size(); i++) {
+            byte[] bytes = journal.getBatch(i);
+            logger.info("Send batch {} to {}", i, slaveAddress);
+            NodeResponse nodeResponse = client.streamRequest(Command.BATCH, new ByteArrayInputStream(bytes));
+            successfullySentBatchesCount++;
         }
 
         return successfullySentBatchesCount;

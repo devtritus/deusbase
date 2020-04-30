@@ -146,7 +146,9 @@ public class SlaveNode implements SlaveApi {
         if(state == null || state.equals("init")) {
             env.putProperty("state", "connect");
             nodeApiInitializer.init();
+            logger.info("Init slave's node api after init");
         }
         //TODO: connect state?
+        logger.info("Sync is completed");
     }
 }
