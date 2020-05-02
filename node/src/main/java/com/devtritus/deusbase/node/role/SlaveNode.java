@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 
 import static com.devtritus.deusbase.node.utils.Utils.bytesToUtf8String;
 import static com.devtritus.deusbase.node.utils.Utils.createFileIfNotExist;
@@ -23,12 +24,15 @@ import static com.devtritus.deusbase.node.utils.Utils.createFileIfNotExist;
 public class SlaveNode implements SlaveApi {
     private final static Logger logger = LoggerFactory.getLogger(SlaveNode.class);
 
-    private String masterAddress;
     private Path path = Paths.get("slaveData.bin");
+    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     private final NodeEnvironment env;
     private final int batchSize;
     private final NodeApiInitializer nodeApiInitializer;
+
+    private boolean nodeInitialized;
+    private boolean masterOnline;
 
     public SlaveNode(NodeEnvironment env, int batchSize, NodeApiInitializer nodeApiInitializer) {
         this.env = env;
@@ -38,12 +42,27 @@ public class SlaveNode implements SlaveApi {
     }
 
     public void init(String slaveAddress, String masterAddress) {
-        String state = env.getProperty("state");
-        if(state != null && state.equals("connect")) {
-            nodeApiInitializer.init();
-        }
+        final String masterAddress1 = "http://" + masterAddress;
 
-        handshake(state, slaveAddress, masterAddress);
+        NodeClient client = new NodeClient(masterAddress1);
+
+        executorService.scheduleAtFixedRate(() -> {
+            if(heartbeat(client)) {
+                if(!masterOnline) {
+                    String state = env.getProperty("state");
+                    if(!nodeInitialized && state != null && state.equals("connect")) {
+                        nodeApiInitializer.init();
+                        nodeInitialized = true;
+                    }
+
+                    handshake(state, slaveAddress, masterAddress1, client);
+                    masterOnline = true;
+                }
+            } else {
+                masterOnline = false;
+            }
+        }, 0, 10, TimeUnit.SECONDS);
+
     }
 
     @Override
@@ -90,8 +109,7 @@ public class SlaveNode implements SlaveApi {
 
     }
 
-    private void handshake(String state, String slaveAddress, String masterAddress) {
-        NodeClient client = new NodeClient("http://" + masterAddress);
+    private void handshake(String state, String slaveAddress, String masterAddress, NodeClient masterClient) {
         String slaveUuid = env.getPropertyOrThrowException("uuid");
         List<String> argsList = new ArrayList<>();
         argsList.add(slaveAddress);
@@ -109,7 +127,7 @@ public class SlaveNode implements SlaveApi {
 
         NodeResponse response;
         try {
-            response = client.request(Command.HANDSHAKE, args);
+            response = masterClient.request(Command.HANDSHAKE, args);
         } catch (HttpHostConnectException e) {
             logger.error("Master node through address {} is unavailable. Only READ mode is permitted", masterAddress);
             return;
@@ -125,8 +143,6 @@ public class SlaveNode implements SlaveApi {
         } else if(!actualMasterUuid.equals(writtenMasterUuid)) {
             throw new IllegalStateException(String.format("Slave isn't owned to master located at %s", masterAddress));
         }
-
-        this.masterAddress = "http://" + masterAddress;
     }
 
     public Long getLastBatchId() {
@@ -150,5 +166,16 @@ public class SlaveNode implements SlaveApi {
         }
         //TODO: connect state?
         logger.info("Sync is completed");
+    }
+
+    private boolean heartbeat(NodeClient client) {
+        try {
+            client.request(Command.HEARTBEAT);
+            logger.debug("Heartbeat is completed");
+            return true;
+        } catch (Exception e) {
+            logger.warn("Master node is unavailable: {}", e.getMessage());
+            return false;
+        }
     }
 }

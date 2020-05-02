@@ -12,10 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -126,37 +123,54 @@ public class MasterNode implements MasterApi {
     }
 
     private void uploadBatch() {
-        if(journal.isEmpty()) {
-            return;
-        }
-
-        List<SlaveParams> onlineSlaves = slaves.values().stream()
-                .filter(SlaveParams::isOnline)
-                .collect(Collectors.toList());
-
-        if(onlineSlaves.isEmpty()) {
-            return;
-        }
-
-        for(SlaveParams slave : onlineSlaves) {
-            int successfullySentBatchesCount = 0;
-            try {
-                successfullySentBatchesCount = sendBatch(slave.getAddress(), slave.getPosition());
-            } catch (Exception e) {
-                logger.error("Batch wasn't sent to {}", slave.getAddress(), e);
-                slave.setOnline(false); //TODO: set offline state only after a few retries
+        try {
+            if (journal.isEmpty()) {
+                logger.debug("Journal is empty");
+                return;
             }
-            slave.setPosition(slave.getPosition() + successfullySentBatchesCount);
+
+            List<SlaveParams> onlineSlaves = slaves.values().stream()
+                    .filter(SlaveParams::isOnline)
+                    .collect(Collectors.toList());
+
+            if (onlineSlaves.isEmpty()) {
+                logger.debug("There is no online slaves");
+                return;
+            }
+
+            for (SlaveParams slave : onlineSlaves) {
+                int successfullySentBatchesCount = 0;
+                try {
+                    successfullySentBatchesCount = sendBatch(slave.getAddress(), slave.getPosition());
+                } catch (Exception e) {
+                    logger.error("Batch wasn't sent to {}", slave.getAddress(), e);
+                    slave.setOnline(false); //TODO: set offline state only after a few retries
+                }
+                slave.setPosition(slave.getPosition() + successfullySentBatchesCount);
+            }
+
+            int minPosition = slaves.values().stream()
+                    .mapToInt(SlaveParams::getPosition)
+                    .min()
+                    .orElseThrow(IllegalStateException::new);
+
+            logger.debug("List of slaves: {}", slaves.values());
+
+            OptionalInt offlineSlaveMinPosition = slaves.values().stream()
+                    .filter(slave -> !slave.isOnline())
+                    .mapToInt(SlaveParams::getPosition)
+                    .min();
+
+            if(offlineSlaveMinPosition.isPresent()) {
+                minPosition = Math.min(minPosition, offlineSlaveMinPosition.getAsInt());
+            }
+
+            journal.removeBatches(minPosition);
+
+            writeSlavesToConfig(slaves.values());
+        } catch (Exception e) {
+            logger.error("Replication error", e);
         }
-
-        int minPosition = slaves.values().stream()
-                .mapToInt(SlaveParams::getPosition)
-                .min()
-                .orElse(0);
-
-        journal.removeBatches(minPosition + 1);
-
-        writeSlavesToConfig(slaves.values());
     }
 
     private int sendBatch(String slaveAddress, int startFromPosition) throws Exception {
@@ -165,7 +179,7 @@ public class MasterNode implements MasterApi {
 
         for(int i = startFromPosition; i < journal.size(); i++) {
             byte[] bytes = journal.getBatch(i);
-            logger.info("Send batch {} to {}", i, slaveAddress);
+            logger.debug("Send batch {} to {}", i, slaveAddress);
             NodeResponse nodeResponse = client.streamRequest(Command.BATCH, new ByteArrayInputStream(bytes));
             successfullySentBatchesCount++;
         }

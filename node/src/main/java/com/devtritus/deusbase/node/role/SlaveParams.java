@@ -40,4 +40,14 @@ public class SlaveParams {
     public void setOnline(boolean online) {
         this.online = online;
     }
+
+    @Override
+    public String toString() {
+        return "SlaveParams{" +
+                "address='" + address + '\'' +
+                ", uuid='" + uuid + '\'' +
+                ", position=" + position +
+                ", online=" + online +
+                '}';
+    }
 }
