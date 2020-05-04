@@ -12,7 +12,8 @@ public enum Command {
     COPY_INDEX(8, "copy_index", CommandType.WRITE, 0, 0),
     COPY_STORAGE(9, "copy_storage", CommandType.WRITE, 0, 0),
     SYNC_COMPLETE(10, "sync_complete", CommandType.WRITE, 0, 0),
-    HEARTBEAT(11, "heartbeat", CommandType.READ, 0, 0);
+    HEARTBEAT(11, "heartbeat", CommandType.READ, 0, 0),
+    WRITE_PROPERTY(12, "write_property", CommandType.WRITE, 2, 2);
 
     private final int id;
     private final String text;

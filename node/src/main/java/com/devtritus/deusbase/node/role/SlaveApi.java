@@ -7,6 +7,5 @@ import java.util.List;
 
 public interface SlaveApi {
     List<NodeRequest> receiveLogBatch(ReadableByteChannel channel);
-    Long getLastBatchId();
     void handleSyncComplete();
 }

@@ -24,7 +24,7 @@ public class MasterRequestHandler implements RequestHandler {
 
     @Override
     public byte[] handle(Command command, ReadableByteChannel channel) {
-        NodeResponse nodeResponse = new NodeResponse();;
+        NodeResponse nodeResponse = new NodeResponse();
         if(command == Command.HANDSHAKE) {
             RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
             List<String> responsesValues = masterApi.receiveSlaveHandshake(requestBody.getArgs());

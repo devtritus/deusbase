@@ -6,25 +6,17 @@ import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
 import static com.devtritus.deusbase.node.utils.Utils.bytesToUtf8String;
-import static com.devtritus.deusbase.node.utils.Utils.createFileIfNotExist;
 
 public class SlaveNode implements SlaveApi {
     private final static Logger logger = LoggerFactory.getLogger(SlaveNode.class);
 
-    private Path path = Paths.get("slaveData.bin");
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     private final NodeEnvironment env;
@@ -36,7 +28,6 @@ public class SlaveNode implements SlaveApi {
 
     public SlaveNode(NodeEnvironment env, int batchSize, NodeApiInitializer nodeApiInitializer) {
         this.env = env;
-        createFileIfNotExist(path);
         this.batchSize = batchSize;
         this.nodeApiInitializer = nodeApiInitializer;
     }
@@ -74,15 +65,10 @@ public class SlaveNode implements SlaveApi {
         } catch(Exception e)  {
             throw new RuntimeException(e);
         }
+
         buffer.flip();
-        Long batchId = buffer.getLong();
-        try (SeekableByteChannel channel1 = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
-            ByteBuffer buffer1 = ByteBuffer.allocate(8).putLong(batchId);
-            buffer1.rewind();
-            channel1.write(buffer1);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        long batchId = buffer.getLong();
+        env.putProperty("lastBatchId", Long.toString(batchId));
 
         List<NodeRequest> dd = new ArrayList<>();
         while(buffer.remaining() != 0) {
@@ -102,6 +88,8 @@ public class SlaveNode implements SlaveApi {
 
             NodeRequest request = new NodeRequest(command, args);
 
+            logger.debug("Received entry: {}", request);
+
             dd.add(request);
         }
 
@@ -119,8 +107,8 @@ public class SlaveNode implements SlaveApi {
             argsList.add("init");
         } else if(state.equals("connect")) {
             argsList.add("connect");
-            Long batchId = getLastBatchId();
-            argsList.add(batchId.toString());
+            String lastBatchId = env.getPropertyOrThrowException("lastBatchId");
+            argsList.add(lastBatchId);
         }
 
         String[] args = argsList.toArray(new String[0]);
@@ -143,17 +131,8 @@ public class SlaveNode implements SlaveApi {
         } else if(!actualMasterUuid.equals(writtenMasterUuid)) {
             throw new IllegalStateException(String.format("Slave isn't owned to master located at %s", masterAddress));
         }
-    }
 
-    public Long getLastBatchId() {
-        try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.READ)) {
-            ByteBuffer buffer = ByteBuffer.allocate(8);
-            channel.read(buffer);
-            buffer.rewind();
-            return buffer.getLong();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        logger.info("Handshake with master {} are completed", masterAddress);
     }
 
     @Override
@@ -171,7 +150,6 @@ public class SlaveNode implements SlaveApi {
     private boolean heartbeat(NodeClient client) {
         try {
             client.request(Command.HEARTBEAT);
-            logger.debug("Heartbeat is completed");
             return true;
         } catch (Exception e) {
             logger.warn("Master node is unavailable: {}", e.getMessage());

@@ -9,10 +9,7 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SlaveRequestHandler implements RequestHandler {
     private final NodeEnvironment env;
@@ -28,24 +25,21 @@ public class SlaveRequestHandler implements RequestHandler {
     public byte[] handle(Command command, ReadableByteChannel channel) throws WrongArgumentException {
         NodeResponse nodeResponse = new NodeResponse();
         if(command == Command.SYNC_COMPLETE) {
-            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
             slaveApi.handleSyncComplete();
-            NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());
         } else if(command == Command.BATCH) {
             List<NodeRequest> requests = slaveApi.receiveLogBatch(channel);
 
             for (NodeRequest request1 : requests) {
                 nextHandler.handle(request1);
             }
-
-            Long batchId = slaveApi.getLastBatchId();
-            Map<String, List<String>> result = new HashMap<>();
-            result.put("batchId", Collections.singletonList(batchId.toString()));
-            nodeResponse.setData(result);
         } else if(command == Command.COPY_INDEX) {
             copyDataToFile(channel, env.getIndexPath());
         } else if(command == Command.COPY_STORAGE) {
             copyDataToFile(channel, env.getStoragePath());
+        } else if(command == Command.WRITE_PROPERTY) {
+            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
+            String[] args = requestBody.getArgs();
+            env.putProperty(args[0], args[1]);
         } else if(command.getType() == CommandType.WRITE) {
             throwSlaveException();
         } else {

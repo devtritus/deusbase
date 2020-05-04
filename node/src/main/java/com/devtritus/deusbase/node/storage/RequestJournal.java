@@ -30,11 +30,9 @@ public class RequestJournal {
     public static RequestJournal init(Path journalPath, FlushContext flushContext, int batchSize, int minSizeToTruncate) {
         Journal journal = new Journal(journalPath, batchSize, minSizeToTruncate);
         journal.init();
-        long lastBatchId;
+        long lastBatchId = 0;
         int journalSize = journal.size();
-        if(journalSize == 0) {
-            lastBatchId = -1;
-        } else {
+        if(journalSize > 0) {
             byte[] lastBatch = journal.getBatch(journalSize - 1);
             ByteBuffer buffer = ByteBuffer.wrap(lastBatch);
             lastBatchId = buffer.getLong();
