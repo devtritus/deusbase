@@ -66,21 +66,23 @@ public class MasterNode implements MasterApi {
         if(slaveState.equals("init")) {
             doFullNodeCopy("http://" + slaveAddress);
             logger.info("Init");
+            position = journalSize;
         } else if(journalSize > 0 && slaveState.equals("connect")) {
-            Long slaveBatchId = Long.parseLong(slaveArgs[3]);
+            Long nextSlaveBatchId = Long.parseLong(slaveArgs[3]) + 1;
             Long lastBatchId = journal.getLastBatchId();
             long firstBatchId = lastBatchId - journalSize + 1;
-            logger.info("First batch id = {}, slave batch id = {}, last batch id = {}", firstBatchId, slaveBatchId, lastBatchId);
-            if(firstBatchId <= slaveBatchId && slaveBatchId <= lastBatchId) {
-                position = (int) (slaveBatchId - firstBatchId);
+            logger.info("First batch id = {}, slave batch id = {}, last batch id = {}", firstBatchId, nextSlaveBatchId, lastBatchId);
+            if(firstBatchId <= nextSlaveBatchId && nextSlaveBatchId <= lastBatchId) {
+                position = (int) (nextSlaveBatchId - firstBatchId);
+                //TODO: position as long
                 try {
-                    int lastSentBatchPosition = sendBatch("http://" + slaveAddress, position);
-                    position = lastSentBatchPosition;
+                    position = sendBatch("http://" + slaveAddress, position);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             } else {
                 doFullNodeCopy("http://" + slaveAddress);
+                position = journalSize;
                 logger.info("Init forgotten slave");
             }
             logger.info("Slave {} is online after 'connect' state", slaveAddress);
@@ -92,9 +94,8 @@ public class MasterNode implements MasterApi {
 
         tryToRemoveBatches();
 
-        writeSlavesToConfig(slaves.values());
-
         slaveStatus.setOnline(true);
+        writeSlavesToConfig(slaves.values());
 
         try {
             NodeClient client = new NodeClient("http://" + slaveAddress);
@@ -118,12 +119,13 @@ public class MasterNode implements MasterApi {
         slaveStatus.setAddress("http://" + slaveAddress);
 
         slaveStatus.setPosition(0);
-        slaveStatus.setOnline(true);
         slaves.put(slaveUuid, slaveStatus);
+        slaveStatus.setOnline(true);
         writeSlavesToConfig(slaves.values());
         logger.info("Slave {} is online after 'init' state", slaveAddress);
     }
 
+    //TODO: add a fast check
     private void uploadBatch() {
         try {
             if (journal.isEmpty()) {
@@ -162,14 +164,15 @@ public class MasterNode implements MasterApi {
     private int sendBatch(String slaveAddress, int startFromPosition) throws Exception {
         NodeClient client = new NodeClient(slaveAddress);
 
-        int nextPosition;
-        for(nextPosition = startFromPosition; nextPosition < journal.size(); nextPosition++) {
-            byte[] bytes = journal.getBatch(nextPosition);
-            logger.debug("Send batch {} to {}", nextPosition, slaveAddress);
+        int nextPosition = 0;
+        for(int i = startFromPosition; i < journal.size(); i++) {
+            byte[] bytes = journal.getBatch(i);
+            logger.debug("Send batch {} to {}", i, slaveAddress);
             NodeResponse nodeResponse = client.streamRequest(Command.BATCH, new ByteArrayInputStream(bytes));
+            nextPosition = i;
         }
 
-        return nextPosition == 0 ? 0 : nextPosition + 1;
+        return nextPosition + 1;
     }
 
     private void doFullNodeCopy(String slaveAddress) {
@@ -199,15 +202,6 @@ public class MasterNode implements MasterApi {
                 .orElseThrow(IllegalStateException::new);
 
         logger.debug("List of slaves: {}", slaves.values());
-
-        OptionalInt offlineSlaveMinPosition = slaves.values().stream()
-                .filter(slave -> !slave.isOnline())
-                .mapToInt(SlaveParams::getPosition)
-                .min();
-
-        if(offlineSlaveMinPosition.isPresent()) {
-            minPosition = Math.min(minPosition, offlineSlaveMinPosition.getAsInt());
-        }
 
         if(minPosition > 0) {
             journal.removeBatches(minPosition);
