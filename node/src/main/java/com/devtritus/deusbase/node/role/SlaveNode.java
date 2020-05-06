@@ -60,7 +60,11 @@ public class SlaveNode implements SlaveApi {
         try {
             while (channel.read(buffer) != -1) {
                 buffer.flip();
-                out.write(buffer.array());
+
+                while(buffer.hasRemaining()) {
+                    out.write(buffer.get());
+                }
+
                 buffer.clear();
             }
         } catch (IOException e) {
