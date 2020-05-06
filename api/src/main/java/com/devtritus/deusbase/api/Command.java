@@ -58,7 +58,7 @@ public enum Command {
                 return command;
             }
         }
-        throw new IllegalArgumentException(String.format("Id %s doesn't exist", id));
+        throw new IllegalArgumentException(String.format("Id %s does not exist", id));
     }
 
     @Override

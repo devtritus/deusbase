@@ -58,6 +58,8 @@ public class MasterNode implements MasterApi {
         String slaveUuid = slaveArgs[1];
         String slaveState = slaveArgs[2];
 
+        logger.info("Receive handshake from {}", slaveAddress);
+
         SlaveParams slaveStatus = new SlaveParams();
         slaveStatus.setUuid(slaveUuid);
         slaveStatus.setAddress("http://" + slaveAddress);
