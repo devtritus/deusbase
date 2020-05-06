@@ -6,6 +6,8 @@ import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
@@ -17,69 +19,69 @@ import static com.devtritus.deusbase.node.utils.Utils.bytesToUtf8String;
 public class SlaveNode implements SlaveApi {
     private final static Logger logger = LoggerFactory.getLogger(SlaveNode.class);
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     private final NodeEnvironment env;
-    private final int batchSize;
     private final NodeApiInitializer nodeApiInitializer;
 
+    private SlaveState state;
     private boolean nodeInitialized;
     private boolean masterOnline;
 
-    public SlaveNode(NodeEnvironment env, int batchSize, NodeApiInitializer nodeApiInitializer) {
+    public SlaveNode(NodeEnvironment env, NodeApiInitializer nodeApiInitializer) {
         this.env = env;
-        this.batchSize = batchSize;
         this.nodeApiInitializer = nodeApiInitializer;
     }
 
     public void init(String slaveAddress, String masterAddress) {
-        final String masterAddress1 = "http://" + masterAddress;
-
-        NodeClient client = new NodeClient(masterAddress1);
+        NodeClient client = new NodeClient(masterAddress);
 
         executorService.scheduleAtFixedRate(() -> {
             if(heartbeat(client)) {
                 if(!masterOnline) {
-                    String state = env.getProperty("state");
-                    if(!nodeInitialized && state != null && state.equals("connect")) {
+                    String stateText = env.getProperty("state");
+                    state = stateText != null ? SlaveState.fromText(stateText) : SlaveState.INIT;
+                    if(!nodeInitialized && state == SlaveState.CONNECT) {
                         nodeApiInitializer.init();
                         nodeInitialized = true;
                     }
 
-                    handshake(state, slaveAddress, masterAddress1, client);
+                    handshake(state, slaveAddress, masterAddress, client);
                     masterOnline = true;
                 }
-            } else {
-                masterOnline = false;
             }
         }, 0, 10, TimeUnit.SECONDS);
-
     }
 
     @Override
-    public List<NodeRequest> receiveLogBatch(ReadableByteChannel channel) {
-        //TODO: make buffer less
-        ByteBuffer buffer = ByteBuffer.allocate(batchSize);
+    public List<NodeRequest> parseLogBatch(ReadableByteChannel channel) {
+        ByteBuffer buffer = ByteBuffer.allocate(4096);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
-            channel.read(buffer);
-        } catch(Exception e)  {
+            while (channel.read(buffer) != -1) {
+                buffer.flip();
+                out.write(buffer.array());
+                buffer.clear();
+            }
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        buffer.flip();
-        long batchId = buffer.getLong();
+        ByteBuffer batch = ByteBuffer.wrap(out.toByteArray());
+
+        long batchId = batch.getLong();
         env.putProperty("lastBatchId", Long.toString(batchId));
 
-        List<NodeRequest> dd = new ArrayList<>();
-        while(buffer.remaining() != 0) {
-            int commandId = buffer.getInt();
-            int argsCount = buffer.getInt();
+        List<NodeRequest> requests = new ArrayList<>();
+        while(batch.remaining() != 0) {
+            int commandId = batch.getInt();
+            int argsCount = batch.getInt();
 
             String[] args = new String[argsCount];
             for (int i = 0; i < argsCount; i++) {
-                int argSize = buffer.getInt();
+                int argSize = batch.getInt();
                 byte[] argBytes = new byte[argSize];
-                buffer.get(argBytes);
+                batch.get(argBytes);
                 String arg = bytesToUtf8String(argBytes);
                 args[i] = arg;
             }
@@ -90,23 +92,21 @@ public class SlaveNode implements SlaveApi {
 
             logger.debug("Received entry: {}", request);
 
-            dd.add(request);
+            requests.add(request);
         }
 
-        return dd;
-
+        return requests;
     }
 
-    private void handshake(String state, String slaveAddress, String masterAddress, NodeClient masterClient) {
+    private void handshake(SlaveState state, String slaveAddress, String masterAddress, NodeClient masterClient) {
         String slaveUuid = env.getPropertyOrThrowException("uuid");
         List<String> argsList = new ArrayList<>();
+
         argsList.add(slaveAddress);
         argsList.add(slaveUuid);
+        argsList.add(state.getText());
 
-        if(state == null || state.equals("init")) {
-            argsList.add("init");
-        } else if(state.equals("connect")) {
-            argsList.add("connect");
+        if(state == SlaveState.CONNECT) {
             String lastBatchId = env.getPropertyOrThrowException("lastBatchId");
             argsList.add(lastBatchId);
         }
@@ -123,7 +123,6 @@ public class SlaveNode implements SlaveApi {
             throw new RuntimeException(e);
         }
 
-        //TODO: handler response from master and run server
         String actualMasterUuid = response.getData().get("result").get(0);
         String writtenMasterUuid = env.getProperty("masterUuid");
         if(writtenMasterUuid == null) { //first connection
@@ -137,13 +136,11 @@ public class SlaveNode implements SlaveApi {
 
     @Override
     public void handleSyncComplete() {
-        String state = env.getProperty("state");
-        if(state == null || state.equals("init")) {
-            env.putProperty("state", "connect");
+        if(state == SlaveState.INIT) {
+            env.putProperty("state", SlaveState.CONNECT.getText());
             nodeApiInitializer.init();
             logger.info("Init slave's node api after init");
         }
-        //TODO: connect state?
         logger.info("Sync is completed");
     }
 

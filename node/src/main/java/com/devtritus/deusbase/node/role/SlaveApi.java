@@ -6,6 +6,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 
 public interface SlaveApi {
-    List<NodeRequest> receiveLogBatch(ReadableByteChannel channel);
+    List<NodeRequest> parseLogBatch(ReadableByteChannel channel);
     void handleSyncComplete();
 }

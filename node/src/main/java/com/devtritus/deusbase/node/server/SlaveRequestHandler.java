@@ -27,7 +27,7 @@ public class SlaveRequestHandler implements RequestHandler {
         if(command == Command.SYNC_COMPLETE) {
             slaveApi.handleSyncComplete();
         } else if(command == Command.BATCH) {
-            List<NodeRequest> requests = slaveApi.receiveLogBatch(channel);
+            List<NodeRequest> requests = slaveApi.parseLogBatch(channel);
 
             for (NodeRequest request1 : requests) {
                 nextHandler.handle(request1);

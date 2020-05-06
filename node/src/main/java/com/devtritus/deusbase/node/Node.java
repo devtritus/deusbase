@@ -29,7 +29,6 @@ class Node {
     }
 
     void start() {
-
         final String host = programArgs.getOrDefault(HOST, DEFAULT_HOST);
         final int port = programArgs.getIntegerOrDefault(PORT, DEFAULT_PORT);
         final int treeM = programArgs.getIntegerOrDefault(TREE_M, DEFAULT_TREE_M);
@@ -52,9 +51,8 @@ class Node {
 
         crudRequestHandler.setApi(nodeApi);
 
-        //TODO: remove batchSize from slave
-        final int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
         if(mode == NodeMode.MASTER) {
+            int journalBatchSize = programArgs.getIntegerOrDefault(JOURNAL_BATCH_SIZE, DEFAULT_JOURNAL_BATCH_SIZE);
             int journalMinSizeToTruncate = programArgs.getIntegerOrDefault(JOURNAL_MIN_SIZE_TO_TRUNCATE, DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE);
             String pathToJournal = programArgs.getOrDefault(JOURNAL_PATH, DEFAULT_JOURNAL_PATH);
             String pathToFlushContext = programArgs.getOrDefault(FLUSH_CONTEXT_PATH, DEFAULT_FLUSH_CONTEXT_PATH);
@@ -86,12 +84,13 @@ class Node {
 
             SlaveRequestHandler requestHandler = new SlaveRequestHandler(env);
             NodeServer nodeServer = new NodeServer(host, port, requestHandler, Node::printBanner);
-            SlaveNode slaveNode = new SlaveNode(env, journalBatchSize, nodeApiInitializer);
+            SlaveNode slaveNode = new SlaveNode(env, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
             requestHandler.setSlaveApi(slaveNode);
 
             nodeServer.start();
+
             slaveNode.init(nodeAddress, masterAddress);
         } else {
             throw new IllegalStateException(String.format("Unexpected mode: %s", mode));
