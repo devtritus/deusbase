@@ -3,6 +3,8 @@ package com.devtritus.deusbase.node.server;
 import com.devtritus.deusbase.api.*;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,6 +14,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 class HttpRequestHandler extends AbstractHandler {
+    private final static Logger logger = LoggerFactory.getLogger(HttpRequestHandler.class);
     private final RequestHandler requestHandler;
 
     HttpRequestHandler(RequestHandler requestHandler) {
@@ -35,15 +38,24 @@ class HttpRequestHandler extends AbstractHandler {
 
         Command command = Command.getCommandByName(s.substring(1));
 
+        NodeResponse response;
         try {
-            byte[] response = requestHandler.handle(command, channel);
+            response = requestHandler.handle(command, channel);
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-            httpServletResponse.getOutputStream().write(response);
-
-            request.setHandled(true);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            response = new NodeResponse();
+            response.setCode(ResponseStatus.SERVER_ERROR.getCode());
+            response.setData("error", e.getMessage());
+
+            httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+
+            logger.error("Internal server error", e);
         }
+
+        byte[] byteResponse = JsonDataConverter.convertObjectToJsonBytes(response);
+
+        request.setHandled(true);
+        httpServletResponse.getOutputStream().write(byteResponse);
     }
 }

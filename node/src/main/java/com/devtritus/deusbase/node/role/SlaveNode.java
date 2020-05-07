@@ -10,6 +10,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -102,6 +106,32 @@ public class SlaveNode implements SlaveApi {
         return requests;
     }
 
+    //TODO: move that method to more common class
+    @Override
+    public void copyDataToFile(ReadableByteChannel channel, Path path) {
+        try(WritableByteChannel writer = Files.newByteChannel(path, StandardOpenOption.WRITE)) {
+            ByteBuffer buffer = ByteBuffer.allocate(4096);
+
+            while(channel.read(buffer) != -1) {
+                buffer.flip();
+                writer.write(buffer);
+                buffer.rewind();
+            }
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void handleSyncComplete() {
+        if(state == SlaveState.INIT) {
+            env.putProperty("state", SlaveState.CONNECT.getText());
+            nodeApiInitializer.init();
+            logger.info("Init slave's node api after init");
+        }
+        logger.info("Sync is completed");
+    }
+
     private void handshake(SlaveState state, String slaveAddress, String masterAddress, NodeClient masterClient) {
         String slaveUuid = env.getPropertyOrThrowException("uuid");
         List<String> argsList = new ArrayList<>();
@@ -136,16 +166,6 @@ public class SlaveNode implements SlaveApi {
         }
 
         logger.info("Handshake with master {} are completed", masterAddress);
-    }
-
-    @Override
-    public void handleSyncComplete() {
-        if(state == SlaveState.INIT) {
-            env.putProperty("state", SlaveState.CONNECT.getText());
-            nodeApiInitializer.init();
-            logger.info("Init slave's node api after init");
-        }
-        logger.info("Sync is completed");
     }
 
     private boolean heartbeat(NodeClient client) {

@@ -2,7 +2,8 @@ package com.devtritus.deusbase.api;
 
 public enum ResponseStatus {
     OK(0, "ok"),
-    NOT_FOUND(1, "Not found");
+    NOT_FOUND(1, "not found"),
+    SERVER_ERROR(10, "server error");
 
     private int code;
     private String message;

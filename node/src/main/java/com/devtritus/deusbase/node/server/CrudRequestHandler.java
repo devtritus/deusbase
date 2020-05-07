@@ -6,7 +6,6 @@ import java.util.Map;
 
 public class CrudRequestHandler implements NodeRequestHandler {
     private Api<String, String> api;
-    private NodeRequestHandler nextHandler;
 
     public NodeResponse handle(NodeRequest request) {
         final Command command = request.getCommand();
@@ -37,11 +36,7 @@ public class CrudRequestHandler implements NodeRequestHandler {
                 data = api.update(args[0], Integer.parseInt(args[1]), args[2]);
                 break;
             default:
-                if(nextHandler == null) {
-                    throw new IllegalArgumentException(String.format("Unhandled command %s", command));
-                } else {
-                    return nextHandler.handle(request);
-                }
+                throw new IllegalArgumentException(String.format("Unhandled command %s", command));
         }
 
         NodeResponse response = new NodeResponse();
@@ -53,9 +48,5 @@ public class CrudRequestHandler implements NodeRequestHandler {
 
     public void setApi(Api<String, String> api) {
         this.api = api;
-    }
-
-    public void setNextHandler(NodeRequestHandler nextHandler) {
-        this.nextHandler = nextHandler;
     }
 }

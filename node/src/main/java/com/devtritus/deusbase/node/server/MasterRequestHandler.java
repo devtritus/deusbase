@@ -11,11 +11,6 @@ public class MasterRequestHandler implements RequestHandler {
     private final RequestJournal journal;
 
     private MasterApi masterApi;
-
-    public void setNextHandler(NodeRequestHandler nextHandler) {
-        this.nextHandler = nextHandler;
-    }
-
     private NodeRequestHandler nextHandler;
 
     public MasterRequestHandler(RequestJournal journal) {
@@ -23,15 +18,12 @@ public class MasterRequestHandler implements RequestHandler {
     }
 
     @Override
-    public byte[] handle(Command command, ReadableByteChannel channel) {
-        NodeResponse nodeResponse = new NodeResponse();
+    public NodeResponse handle(Command command, ReadableByteChannel channel) {
+        NodeResponse nodeResponse = NodeResponse.ok();
         if(command == Command.HANDSHAKE) {
             RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
-            List<String> responsesValues = masterApi.receiveSlaveHandshake(requestBody.getArgs());
-            Map<String, List<String>> result = new HashMap<>();
-            result.put("result", responsesValues);
-            nodeResponse.setData(result);
-            nodeResponse.setCode(ResponseStatus.OK.getCode());
+            List<String> values = masterApi.receiveSlaveHandshake(requestBody.getArgs());
+            nodeResponse.setData("result", values);
         } else if(command == Command.HEARTBEAT) {
             //do nothing
         } else {
@@ -47,10 +39,15 @@ public class MasterRequestHandler implements RequestHandler {
                 journal.flush(nodeRequest);
             }
         }
-        return JsonDataConverter.convertObjectToJsonBytes(nodeResponse);
+
+        return nodeResponse;
     }
 
     public void setMasterApi(MasterApi masterApi) {
         this.masterApi = masterApi;
+    }
+
+    public void setNextHandler(NodeRequestHandler nextHandler) {
+        this.nextHandler = nextHandler;
     }
 }
