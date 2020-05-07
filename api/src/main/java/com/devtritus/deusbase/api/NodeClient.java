@@ -12,6 +12,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 public class NodeClient {
@@ -24,13 +25,13 @@ public class NodeClient {
         this.url = url;
     }
 
-    public NodeResponse streamRequest(Command command, InputStream in) throws Exception {
+    public NodeResponse streamRequest(Command command, InputStream in) throws IOException {
         InputStreamEntity inputStreamEntity = new InputStreamEntity(in, -1, ContentType.APPLICATION_OCTET_STREAM);
 
         return doPost(command, inputStreamEntity);
     }
 
-    public NodeResponse request(Command command, String... args) throws Exception {
+    public NodeResponse request(Command command, String... args) throws IOException {
         RequestBody requestBody = new RequestBody();
         requestBody.setArgs(args);
         String jsonBody = objectMapper.writeValueAsString(requestBody);
@@ -39,7 +40,7 @@ public class NodeClient {
         return doPost(command, entity);
     }
 
-    private NodeResponse doPost(Command command, HttpEntity entity) throws Exception {
+    private NodeResponse doPost(Command command, HttpEntity entity) throws IOException {
         HttpPost httpPost = new HttpPost(url + "/" + command.toString());
         httpPost.setEntity(entity);
 
@@ -59,5 +60,12 @@ public class NodeClient {
                 throw new ClientProtocolException(String.format("Unexpected response status: %s, details: %s", status, entityMessage));
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "NodeClient{" +
+                "url='" + url + '\'' +
+                '}';
     }
 }

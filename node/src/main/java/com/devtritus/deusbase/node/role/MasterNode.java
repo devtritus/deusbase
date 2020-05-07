@@ -9,6 +9,7 @@ import com.devtritus.deusbase.node.storage.RequestJournal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -22,11 +23,18 @@ import java.util.stream.Collectors;
 public class MasterNode implements MasterApi {
     private final static Logger logger = LoggerFactory.getLogger(MasterNode.class);
 
+    private final static int MAX_RETRY_COUNT = 3;
+    private final static int MAX_NUMBER_OF_BATCHES_TO_UPLOAD = 5;
+    private final static int UPLOAD_BATCH_COUNTER_LIMIT = 5;
+    private final static int UPLOAD_BATCH_RATE_IN_SECONDS = 2;
+
     private final Map<String, SlaveParams> slaves = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final NodeEnvironment env;
     private final RequestJournal journal;
     private final NodeApiInitializer nodeApiInitializer;
+
+    private int uploadBatchCounter;
 
     public MasterNode(NodeEnvironment env, RequestJournal journal, NodeApiInitializer nodeApiInitializer) {
         this.env = env;
@@ -37,70 +45,69 @@ public class MasterNode implements MasterApi {
     public void init() {
         nodeApiInitializer.init();
 
-        List<SlaveParams> slaveStatuses = readSlavesFromConfig();
-        if(slaveStatuses == null) {
-            slaveStatuses = new ArrayList<>();
-            writeSlavesToConfig(slaveStatuses);
+        List<SlaveParams> slaves = readSlavesFromConfig();
+        if(slaves == null) {
+            slaves = new ArrayList<>();
+            writeSlavesToConfig(slaves);
         }
 
-        for(SlaveParams slaveStatus : slaveStatuses) {
-            slaves.put(slaveStatus.getUuid(), slaveStatus);
+        for(SlaveParams slave : slaves) {
+            this.slaves.put(slave.getUuid(), slave);
         }
 
-        scheduler.scheduleAtFixedRate(this::uploadBatch, 0, 20, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::uploadBatch, 0, UPLOAD_BATCH_RATE_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     @Override
     public List<String> receiveSlaveHandshake(String[] slaveArgs) {
         String masterUuid = env.getPropertyOrThrowException("uuid");
 
-        String slaveAddress = slaveArgs[0];
+        String slaveAddress = "http://" + slaveArgs[0];
         String slaveUuid = slaveArgs[1];
-        String slaveState = slaveArgs[2];
+        SlaveState slaveState = SlaveState.fromText(slaveArgs[2]);
 
         logger.info("Receive handshake from {}", slaveAddress);
 
-        SlaveParams slaveStatus = new SlaveParams();
-        slaveStatus.setUuid(slaveUuid);
-        slaveStatus.setAddress("http://" + slaveAddress);
+        SlaveParams slave = new SlaveParams();
+        slave.setUuid(slaveUuid);
+        slave.setAddress(slaveAddress);
+
+        NodeClient client = new NodeClient(slaveAddress);
+
         int journalSize = journal.size();
         int position = 0;
-        if(slaveState.equals("init")) {
-            doFullNodeCopy("http://" + slaveAddress);
-            logger.info("Init");
+        if(slaveState == SlaveState.INIT) {
+            doFullNodeCopy(client);
+            logger.info("Init slave");
             position = journalSize;
-        } else if(journalSize > 0 && slaveState.equals("connect")) {
+        } else if(journalSize > 0 && slaveState == SlaveState.CONNECT) {
             Long nextSlaveBatchId = Long.parseLong(slaveArgs[3]) + 1;
             Long lastBatchId = journal.getLastBatchId();
             long firstBatchId = lastBatchId - journalSize + 1;
-            logger.info("First batch id = {}, slave batch id = {}, last batch id = {}", firstBatchId, nextSlaveBatchId, lastBatchId);
             if(firstBatchId <= nextSlaveBatchId && nextSlaveBatchId <= lastBatchId) {
                 position = (int) (nextSlaveBatchId - firstBatchId);
-                //TODO: position as long
                 try {
-                    position = sendBatch("http://" + slaveAddress, position);
+                    position = sendBatch(client, position);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             } else {
-                doFullNodeCopy("http://" + slaveAddress);
+                doFullNodeCopy(client);
                 position = journalSize;
                 logger.info("Init forgotten slave");
             }
-            logger.info("Slave {} is online after 'connect' state", slaveAddress);
         }
 
-        //TODO: get address from request url
-        slaveStatus.setPosition(position);
-        slaves.put(slaveUuid, slaveStatus);
+        slave.setPosition(position);
+        slaves.put(slaveUuid, slave);
 
         tryToRemoveBatches();
 
-        slaveStatus.setOnline(true);
+        slave.setClient(client);
+        slave.setOnline(true);
         writeSlavesToConfig(slaves.values());
 
         try {
-            NodeClient client = new NodeClient("http://" + slaveAddress);
             client.request(Command.SYNC_COMPLETE);
         } catch(Exception e) {
             throw new RuntimeException(e);
@@ -111,65 +118,62 @@ public class MasterNode implements MasterApi {
         return Collections.singletonList(masterUuid);
     }
 
-    @Override
-    public void copyFinished(String[] slaveArgs) {
-        String slaveAddress = slaveArgs[0];
-        String slaveUuid = slaveArgs[1];
+    private void uploadBatch() {
+        if(uploadBatchCounter++ < UPLOAD_BATCH_COUNTER_LIMIT && journal.size() < MAX_NUMBER_OF_BATCHES_TO_UPLOAD) {
+            return;
+        }
 
-        SlaveParams slaveStatus = new SlaveParams();
-        slaveStatus.setUuid(slaveUuid);
-        slaveStatus.setAddress("http://" + slaveAddress);
+        uploadBatchCounter = 0;
 
-        slaveStatus.setPosition(0);
-        slaves.put(slaveUuid, slaveStatus);
-        slaveStatus.setOnline(true);
+        if (journal.isEmpty()) {
+            logger.debug("Journal is empty");
+            return;
+        }
+
+        List<SlaveParams> onlineSlaves = slaves.values().stream()
+                .filter(SlaveParams::isOnline)
+                .collect(Collectors.toList());
+
+        if (onlineSlaves.isEmpty()) {
+            logger.debug("There is no online slaves");
+            return;
+        }
+
+        for (SlaveParams slave : onlineSlaves) {
+            try {
+                int nextPosition = sendBatch(slave.getClient(), slave.getPosition());
+                slave.setPosition(nextPosition);
+            } catch (IOException e) {
+                logger.error("Batch wasn't sent to {}", slave.getAddress(), e);
+                slave.setOnline(false);
+            }
+        }
+
+        tryToRemoveBatches();
+
         writeSlavesToConfig(slaves.values());
-        logger.info("Slave {} is online after 'init' state", slaveAddress);
     }
 
-    //TODO: add a fast check
-    private void uploadBatch() {
-        try {
-            if (journal.isEmpty()) {
-                logger.debug("Journal is empty");
-                return;
-            }
-
-            List<SlaveParams> onlineSlaves = slaves.values().stream()
-                    .filter(SlaveParams::isOnline)
-                    .collect(Collectors.toList());
-
-            if (onlineSlaves.isEmpty()) {
-                logger.debug("There is no online slaves");
-                return;
-            }
-
-            for (SlaveParams slave : onlineSlaves) {
-                int nextPosition = slave.getPosition();
-                try {
-                    nextPosition = sendBatch(slave.getAddress(), slave.getPosition());
-                } catch (Exception e) {
-                    logger.error("Batch wasn't sent to {}", slave.getAddress(), e);
-                    slave.setOnline(false); //TODO: set offline state only after a few retries
+    private int sendBatch(NodeClient client, int position) throws IOException {
+        int retryCount = 0;
+        while(true) {
+            try {
+                return doSendBatch(client, position);
+            } catch (IOException e) {
+                retryCount++;
+                logger.error("Batch wasn't sent to {}", client, e);
+                if(retryCount < MAX_RETRY_COUNT) {
+                    throw e;
                 }
-                slave.setPosition(nextPosition);
             }
-
-            tryToRemoveBatches();
-
-            writeSlavesToConfig(slaves.values());
-        } catch (Exception e) {
-            logger.error("Replication error", e);
         }
     }
 
-    private int sendBatch(String slaveAddress, int startFromPosition) throws Exception {
-        NodeClient client = new NodeClient(slaveAddress);
-
+    private int doSendBatch(NodeClient client, int startFromPosition) throws IOException {
         int nextPosition = 0;
         for(int i = startFromPosition; i < journal.size(); i++) {
             byte[] bytes = journal.getBatch(i);
-            logger.debug("Send batch {} to {}", i, slaveAddress);
+            logger.debug("Send batch {} to {}", i, client);
             NodeResponse nodeResponse = client.streamRequest(Command.BATCH, new ByteArrayInputStream(bytes));
             nextPosition = i;
         }
@@ -177,10 +181,9 @@ public class MasterNode implements MasterApi {
         return nextPosition + 1;
     }
 
-    private void doFullNodeCopy(String slaveAddress) {
+    private void doFullNodeCopy(NodeClient client) {
         try(InputStream inIndex = Files.newInputStream(env.getIndexPath(), StandardOpenOption.READ);
             InputStream inStorage = Files.newInputStream(env.getStoragePath(), StandardOpenOption.READ)) {
-            NodeClient client = new NodeClient(slaveAddress);
             client.streamRequest(Command.COPY_INDEX, inIndex);
             client.streamRequest(Command.COPY_STORAGE, inStorage);
             client.request(Command.WRITE_PROPERTY, "lastBatchId", Long.toString(journal.getLastBatchId()));
