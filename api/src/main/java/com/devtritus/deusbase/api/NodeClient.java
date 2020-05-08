@@ -2,6 +2,7 @@ package com.devtritus.deusbase.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -54,7 +55,7 @@ public class NodeClient {
                 throw new IllegalStateException("Body is null");
             }
 
-            if (status == 200) {
+            if (status == HttpStatus.SC_OK || status == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
                 return objectMapper.readValue(entityMessage, NodeResponse.class);
             } else {
                 throw new ClientProtocolException(String.format("Unexpected response status: %s, details: %s", status, entityMessage));

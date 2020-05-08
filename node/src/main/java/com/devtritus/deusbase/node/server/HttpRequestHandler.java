@@ -46,7 +46,7 @@ class HttpRequestHandler extends AbstractHandler {
         } catch (Exception e) {
             response = new NodeResponse();
             response.setCode(ResponseStatus.SERVER_ERROR.getCode());
-            response.setData("error", e.getMessage());
+            response.setData("error", e.toString());
 
             httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 

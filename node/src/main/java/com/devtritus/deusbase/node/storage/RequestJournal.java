@@ -14,12 +14,10 @@ public class RequestJournal {
     private final static int LONG_SIZE = 8;
 
     private final Journal journal;
-    private final FlushContext flushContext;
     private long lastBatchId;
 
-    private RequestJournal(Journal journal, FlushContext flushContext, long lastBatchId) {
+    private RequestJournal(Journal journal, long lastBatchId) {
         this.journal = journal;
-        this.flushContext = flushContext;
         this.lastBatchId = lastBatchId;
     }
 
@@ -27,7 +25,7 @@ public class RequestJournal {
         return lastBatchId;
     }
 
-    public static RequestJournal init(Path journalPath, FlushContext flushContext, int batchSize, int minSizeToTruncate) {
+    public static RequestJournal init(Path journalPath, int batchSize, int minSizeToTruncate) {
         Journal journal = new Journal(journalPath, batchSize, minSizeToTruncate);
         journal.init();
         long lastBatchId = 0;
@@ -38,7 +36,7 @@ public class RequestJournal {
             lastBatchId = buffer.getLong();
         }
 
-        return new RequestJournal(journal, flushContext, lastBatchId);
+        return new RequestJournal(journal, lastBatchId);
     }
 
     public int size() {
@@ -47,21 +45,6 @@ public class RequestJournal {
 
     public boolean isEmpty() {
         return journal.isEmpty();
-    }
-
-    public void putRequest(NodeRequest request) {
-        if(flushContext != null) {
-            flushContext.put(request);
-        } else {
-            flushRequest(request);
-        }
-    }
-
-    public void flush(NodeRequest request) {
-        if(flushContext != null) {
-            flushContext.remove(request);
-            flushRequest(request);
-        }
     }
 
     public void removeBatches(int end) {
@@ -106,7 +89,7 @@ public class RequestJournal {
         return journal.getBatch(position);
     }
 
-    private void flushRequest(NodeRequest request) {
+    public void putRequest(NodeRequest request) {
         if(journal.isLastBatchEmpty()) {
             ByteBuffer longBuffer = ByteBuffer.allocate(LONG_SIZE)
                     .putLong(++lastBatchId);

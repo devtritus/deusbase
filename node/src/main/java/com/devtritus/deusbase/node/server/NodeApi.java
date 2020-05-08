@@ -98,6 +98,17 @@ public class NodeApi implements Api<String, String> {
     }
 
     @Override
+    public Map<String, List<String>> delete(String key) {
+        List<Long> addresses = tree.searchByKey(key);
+
+        if (addresses != null) {
+            tree.deleteKey(key);
+        }
+
+        return Collections.singletonMap(key, null);
+    }
+
+    @Override
     public Map<String, List<String>> delete(String key, int valueIndex) {
         List<Long> addresses = tree.searchByKey(key);
 

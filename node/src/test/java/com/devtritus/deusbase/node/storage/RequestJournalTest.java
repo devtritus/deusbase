@@ -23,7 +23,7 @@ class RequestJournalTest {
         deleteFileIfExists(path);
         createFile(path);
 
-        requestJournal = RequestJournal.init(path, null, BATCH_SIZE, -1);
+        requestJournal = RequestJournal.init(path, BATCH_SIZE, -1);
     }
 
     @Test

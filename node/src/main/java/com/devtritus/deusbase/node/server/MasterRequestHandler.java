@@ -2,6 +2,7 @@ package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.role.MasterApi;
+import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 
 import java.nio.channels.ReadableByteChannel;
@@ -12,9 +13,11 @@ public class MasterRequestHandler implements RequestHandler {
 
     private MasterApi masterApi;
     private NodeRequestHandler nextHandler;
+    private FlushContext flushContext;
 
-    public MasterRequestHandler(RequestJournal journal) {
+    public MasterRequestHandler(RequestJournal journal, FlushContext flushContext) {
         this.journal = journal;
+        this.flushContext = flushContext;
     }
 
     @Override
@@ -30,13 +33,19 @@ public class MasterRequestHandler implements RequestHandler {
             RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
             NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());
             if(command.getType() == CommandType.WRITE) {
-                journal.putRequest(nodeRequest);
+                flushContext.put(nodeRequest);
             }
 
-            nodeResponse = nextHandler.handle(nodeRequest);
+            try {
+                nodeResponse = nextHandler.handle(nodeRequest);
+            } catch(Exception e) {
+                flushContext.remove(nodeRequest);
+                throw e;
+            }
 
             if(command.getType() == CommandType.WRITE) {
-                journal.flush(nodeRequest);
+                flushContext.remove(nodeRequest);
+                journal.putRequest(nodeRequest);
             }
         }
 

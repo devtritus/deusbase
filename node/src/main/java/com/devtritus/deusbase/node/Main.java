@@ -1,5 +1,8 @@
 package com.devtritus.deusbase.node;
 
+import org.slf4j.LoggerFactory;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
@@ -16,6 +19,12 @@ import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
 
 public class Main {
+
+    static {
+        Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+    }
+
     public static void main(String[] args) throws Exception {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
 

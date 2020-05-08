@@ -30,7 +30,11 @@ public class CrudRequestHandler implements NodeRequestHandler {
                 data = api.create(args[0], args[1]);
                 break;
             case DELETE:
-                data = api.delete(args[0], Integer.parseInt(args[1]));
+                if(args.length == 1) {
+                    data = api.delete(args[0]);
+                } else {
+                    data = api.delete(args[0], Integer.parseInt(args[1]));
+                }
                 break;
             case UPDATE:
                 data = api.update(args[0], Integer.parseInt(args[1]), args[2]);

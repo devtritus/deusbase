@@ -12,11 +12,6 @@ public class CommandParamsUtils {
                     return Arrays.asList(params[0], "0", params[1]).toArray(new String[0]);
                 }
                 break;
-            case DELETE:
-                if(params.length == 1) {
-                    return Arrays.asList(params[0], "0").toArray(new String[0]);
-                }
-                break;
         }
 
         return params;

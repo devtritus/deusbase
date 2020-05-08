@@ -43,6 +43,17 @@ public class MockNodeApi implements Api<String, String> {
     }
 
     @Override
+    public Map<String, List<String>> delete(String key) {
+        List<String> values = data.get(key);
+
+        if(values != null) {
+            data.remove(key);
+        }
+
+        return read(key);
+    }
+
+    @Override
     public Map<String, List<String>> delete(String key, int valueIndex) {
         List<String> values = data.get(key);
 

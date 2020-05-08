@@ -1,5 +1,7 @@
 package com.devtritus.deusbase.api;
 
+import java.util.EnumSet;
+
 public enum Command {
     READ(1, "read", CommandType.READ, 1, 1),
     SEARCH(2, "search", CommandType.READ, 1, 1),
@@ -20,6 +22,8 @@ public enum Command {
     private final CommandType type;
     private final int minTokensNumber;
     private final int maxTokensNumber;
+
+    public final static EnumSet<Command> externalCommands = EnumSet.of(READ, SEARCH, CREATE, DELETE, UPDATE);
 
     Command(int id, String text, CommandType type, int minTokensNumber, int maxTokensNumber) {
         this.id = id;

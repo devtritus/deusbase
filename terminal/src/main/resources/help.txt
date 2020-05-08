@@ -1,0 +1,20 @@
+Available commands:
+
+    read   - retrieve entries by specified key. Syntax: read "key"
+
+    search - search for entries by the first letters of the key. It is a case-insensitive command. Syntax: search "symbols"
+
+    create - create an entry in the database. Syntax: create "key" "value"
+
+    delete - delete an entry from the database. Command can includes an index of one of the values that available by key.
+             If index isn't specified all values available by key will be deleted.
+             Syntax: delete "key" [ index optional type integer ]
+
+    update - update an existing entry inside the database. Command might includes an index of one of the values that available by key.
+             If index isn't specified entry by index 0 will be updated.
+             Syntax: update "key" [ index optional type integer ] "value"
+
+    exit - close terminal
+
+    * argument can be enclosed in double quotes if contains spaces.
+      Example: create "Tom Sawyer" "The title character of the Mark Twain"

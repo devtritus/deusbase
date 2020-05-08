@@ -64,12 +64,12 @@ class Node {
             if(!isEmptyFile(flushContextPath)) {
                 List<NodeRequest> unflushedRequests = flushContext.getAll();
                 if(!unflushedRequests.isEmpty()) {
-                    throw new IllegalStateException("Unflushed requests were found");
+                    throw new IllegalStateException("Unflushed requests were found, to get details see " + flushContextPath.toAbsolutePath().normalize());
                 }
             }
 
-            RequestJournal journal = RequestJournal.init(journalPath, flushContext, journalBatchSize, journalMinSizeToTruncate);
-            MasterRequestHandler requestHandler = new MasterRequestHandler(journal);
+            RequestJournal journal = RequestJournal.init(journalPath, journalBatchSize, journalMinSizeToTruncate);
+            MasterRequestHandler requestHandler = new MasterRequestHandler(journal, flushContext);
             NodeServer nodeServer = new NodeServer(host, port, requestHandler, Node::printBanner);
             MasterNode masterNode = new MasterNode(env, journal, nodeApiInitializer);
 

@@ -45,8 +45,16 @@ public class LoggingApiDecorator<K, V> implements Api<K, V> {
     }
 
     @Override
+    public Map<K, List<V>> delete(K key) {
+        log("delete by key", key);
+        Map<K, List<V>> result = api.delete(key);
+        logSuccess(result);
+        return result;
+    }
+
+    @Override
     public Map<K, List<V>> delete(K key, int valueIndex) {
-        log("delete", key);
+        log("delete by key and index", key);
         Map<K, List<V>> result = api.delete(key, valueIndex);
         logSuccess(result);
         return result;
