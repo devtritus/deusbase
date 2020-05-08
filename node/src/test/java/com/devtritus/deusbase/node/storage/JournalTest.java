@@ -3,7 +3,6 @@ package com.devtritus.deusbase.node.storage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import static com.devtritus.deusbase.node.TestUtils.*;
@@ -28,9 +27,8 @@ class JournalTest {
 
     @BeforeEach
     void init() {
-        Path path = Paths.get(TEST_FILE_NAME);
-        deleteFileIfExists(path);
-        createFile(path);
+        Path path = createTempFile(TEST_FILE_NAME);
+
         journal = new Journal(path, BATCH_SIZE, -1);
         journal.init();
     }

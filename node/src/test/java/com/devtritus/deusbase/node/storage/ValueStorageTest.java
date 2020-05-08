@@ -3,11 +3,10 @@ package com.devtritus.deusbase.node.storage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 
-import static com.devtritus.deusbase.node.utils.Utils.*;
+import static com.devtritus.deusbase.node.TestUtils.createTempFile;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ValueStorageTest {
@@ -17,9 +16,7 @@ class ValueStorageTest {
 
     @BeforeEach
     void init() {
-        Path path = Paths.get(TEST_FILE_NAME);
-        deleteFileIfExists(path);
-        createFile(path);
+        Path path = createTempFile(TEST_FILE_NAME);
 
         storage = new ValueStorage(path);
     }

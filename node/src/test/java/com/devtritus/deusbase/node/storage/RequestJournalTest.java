@@ -5,10 +5,9 @@ import com.devtritus.deusbase.api.NodeRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
-import static com.devtritus.deusbase.node.utils.Utils.*;
+import static com.devtritus.deusbase.node.TestUtils.createTempFile;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RequestJournalTest {
@@ -19,9 +18,7 @@ class RequestJournalTest {
 
     @BeforeEach
     void init() {
-        Path path = Paths.get(TEST_FILE_NAME);
-        deleteFileIfExists(path);
-        createFile(path);
+        Path path = createTempFile(TEST_FILE_NAME);
 
         requestJournal = RequestJournal.init(path, BATCH_SIZE, -1);
     }

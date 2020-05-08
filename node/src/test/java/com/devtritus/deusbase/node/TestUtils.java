@@ -1,6 +1,7 @@
 package com.devtritus.deusbase.node;
 
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -49,5 +50,13 @@ public abstract class TestUtils {
         return list.stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());
+    }
+
+    public static Path createTempFile(String fileName) {
+        try {
+            return Files.createTempFile(fileName, null);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
