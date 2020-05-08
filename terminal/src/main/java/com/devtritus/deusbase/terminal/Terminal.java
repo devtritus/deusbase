@@ -5,6 +5,7 @@ import org.apache.http.conn.HttpHostConnectException;
 
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -20,13 +21,16 @@ class Terminal {
     private final InputStream in;
     private final PrintStream out;
     private final TerminalMode mode;
-    private final NodeClient nodeClient;
 
-    Terminal(InputStream in, PrintStream out, TerminalMode mode, NodeClient nodeClient) {
+    private String url;
+    private NodeClient nodeClient;
+
+    Terminal(InputStream in, PrintStream out, TerminalMode mode, String url) {
         this.in = in;
         this.out = out;
         this.mode = mode;
-        this.nodeClient = nodeClient;
+        this.url = url;
+        this.nodeClient = new NodeClient(url);
     }
 
     void run() {
@@ -57,6 +61,19 @@ class Terminal {
 
             } else if(isSame("help", commandMessage)) {
                 printHelp();
+
+            } else if(isSame("connect", commandMessage)) {
+
+                if(args.length != 1) {
+                    print(WRONG_ARGS_COUNT);
+                    print("Url to the database is expected");
+                }
+                String newUrl = args[0].startsWith("http://") ? args[0] : "http://" + args[0];
+                if(!url.equals(newUrl)) {
+                    url = newUrl;
+                    nodeClient = new NodeClient(newUrl);
+                }
+                print("OK");
 
             } else if(isExternalCommand(commandMessage)) {
                 handleExternalCommand(commandMessage, args);
@@ -94,9 +111,15 @@ class Terminal {
         } catch (WrongArgumentException e) {
             print(WRONG_ARGS_COUNT);
             print(e.getMessage());
+        } catch (UnknownHostException e) {
+            print(UNKNOWN_HOST + ": " + url);
         } catch (Exception e) {
-            print(UNKNOWN_ERROR + ":");
-            printStackTrace(e);
+            if(mode == TerminalMode.DEBUG) {
+                print(UNKNOWN_ERROR + ":");
+                printStackTrace(e);
+            } else {
+                print(UNKNOWN_ERROR + ": " + e.toString());
+            }
         }
     }
 

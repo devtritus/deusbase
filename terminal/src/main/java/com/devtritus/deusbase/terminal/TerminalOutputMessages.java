@@ -13,4 +13,5 @@ class TerminalOutputMessages {
     final static String UNKNOWN_ERROR = "UNKNOWN ERROR";
     final static String SERVER_ERROR = "SERVER ERROR";
     final static String WRONG_ARGS_COUNT = "WRONG ARGUMENTS COUNT";
+    final static String UNKNOWN_HOST = "UNKNOWN HOST";
 }

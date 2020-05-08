@@ -1,6 +1,5 @@
 package com.devtritus.deusbase.terminal;
 
-import com.devtritus.deusbase.api.NodeClient;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
 
@@ -15,10 +14,9 @@ public class Main {
         final String url = programArgs.getOrDefault(URL, DEFAULT_CLIENT_URL);
         final TerminalMode terminalMode = programArgs.contains(DEBUG) ? TerminalMode.DEBUG : TerminalMode.PROD;
 
-        System.out.println("Connect to " + url);
+        System.out.println("Attach terminal to " + url);
 
-        NodeClient nodeClient = new NodeClient(url);
-        new Terminal(System.in, System.out, terminalMode, nodeClient).run();
+        new Terminal(System.in, System.out, terminalMode, url).run();
         //TODO: add connection checking query
     }
 }

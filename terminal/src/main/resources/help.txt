@@ -14,7 +14,11 @@ Available commands:
              If index isn't specified entry by index 0 will be updated.
              Syntax: update "key" [ index optional type integer ] "value"
 
+    connect - change url destination to the database. Prefix "http://" is optional. Syntax: connect [ http://any:port ]
+
     exit - close terminal
 
     * argument can be enclosed in double quotes if contains spaces.
       Example: create "Tom Sawyer" "The title character of the Mark Twain"
+
+    ** square brackets [ ] aren't written in the query
