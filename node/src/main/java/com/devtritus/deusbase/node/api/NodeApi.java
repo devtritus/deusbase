@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.node.server;
+package com.devtritus.deusbase.node.api;
 
 import com.devtritus.deusbase.api.Api;
 import com.devtritus.deusbase.node.storage.ValueStorage;

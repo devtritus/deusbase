@@ -1,6 +1,7 @@
 package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.api.*;
+import com.devtritus.deusbase.node.api.SlaveApi;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import org.apache.http.conn.HttpHostConnectException;
@@ -162,7 +163,7 @@ public class SlaveNode implements SlaveApi {
         if(writtenMasterUuid == null) { //first connection
             env.putProperty("masterUuid", actualMasterUuid);
         } else if(!actualMasterUuid.equals(writtenMasterUuid)) {
-            throw new IllegalStateException(String.format("Slave isn't owned to master located at %s", masterAddress));
+            throw new IllegalStateException(String.format("Slave is not owned to master located at %s", masterAddress));
         }
 
         logger.info("Handshake with master {} are completed", masterAddress);

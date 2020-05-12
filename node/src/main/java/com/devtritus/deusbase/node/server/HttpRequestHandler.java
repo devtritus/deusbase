@@ -12,9 +12,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 class HttpRequestHandler extends AbstractHandler {
     private final static Logger logger = LoggerFactory.getLogger(HttpRequestHandler.class);
+    private final static ExecutorService executorService = Executors.newSingleThreadExecutor(); //single thread are used to ensure thread-safety
+
     private final RequestHandler requestHandler;
 
     HttpRequestHandler(RequestHandler requestHandler) {
@@ -40,7 +45,9 @@ class HttpRequestHandler extends AbstractHandler {
 
         NodeResponse response;
         try {
-            response = requestHandler.handle(command, channel);
+            //TODO: handle exception
+            Future<NodeResponse> future = executorService.submit(() -> requestHandler.handle(command, channel));
+            response = future.get();
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
         } catch (Exception e) {

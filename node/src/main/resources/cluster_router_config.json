@@ -1,0 +1,14 @@
+[
+  {
+    "master": "http://localhost:",
+    "slaves": [ "http://localhost", "http://localhost"]
+  },
+  {
+    "master": "http://localhost:",
+    "slaves": [ "http://localhost", "http://localhost"]
+  },
+  {
+    "master": "http://localhost:",
+    "slaves": [ "http://localhost", "http://localhost"]
+  }
+]

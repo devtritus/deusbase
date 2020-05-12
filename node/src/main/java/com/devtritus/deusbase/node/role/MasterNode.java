@@ -3,6 +3,7 @@ package com.devtritus.deusbase.node.role;
 import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeClient;
 import com.devtritus.deusbase.api.NodeResponse;
+import com.devtritus.deusbase.node.api.MasterApi;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import com.devtritus.deusbase.node.storage.RequestJournal;
@@ -144,7 +145,7 @@ public class MasterNode implements MasterApi {
                 int nextPosition = sendBatch(slave.getClient(), slave.getPosition());
                 slave.setPosition(nextPosition);
             } catch (IOException e) {
-                logger.error("Batch wasn't sent to {}", slave.getAddress(), e);
+                logger.error("Batch was not sent to {}", slave.getAddress(), e);
                 slave.setOnline(false);
             }
         }
@@ -161,7 +162,7 @@ public class MasterNode implements MasterApi {
                 return doSendBatch(client, position);
             } catch (IOException e) {
                 retryCount++;
-                logger.error("Batch wasn't sent to {}", client, e);
+                logger.error("Batch was not sent to {}", client, e);
                 if(retryCount < MAX_RETRY_COUNT) {
                     throw e;
                 }

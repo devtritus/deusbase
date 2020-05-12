@@ -23,10 +23,11 @@ public class Main {
         NodeMode mode = NodeMode.fromText(programArgs.getOrDefault(MODE, DEFAULT_NODE_MODE));
         if(mode == NodeMode.LOAD_DATA) {
             ActorsLoader.load(programArgs);
+        } else if(mode == NodeMode.ROUTER) {
+            new Router(programArgs).start();
         } else {
             new Node(mode, programArgs).start();
         }
     }
-
     //TODO: design an initialization cycle
 }

@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.node.role;
+package com.devtritus.deusbase.node.api;
 
 import java.util.List;
 

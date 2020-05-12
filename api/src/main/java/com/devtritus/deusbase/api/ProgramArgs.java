@@ -41,7 +41,7 @@ public class ProgramArgs {
     private String getOrThrow(String key) {
         String value = data.get(key);
         if(value == null) {
-            throw new IllegalArgumentException(String.format("Value by key %s wasn't found", key));
+            throw new IllegalArgumentException(String.format("Value by key %s was not found", key));
         }
         return value;
     }

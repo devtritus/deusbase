@@ -7,7 +7,7 @@ import java.util.Map;
 public class CrudRequestHandler implements NodeRequestHandler {
     private Api<String, String> api;
 
-    public NodeResponse handle(NodeRequest request) {
+    public NodeResponse handle(NodeRequest request) throws Exception {
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
 
@@ -40,7 +40,7 @@ public class CrudRequestHandler implements NodeRequestHandler {
                 data = api.update(args[0], Integer.parseInt(args[1]), args[2]);
                 break;
             default:
-                throw new IllegalArgumentException(String.format("Unhandled command %s", command));
+                throw new UnhandledCommandException(command.toString());
         }
 
         NodeResponse response = new NodeResponse();

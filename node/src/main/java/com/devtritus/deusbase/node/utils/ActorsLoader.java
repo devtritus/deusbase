@@ -3,7 +3,7 @@ package com.devtritus.deusbase.node.utils;
 import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.CrudRequestHandler;
-import com.devtritus.deusbase.node.server.NodeApi;
+import com.devtritus.deusbase.node.api.NodeApi;
 import com.devtritus.deusbase.node.storage.ValueStorage;
 import com.devtritus.deusbase.node.tree.BTree;
 import com.devtritus.deusbase.node.tree.BTreeInitializer;

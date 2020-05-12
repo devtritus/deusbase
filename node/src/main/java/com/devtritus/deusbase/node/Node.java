@@ -2,6 +2,7 @@ package com.devtritus.deusbase.node;
 
 import com.devtritus.deusbase.api.NodeRequest;
 import com.devtritus.deusbase.api.ProgramArgs;
+import com.devtritus.deusbase.node.api.NodeApi;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.role.MasterNode;
 import com.devtritus.deusbase.node.role.SlaveNode;
@@ -9,10 +10,10 @@ import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 import com.devtritus.deusbase.node.utils.NodeMode;
-import java.io.InputStream;
+import com.devtritus.deusbase.node.utils.Utils;
+
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
@@ -70,7 +71,7 @@ class Node {
 
             RequestJournal journal = RequestJournal.init(journalPath, journalBatchSize, journalMinSizeToTruncate);
             MasterRequestHandler requestHandler = new MasterRequestHandler(journal, flushContext);
-            NodeServer nodeServer = new NodeServer(host, port, requestHandler, Node::printBanner);
+            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> Utils.printFromFile("banner.txt"));
             MasterNode masterNode = new MasterNode(env, journal, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
@@ -83,7 +84,7 @@ class Node {
             String masterAddress = programArgs.get(MASTER_ADDRESS);
 
             SlaveRequestHandler requestHandler = new SlaveRequestHandler(env);
-            NodeServer nodeServer = new NodeServer(host, port, requestHandler, Node::printBanner);
+            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> Utils.printFromFile("banner.txt"));
             SlaveNode slaveNode = new SlaveNode(env, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
@@ -94,18 +95,6 @@ class Node {
             slaveNode.init(nodeAddress, masterAddress);
         } else {
             throw new IllegalStateException(String.format("Unexpected mode: %s", mode));
-        }
-    }
-
-    private static void printBanner() {
-        try {
-            InputStream in = Main.class.getClassLoader().getResourceAsStream("banner.txt");
-            Scanner scanner = new Scanner(in);
-            while(scanner.hasNextLine()) {
-                System.out.println(scanner.nextLine());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 }

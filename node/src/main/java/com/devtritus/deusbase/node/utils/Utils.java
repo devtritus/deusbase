@@ -1,10 +1,14 @@
 package com.devtritus.deusbase.node.utils;
 
+import com.devtritus.deusbase.node.Main;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Scanner;
 
 public abstract class Utils {
     public static <T> List<T> insertToList(List<T> list, T element, int insertIndex)  {
@@ -92,6 +96,18 @@ public abstract class Utils {
         try {
             return Files.size(path) == 0;
         } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void printFromFile(String fileName) {
+        try {
+            InputStream in = Main.class.getClassLoader().getResourceAsStream(fileName);
+            Scanner scanner = new Scanner(in);
+            while(scanner.hasNextLine()) {
+                System.out.println(scanner.nextLine());
+            }
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

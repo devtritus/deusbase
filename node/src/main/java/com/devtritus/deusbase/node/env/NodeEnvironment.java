@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -91,7 +92,7 @@ public class NodeEnvironment {
     public String getPropertyOrThrowException(String key) {
         String property = getProperty(key);
         if(property == null) {
-            throw new RuntimeException(String.format("Key %s wasn't found", key));
+            throw new RuntimeException(String.format("Key %s was not found", key));
         }
         return property;
     }
@@ -155,6 +156,16 @@ public class NodeEnvironment {
         Path path = appendToPath(nodePath, name);
 
         createFileIfNotExist(path);
+
+        return path;
+    }
+
+    public Path getFile(String name) throws FileNotFoundException {
+        Path path = appendToPath(nodePath, name);
+
+        if(Files.exists(path)) {
+            throw new FileNotFoundException(path.toAbsolutePath().normalize().toString());
+        }
 
         return path;
     }
