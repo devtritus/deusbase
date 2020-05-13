@@ -2,7 +2,6 @@ package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
-import com.devtritus.deusbase.node.api.SlaveApi;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.util.List;

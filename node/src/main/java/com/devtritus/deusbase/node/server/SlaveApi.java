@@ -1,4 +1,4 @@
-package com.devtritus.deusbase.node.api;
+package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.NodeRequest;
 

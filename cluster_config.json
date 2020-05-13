@@ -1,0 +1,17 @@
+{
+  "router": "http://localhost:4001",
+  "shard_list": [
+    {
+      "master": "http://localhost:4002",
+      "slaves": [ "http://localhost:4003", "http://localhost:4004"]
+    },
+    {
+      "master": "http://localhost:4005",
+      "slaves": [ "http://localhost:4006", "http://localhost:4007"]
+    },
+    {
+      "master": "http://localhost:4008",
+      "slaves": [ "http://localhost:4009", "http://localhost:4010"]
+    }
+  ]
+}

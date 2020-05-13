@@ -2,7 +2,7 @@ package com.devtritus.deusbase.node;
 
 import com.devtritus.deusbase.api.NodeRequest;
 import com.devtritus.deusbase.api.ProgramArgs;
-import com.devtritus.deusbase.node.api.NodeApi;
+import com.devtritus.deusbase.node.server.NodeApi;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.role.MasterNode;
 import com.devtritus.deusbase.node.role.SlaveNode;

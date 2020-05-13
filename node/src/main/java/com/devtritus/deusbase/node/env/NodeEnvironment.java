@@ -48,8 +48,8 @@ public class NodeEnvironment {
             createDirectoryIfNotExist(nodePath);
         }
 
-        if (programArgs.contains(ID)) {
-            String nodeName = "node_" + programArgs.get(ID);
+        if (programArgs.contains(NODE)) {
+            String nodeName = programArgs.get(NODE);
             nodePath = appendToPath(nodePath, nodeName);
             createDirectoryIfNotExist(nodePath);
         }

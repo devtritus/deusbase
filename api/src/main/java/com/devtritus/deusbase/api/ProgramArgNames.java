@@ -4,7 +4,7 @@ public interface ProgramArgNames {
     String MODE = "mode";
     String ROOT_PATH = "root_path";
     String SHARD = "shard";
-    String ID = "id";
+    String NODE = "node";
     String SCHEME = "scheme";
     String TREE_M = "tree_m";
     String TREE_CACHE_LIMIIT = "tree_cache_limit";

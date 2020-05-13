@@ -1,7 +1,6 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.*;
-import com.devtritus.deusbase.node.api.ShardParams;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;

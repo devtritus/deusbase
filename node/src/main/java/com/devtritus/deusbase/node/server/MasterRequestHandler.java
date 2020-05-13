@@ -1,7 +1,6 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.*;
-import com.devtritus.deusbase.node.api.MasterApi;
 import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 import java.io.IOException;

@@ -1,13 +1,12 @@
 package com.devtritus.deusbase.node;
 
 import com.devtritus.deusbase.api.*;
-import com.devtritus.deusbase.node.api.ShardParams;
+import com.devtritus.deusbase.node.server.ShardParams;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.utils.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
@@ -32,7 +31,7 @@ class Router {
 
         Path path;
         try {
-            path = env.getFile("local_cluster_router_config.json");
+            path = env.getFile("config.json");
         } catch (Exception e) {
             throw new RuntimeException("Shard config was not found", e);
         }

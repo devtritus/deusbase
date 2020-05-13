@@ -1,7 +1,7 @@
 package com.devtritus.deusbase.node.role;
 
 import com.devtritus.deusbase.api.*;
-import com.devtritus.deusbase.node.api.SlaveApi;
+import com.devtritus.deusbase.node.server.SlaveApi;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import org.apache.http.conn.HttpHostConnectException;

@@ -3,7 +3,7 @@ package com.devtritus.deusbase.node.role;
 import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeClient;
 import com.devtritus.deusbase.api.NodeResponse;
-import com.devtritus.deusbase.node.api.MasterApi;
+import com.devtritus.deusbase.node.server.MasterApi;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.server.NodeApiInitializer;
 import com.devtritus.deusbase.node.storage.RequestJournal;
