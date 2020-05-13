@@ -3,6 +3,7 @@ package com.devtritus.deusbase.node.server;
 import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.env.NodeEnvironment;
 import com.devtritus.deusbase.node.api.SlaveApi;
+import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class SlaveRequestHandler implements RequestHandler {
     }
 
     @Override
-    public NodeResponse handle(Command command, ReadableByteChannel channel) throws Exception {
+    public NodeResponse handle(Command command, ReadableByteChannel channel) throws IOException, UnhandledCommandException {
         NodeResponse nodeResponse = NodeResponse.ok();
 
         if(command == Command.SYNC_COMPLETE) {

@@ -4,7 +4,7 @@ import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.api.MasterApi;
 import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
-
+import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 
@@ -21,7 +21,7 @@ public class MasterRequestHandler implements RequestHandler {
     }
 
     @Override
-    public NodeResponse handle(Command command, ReadableByteChannel channel) throws Exception {
+    public NodeResponse handle(Command command, ReadableByteChannel channel) throws IOException, UnhandledCommandException {
         NodeResponse nodeResponse = NodeResponse.ok();
         if(command == Command.HANDSHAKE) {
             RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);

@@ -2,7 +2,7 @@ package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.*;
 import com.devtritus.deusbase.node.api.ShardParams;
-
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +21,7 @@ public class RouterRequestHandler implements NodeRequestHandler {
         step = MAX_CYCLE_SIZE / shardParams.size();
     }
 
-    public NodeResponse handle(NodeRequest request) throws Exception {
+    public NodeResponse handle(NodeRequest request) throws IOException, UnhandledCommandException {
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
 
