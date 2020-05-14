@@ -18,8 +18,8 @@ node_jar_name_with_dependencies = 'deusbase.node-1.0-jar-with-dependencies.jar'
 terminal_jar_name_with_dependencies = 'deusbase.terminal-1.0-jar-with-dependencies.jar'
 node_jar_name = 'deusbase.node-1.0-jar'
 terminal_jar_name = 'deusbase.terminal-1.0.jar'
-node_target_folder = 'node/target' + '/' + node_jar_name_with_dependencies
-terminal_target_folder = 'terminal/target' + '/' + terminal_jar_name_with_dependencies
+node_target_folder = '../deusbase/node/target' + '/' + node_jar_name_with_dependencies
+terminal_target_folder = '../deusbase/terminal/target' + '/' + terminal_jar_name_with_dependencies
 
 def zip_dir_and_delete(directory, name):
     path = directory + '/' + name
