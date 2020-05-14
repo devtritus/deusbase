@@ -40,18 +40,21 @@ public class NodeEnvironment {
         String rootPath = programArgs.getOrDefault(ROOT_PATH, DEFAULT_ROOT_PATH);
 
         Path nodePath = Paths.get(rootPath).toAbsolutePath();
-        nodePath = appendToPath(nodePath, DATA_DIRECTORY_NAME);
-        createDirectoryIfNotExist(nodePath);
 
-        if (programArgs.contains(SHARD)) {
-            nodePath = Paths.get(rootPath, programArgs.get(SHARD));
+        if(!programArgs.contains(GENERATE_FOLDERS)) {
+            nodePath = appendToPath(nodePath, DATA_DIRECTORY_NAME);
             createDirectoryIfNotExist(nodePath);
-        }
 
-        if (programArgs.contains(NODE)) {
-            String nodeName = programArgs.get(NODE);
-            nodePath = appendToPath(nodePath, nodeName);
-            createDirectoryIfNotExist(nodePath);
+            if (programArgs.contains(SHARD)) {
+                nodePath = Paths.get(rootPath, programArgs.get(SHARD));
+                createDirectoryIfNotExist(nodePath);
+            }
+
+            if (programArgs.contains(NODE)) {
+                String nodeName = programArgs.get(NODE);
+                nodePath = appendToPath(nodePath, nodeName);
+                createDirectoryIfNotExist(nodePath);
+            }
         }
 
         String schemeName = programArgs.getOrDefault(SCHEME, DEFAULT_SCHEME_NAME);

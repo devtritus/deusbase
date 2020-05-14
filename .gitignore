@@ -1,6 +1,6 @@
 *.iml
 .idea/**
 target/
-data/
 *.tsv
 *.bin
+output/

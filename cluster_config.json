@@ -1,17 +1,26 @@
 {
-  "router": "http://localhost:4001",
+  "router": { "host": "localhost", "port": "4001" },
   "shard_list": [
     {
-      "master": "http://localhost:4002",
-      "slaves": [ "http://localhost:4003", "http://localhost:4004"]
+      "master": { "host": "localhost", "port": "4002" },
+      "slaves": [
+        { "host": "localhost", "port": "4003" },
+        { "host": "localhost", "port": "4004" }
+      ]
     },
     {
-      "master": "http://localhost:4005",
-      "slaves": [ "http://localhost:4006", "http://localhost:4007"]
+      "master": { "host": "localhost", "port": "4005" },
+      "slaves": [
+        { "host": "localhost", "port": "4006" },
+        { "host": "localhost", "port": "4007" }
+      ]
     },
     {
-      "master": "http://localhost:4008",
-      "slaves": [ "http://localhost:4009", "http://localhost:4010"]
+      "master": { "host": "localhost", "port": "4008" },
+      "slaves": [
+        { "host": "localhost", "port": "4009" },
+        { "host": "localhost", "port": "4010" }
+      ]
     }
   ]
 }

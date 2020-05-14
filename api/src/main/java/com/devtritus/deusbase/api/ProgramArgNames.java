@@ -4,6 +4,7 @@ public interface ProgramArgNames {
     String MODE = "mode";
     String ROOT_PATH = "root_path";
     String SHARD = "shard";
+    String GENERATE_FOLDERS = "generate_folders";
     String NODE = "node";
     String SCHEME = "scheme";
     String TREE_M = "tree_m";
