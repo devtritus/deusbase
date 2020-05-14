@@ -1,20 +1,30 @@
-import json
 import os
+import sys
 import stat
+import json
+import getopt
 import shutil
+import zipfile
 from pathlib import Path
 
 output_folder_name = './output'
-router_folder_name = output_folder_name + '/router'
-terminal_folder_name = output_folder_name + '/terminal'
+router_name = 'router'
+terminal_name = 'terminal'
+router_folder_name = output_folder_name + '/' + router_name
+terminal_folder_name = output_folder_name + '/' + terminal_name
 run_script_name = 'run.sh'
 java_prefix = 'java -jar '
 node_jar_name_with_dependencies = 'deusbase.node-1.0-jar-with-dependencies.jar'
 terminal_jar_name_with_dependencies = 'deusbase.terminal-1.0-jar-with-dependencies.jar'
-node_jar_name = 'deusbase.node-1.0-jar.jar'
+node_jar_name = 'deusbase.node-1.0-jar'
 terminal_jar_name = 'deusbase.terminal-1.0.jar'
-node_target_folder = 'node/target' + "/" + node_jar_name_with_dependencies
-terminal_target_folder = 'terminal/target' + "/" + terminal_jar_name_with_dependencies
+node_target_folder = 'node/target' + '/' + node_jar_name_with_dependencies
+terminal_target_folder = 'terminal/target' + '/' + terminal_jar_name_with_dependencies
+
+def zip_dir_and_delete(directory, name):
+    path = directory + '/' + name
+    shutil.make_archive(path, 'zip', path)
+    shutil.rmtree(path)
 
 def create_http_address(host_port):
     return 'http://' + host_port['host'] + ':' + host_port['port']
@@ -32,54 +42,74 @@ def create_run_script(executable_file_name, script_folder_path, program_args):
     st = os.stat(script_path)
     os.chmod(script_path, st.st_mode | stat.S_IEXEC)
 
-if(Path(output_folder_name).exists()):
-    shutil.rmtree(output_folder_name)
+def main(argv):
+    opts, args = getopt.getopt(argv, 'z', ['zip'])
 
-os.mkdir(output_folder_name)
-os.mkdir(router_folder_name)
-os.mkdir(terminal_folder_name)
+    do_zip = 0
+    for opt, arg in opts:
+        if opt == '--zip' or opt == '-z':
+            do_zip = 1
 
-shutil.copyfile(terminal_target_folder, terminal_folder_name + "/" + terminal_jar_name)
-shutil.copyfile(node_target_folder, router_folder_name + "/" + node_jar_name)
+    if(Path(output_folder_name).exists()):
+        shutil.rmtree(output_folder_name)
 
-with open('cluster_config.json') as json_file:
-    data = json.load(json_file)
+    os.mkdir(output_folder_name)
+    os.mkdir(router_folder_name)
+    os.mkdir(terminal_folder_name)
 
-    router = data['router']
+    shutil.copyfile(terminal_target_folder, terminal_folder_name + '/' + terminal_jar_name)
+    shutil.copyfile(node_target_folder, router_folder_name + '/' + node_jar_name)
 
-    create_run_script(node_jar_name, router_folder_name, { '-mode': 'router', '-host': router['host'], '-port': router['port'] })
+    with open('cluster_config.json') as json_file:
+        data = json.load(json_file)
 
-    create_run_script(terminal_jar_name, terminal_folder_name, { '-url': create_http_address(router) })
+        router = data['router']
 
-    shard_list = data['shard_list']
+        create_run_script(node_jar_name, router_folder_name, { '-mode': 'router', '-host': router['host'], '-port': router['port'] })
 
-    with open(router_folder_name + '/router_config.json', 'w') as outfile:
-        json.dump(shard_list, outfile)
+        create_run_script(terminal_jar_name, terminal_folder_name, { '-url': create_http_address(router) })
 
-    for i in range(len(shard_list)):
-        shard = shard_list[i]
+        shard_list = data['shard_list']
 
-        shard_name = 'shard_' + str(i)
-        shard_folder_name = output_folder_name + '/' + shard_name
-        os.mkdir(shard_folder_name)
+        with open(router_folder_name + '/router_config.json', 'w') as outfile:
+            json.dump(shard_list, outfile)
 
-        master_node_name = 'master'
-        master_folder_name = shard_folder_name + '/' + master_node_name
+        if do_zip:
+            zip_dir_and_delete(output_folder_name, terminal_name)
+            zip_dir_and_delete(output_folder_name, router_name)
 
-        os.mkdir(master_folder_name)
-        shutil.copyfile(node_target_folder, master_folder_name + "/" + node_jar_name)
+        for i in range(len(shard_list)):
+            shard = shard_list[i]
 
-        master = shard['master']
-        create_run_script(node_jar_name, master_folder_name, { '-shard': shard_name, '-node': 'master', '-mode': 'master', '-host': master['host'], '-port': master['port'] })
+            shard_name = 'shard_' + str(i)
+            shard_folder_name = output_folder_name + '/' + shard_name
+            os.mkdir(shard_folder_name)
 
-        for j in range(len(shard['slaves'])):
-            slave = shard['slaves'][j]
-            slave_node_name = 'slave_' + str(j)
-            slave_folder_name = shard_folder_name + '/' + slave_node_name
+            master_node_name = 'master'
+            master_folder_name = shard_folder_name + '/' + master_node_name
 
-            os.mkdir(slave_folder_name)
-            shutil.copyfile(node_target_folder, slave_folder_name + "/" + node_jar_name)
+            os.mkdir(master_folder_name)
+            shutil.copyfile(node_target_folder, master_folder_name + '/' + node_jar_name)
 
-            create_run_script(node_jar_name, slave_folder_name, { '-shard': shard_name, '-node': slave_node_name, '-mode': 'slave', '-host': slave['host'], '-port': slave['port'], '-master_address': create_http_address(master) })
+            master = shard['master']
+            create_run_script(node_jar_name, master_folder_name, { '-shard': shard_name, '-node': 'master', '-mode': 'master', '-host': master['host'], '-port': master['port'] })
 
-print('Cluster has been generated')
+            if do_zip:
+                zip_dir_and_delete(shard_folder_name, master_node_name)
+
+            for j in range(len(shard['slaves'])):
+                slave = shard['slaves'][j]
+                slave_node_name = 'slave_' + str(j)
+                slave_folder_name = shard_folder_name + '/' + slave_node_name
+
+                os.mkdir(slave_folder_name)
+                shutil.copyfile(node_target_folder, slave_folder_name + '/' + node_jar_name)
+
+                create_run_script(node_jar_name, slave_folder_name, { '-shard': shard_name, '-node': slave_node_name, '-mode': 'slave', '-host': slave['host'], '-port': slave['port'], '-master_address': create_http_address(master) })
+
+                if do_zip:
+                    zip_dir_and_delete(shard_folder_name, slave_node_name)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
+    print('Cluster has been generated')

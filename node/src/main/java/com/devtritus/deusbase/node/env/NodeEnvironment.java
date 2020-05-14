@@ -42,7 +42,7 @@ public class NodeEnvironment {
         Path nodePath = Paths.get(rootPath).toAbsolutePath();
 
         if(programArgs.contains(GENERATE_FOLDERS)) {
-            nodePath = appendToPath(nodePath, DATA_DIRECTORY_NAME);
+            nodePath = appendToPath(nodePath, ROOT_DIRECTORY_NAME);
             createDirectoryIfNotExist(nodePath);
 
             if (programArgs.contains(SHARD)) {

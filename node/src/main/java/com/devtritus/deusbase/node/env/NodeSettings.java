@@ -3,7 +3,7 @@ package com.devtritus.deusbase.node.env;
 public interface NodeSettings {
     String DEFAULT_NODE_MODE = "master";
     String DEFAULT_ROOT_PATH = "./";
-    String DATA_DIRECTORY_NAME = "output";
+    String ROOT_DIRECTORY_NAME = "output";
     String DEFAULT_SCHEME_NAME = "default";
     String CONFIG_FILE_NAME = "config.json";
     String STORAGE_FILE_NAME = "storage.bin";
