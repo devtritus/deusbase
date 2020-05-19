@@ -5,7 +5,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
-import com.devtritus.deusbase.node.utils.ActorsLoader;
 import com.devtritus.deusbase.node.utils.NodeMode;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
@@ -17,17 +16,14 @@ public class Main {
         root.setLevel(Level.INFO);
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
 
         NodeMode mode = NodeMode.fromText(programArgs.getOrDefault(MODE, DEFAULT_NODE_MODE));
-        if(mode == NodeMode.LOAD_DATA) {
-            ActorsLoader.load(programArgs);
-        } else if(mode == NodeMode.ROUTER) {
+        if(mode == NodeMode.ROUTER) {
             new Router(programArgs).start();
         } else {
             new Node(mode, programArgs).start();
         }
     }
-    //TODO: design an initialization cycle
 }

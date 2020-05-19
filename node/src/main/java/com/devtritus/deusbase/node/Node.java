@@ -11,7 +11,8 @@ import com.devtritus.deusbase.node.storage.FlushContext;
 import com.devtritus.deusbase.node.storage.RequestJournal;
 import com.devtritus.deusbase.node.utils.NodeMode;
 import com.devtritus.deusbase.node.utils.Utils;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
@@ -20,7 +21,10 @@ import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
 import static com.devtritus.deusbase.node.utils.Utils.isEmptyFile;
 
+//TODO: create template method for all modes
 class Node {
+    private final static Logger logger = LoggerFactory.getLogger(Router.class);
+
     private NodeMode mode;
     private ProgramArgs programArgs;
 
@@ -71,7 +75,7 @@ class Node {
 
             RequestJournal journal = RequestJournal.init(journalPath, journalBatchSize, journalMinSizeToTruncate);
             MasterRequestHandler requestHandler = new MasterRequestHandler(journal, flushContext);
-            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> Utils.printFromFile("banner.txt"));
+            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> successCallback(mode));
             MasterNode masterNode = new MasterNode(env, journal, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
@@ -84,7 +88,7 @@ class Node {
             String masterAddress = programArgs.get(MASTER_ADDRESS);
 
             SlaveRequestHandler requestHandler = new SlaveRequestHandler(env);
-            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> Utils.printFromFile("banner.txt"));
+            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> successCallback(mode));
             SlaveNode slaveNode = new SlaveNode(env, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
@@ -96,5 +100,10 @@ class Node {
         } else {
             throw new IllegalStateException(String.format("Unexpected mode: %s", mode));
         }
+    }
+
+    private static void successCallback(NodeMode mode) {
+        Utils.printFromFile("banner.txt");
+        logger.info("Mode - {}", mode.name().toLowerCase());
     }
 }

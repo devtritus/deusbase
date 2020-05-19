@@ -35,9 +35,8 @@ def create_run_script(executable_file_name, script_folder_path, program_args):
     for k, v in program_args.items():
         java_command += (' ' + k + '=' + v)
 
-
     with open(script_folder_path + '/' + run_script_name, 'w+') as text_file:
-        text_file.write(java_command)
+        text_file.write(java_command + " \"$@\"")
 
     st = os.stat(script_path)
     os.chmod(script_path, st.st_mode | stat.S_IEXEC)

@@ -7,15 +7,23 @@ import com.devtritus.deusbase.node.server.*;
 import com.devtritus.deusbase.node.utils.Utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
 
 class Router {
+    private final static Logger logger = LoggerFactory.getLogger(Router.class);
+
     private ProgramArgs programArgs;
 
     Router(ProgramArgs programArgs) {
@@ -30,10 +38,24 @@ class Router {
         env.setUp(programArgs);
 
         Path path;
-        try {
-            path = env.getFile("config.json");
-        } catch (Exception e) {
-            throw new RuntimeException("Shard config was not found", e);
+        if(programArgs.contains(CLUSTER_CONFIG_PATH)) {
+            String configPath = programArgs.get(CLUSTER_CONFIG_PATH);
+            URL url = Router.class.getClassLoader().getResource(configPath);
+            try {
+                path = Paths.get(url.toURI());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            if(!Files.exists(path)) {
+                throw new RuntimeException("Shard config was not found by path " + configPath);
+            }
+        } else {
+            try {
+                path = env.getFile("router_config.json");
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Shard config was not found", e);
+            }
         }
 
         List<ShardParams> shardParams;
@@ -45,8 +67,13 @@ class Router {
 
         RouterRequestHandler routerRequestHandler = new RouterRequestHandler(shardParams);
 
-        NodeServer nodeServer = new NodeServer(host, port, proxyRequestHandler(routerRequestHandler), () -> Utils.printFromFile("banner.txt"));
+        NodeServer nodeServer = new NodeServer(host, port, proxyRequestHandler(routerRequestHandler), Router::successCallback);
         nodeServer.start();
+    }
+
+    private static void successCallback() {
+        Utils.printFromFile("banner.txt");
+        logger.info("Mode - router");
     }
 
     private RequestHandler proxyRequestHandler(NodeRequestHandler nodeRequestHandler) {

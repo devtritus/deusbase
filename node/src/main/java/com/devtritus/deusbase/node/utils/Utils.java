@@ -102,7 +102,7 @@ public abstract class Utils {
 
     public static void printFromFile(String fileName) {
         try {
-            InputStream in = Main.class.getClassLoader().getResourceAsStream(fileName);
+            InputStream in = Utils.class.getClassLoader().getResourceAsStream(fileName);
             Scanner scanner = new Scanner(in);
             while(scanner.hasNextLine()) {
                 System.out.println(scanner.nextLine());

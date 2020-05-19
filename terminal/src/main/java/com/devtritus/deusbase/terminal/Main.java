@@ -2,21 +2,32 @@ package com.devtritus.deusbase.terminal;
 
 import com.devtritus.deusbase.api.ProgramArgs;
 import com.devtritus.deusbase.api.ProgramArgsParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 
 public class Main {
-    private final static String DEFAULT_CLIENT_URL = "http://127.0.0.1:3334";
+    private final static Logger logger = LoggerFactory.getLogger(Main.class);
+    private final static String DEFAULT_CLIENT_URL = "http://localhost:4001";
 
     public static void main(String[] args) {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
 
         final String url = programArgs.getOrDefault(URL, DEFAULT_CLIENT_URL);
-        final TerminalMode terminalMode = programArgs.contains(DEBUG) ? TerminalMode.DEBUG : TerminalMode.PROD;
 
-        System.out.println("Attach terminal to " + url);
+        TerminalMode mode;
+        if(programArgs.contains(MODE)) {
+            mode = TerminalMode.fromText(programArgs.get(MODE));
+        } else {
+            mode = TerminalMode.PROD;
+        }
 
-        new Terminal(System.in, System.out, terminalMode, url).run();
-        //TODO: add connection checking query
+        if(mode == TerminalMode.ACTORS_LOADER) {
+            ActorsLoader.load(url, programArgs);
+        } else {
+            logger.info("Attach terminal to {}", url);
+            new Terminal(System.in, System.out, mode, url).run();
+        }
     }
 }

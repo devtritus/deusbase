@@ -2,6 +2,7 @@ package com.devtritus.deusbase.api;
 
 import java.util.*;
 
+//TODO: replace from '-' to '--'
 public class ProgramArgs {
     final Map<String, String> data;
 

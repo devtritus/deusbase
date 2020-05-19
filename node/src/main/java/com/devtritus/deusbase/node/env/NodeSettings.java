@@ -12,8 +12,8 @@ public interface NodeSettings {
     int DEFAULT_TREE_M = 100;
     int DEFAULT_TREE_CACHE_LIMIT = 5000;
 
-    String DEFAULT_HOST = "127.0.0.1";
-    int DEFAULT_PORT = 7599;
+    String DEFAULT_HOST = "localhost";
+    int DEFAULT_PORT = 4001;
 
     String DEFAULT_JOURNAL_PATH = "journal.bin";
     int DEFAULT_JOURNAL_BATCH_SIZE = 512 * 1024; //bytes

@@ -82,7 +82,7 @@
                             <outputDirectory>${basedir}/../deusbase_env</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${basedir}/deusbase_env_src</directory>
+                                    <directory>${basedir}/envsrc</directory>
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>

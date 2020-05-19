@@ -3,7 +3,6 @@ package com.devtritus.deusbase.node.utils;
 public enum NodeMode {
     MASTER,
     SLAVE,
-    LOAD_DATA,
     ROUTER;
 
     public static NodeMode fromText(String text) {

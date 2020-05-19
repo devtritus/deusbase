@@ -63,10 +63,10 @@ public class RouterRequestHandler implements NodeRequestHandler {
 
         String url;
         if(isMaster) {
-            url = shardParam.master;
+            url = shardParam.master.getHttpUrl();
         } else {
             int slaveIndex = random.nextInt(shardParams.size());
-            url = shardParam.slaves.get(slaveIndex);
+            url = shardParam.slaves.get(slaveIndex).getHttpUrl();
         }
 
         return getOrCreateNodeClient(url);

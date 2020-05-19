@@ -1,0 +1,9 @@
+[
+  {
+    "master": { "host": "localhost", "port": "4002" },
+    "slaves": [
+      { "host": "localhost", "port": "4003" },
+      { "host": "localhost", "port": "4004" }
+    ]
+  }
+]

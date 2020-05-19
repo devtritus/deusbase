@@ -56,5 +56,13 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+                <excludes>
+                    <exclude>debug_router_config.json</exclude>
+                </excludes>
+            </resource>
+        </resources>
     </build>
 </project>
