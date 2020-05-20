@@ -44,6 +44,9 @@ public class SlaveRequestHandler implements RequestHandler {
         } else if(command.getType() == CommandType.WRITE) {
             throwSlaveException();
 
+        } else if(command == Command.HEARTBEAT) {
+            //do nothing
+
         } else {
             RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
             NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());

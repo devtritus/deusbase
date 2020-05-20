@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class MasterNode implements MasterApi {
     private final static Logger logger = LoggerFactory.getLogger(MasterNode.class);
 
-    private final static int MAX_RETRY_COUNT = 3;
+    private final static int MAX_RETRIES_COUNT = 3;
     private final static int MAX_NUMBER_OF_BATCHES_TO_UPLOAD = 5;
     private final static int UPLOAD_BATCH_COUNTER_LIMIT = 5;
     private final static int UPLOAD_BATCH_RATE_IN_SECONDS = 2;
@@ -71,7 +71,6 @@ public class MasterNode implements MasterApi {
 
         SlaveParams slave = new SlaveParams();
         slave.setUuid(slaveUuid);
-        slave.setAddress(slaveAddress);
 
         NodeClient client = new NodeClient(slaveAddress);
 
@@ -145,7 +144,7 @@ public class MasterNode implements MasterApi {
                 int nextPosition = sendBatch(slave.getClient(), slave.getPosition());
                 slave.setPosition(nextPosition);
             } catch (IOException e) {
-                logger.error("Batch was not sent to {}", slave.getAddress(), e);
+                logger.error("Batch was not sent to {}", slave.getClient().toString(), e);
                 slave.setOnline(false);
             }
         }
@@ -162,8 +161,8 @@ public class MasterNode implements MasterApi {
                 return doSendBatch(client, position);
             } catch (IOException e) {
                 retryCount++;
-                logger.error("Batch was not sent to {}", client, e);
-                if(retryCount < MAX_RETRY_COUNT) {
+                logger.error("Batch could not send by client {}", client, e);
+                if(retryCount < MAX_RETRIES_COUNT) {
                     throw e;
                 }
             }

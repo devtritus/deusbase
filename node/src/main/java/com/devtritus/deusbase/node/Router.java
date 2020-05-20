@@ -66,6 +66,7 @@ class Router {
         }
 
         RouterRequestHandler routerRequestHandler = new RouterRequestHandler(shardParams);
+        routerRequestHandler.runHealthCheck();
 
         NodeServer nodeServer = new NodeServer(host, port, proxyRequestHandler(routerRequestHandler), Router::successCallback);
         nodeServer.start();

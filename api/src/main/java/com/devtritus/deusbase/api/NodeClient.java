@@ -12,11 +12,15 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public class NodeClient {
+    //TODO: add thread pool
+    private final static Logger logger = LoggerFactory.getLogger(NodeClient.class);
     private final static ObjectMapper objectMapper = new ObjectMapper();
 
     private final CloseableHttpClient httpClient = HttpClients.createDefault();
