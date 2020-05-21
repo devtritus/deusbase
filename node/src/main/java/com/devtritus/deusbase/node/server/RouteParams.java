@@ -2,11 +2,12 @@ package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.NodeClient;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class RouteParams {
     private NodeClient client;
-    private boolean online;
-    private int requestsCount;
+    private volatile boolean online;
+    private final AtomicLong requestsCount = new AtomicLong();
 
     @JsonIgnore
     public NodeClient getClient() {
@@ -26,12 +27,12 @@ public class RouteParams {
         this.online = online;
     }
 
-    public int getRequestsCount() {
-        return requestsCount;
+    public long getRequestsCount() {
+        return requestsCount.get();
     }
 
-    public void setRequestsCount(int requestsCount) {
-        this.requestsCount = requestsCount;
+    public void incrementRequestsCount() {
+        requestsCount.incrementAndGet();
     }
 
     @Override

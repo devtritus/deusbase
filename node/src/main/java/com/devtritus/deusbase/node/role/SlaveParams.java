@@ -7,7 +7,7 @@ public class SlaveParams {
     private String uuid;
     private int position;
     private NodeClient client;
-    private boolean online;
+    private volatile boolean online;
 
     public String getUuid() {
         return uuid;

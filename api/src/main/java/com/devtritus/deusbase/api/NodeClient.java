@@ -11,6 +11,7 @@ import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,15 +20,22 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class NodeClient {
-    //TODO: add thread pool
     private final static Logger logger = LoggerFactory.getLogger(NodeClient.class);
     private final static ObjectMapper objectMapper = new ObjectMapper();
+    private final static PoolingHttpClientConnectionManager connectionManager;
 
-    private final CloseableHttpClient httpClient = HttpClients.createDefault();
+    static {
+        connectionManager = new PoolingHttpClientConnectionManager();
+        connectionManager.setMaxTotal(15);
+    }
+
+    private final CloseableHttpClient httpClient;
     private final String url;
 
     public NodeClient(String url) {
         this.url = url;
+
+        httpClient = HttpClients.custom().setConnectionManager(connectionManager).build();
     }
 
     public NodeResponse streamRequest(Command command, InputStream in) throws IOException {

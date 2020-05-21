@@ -13,17 +13,17 @@ import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-class HttpRequestHandler extends AbstractHandler {
+public class HttpRequestHandler extends AbstractHandler {
     private final static Logger logger = LoggerFactory.getLogger(HttpRequestHandler.class);
-    private final static ExecutorService executorService = Executors.newSingleThreadExecutor(); //single thread are used to ensure thread-safety
 
     private final RequestHandler requestHandler;
+    private final ExecutorService executorService;
 
-    HttpRequestHandler(RequestHandler requestHandler) {
+    public HttpRequestHandler(RequestHandler requestHandler, ExecutorService executorService) {
         this.requestHandler = requestHandler;
+        this.executorService = executorService;
     }
 
     @Override

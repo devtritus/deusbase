@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
@@ -75,7 +76,8 @@ class Node {
 
             RequestJournal journal = RequestJournal.init(journalPath, journalBatchSize, journalMinSizeToTruncate);
             MasterRequestHandler requestHandler = new MasterRequestHandler(journal, flushContext);
-            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> successCallback(mode));
+            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler, Executors.newSingleThreadExecutor()); //use single-thread executor to ensure thread safe
+            NodeServer nodeServer = new NodeServer(host, port, httpRequestHandler, () -> successCallback(mode));
             MasterNode masterNode = new MasterNode(env, journal, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
@@ -88,7 +90,8 @@ class Node {
             String masterAddress = programArgs.get(MASTER_ADDRESS);
 
             SlaveRequestHandler requestHandler = new SlaveRequestHandler(env);
-            NodeServer nodeServer = new NodeServer(host, port, requestHandler, () -> successCallback(mode));
+            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler, Executors.newSingleThreadExecutor()); //use single-thread executor to ensure thread safe
+            NodeServer nodeServer = new NodeServer(host, port, httpRequestHandler, () -> successCallback(mode));
             SlaveNode slaveNode = new SlaveNode(env, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);

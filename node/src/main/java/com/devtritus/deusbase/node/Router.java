@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
@@ -67,7 +68,15 @@ class Router {
 
         RouterRequestHandler routerRequestHandler = new RouterRequestHandler(shardParams);
 
-        NodeServer nodeServer = new NodeServer(host, port, proxyRequestHandler(routerRequestHandler), () -> successCallback(routerRequestHandler));
+        RequestHandler requestHandler = (command, channel) -> {
+            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
+            NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());
+            return routerRequestHandler.handle(nodeRequest);
+        };
+
+        HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler, Executors.newCachedThreadPool());
+
+        NodeServer nodeServer = new NodeServer(host, port, httpRequestHandler, () -> successCallback(routerRequestHandler));
         nodeServer.start();
     }
 
@@ -75,13 +84,5 @@ class Router {
         Utils.printFromFile("banner.txt");
         logger.info("Mode - router");
         routerRequestHandler.runHealthCheck();
-    }
-
-    private RequestHandler proxyRequestHandler(NodeRequestHandler nodeRequestHandler) {
-        return (Command command, ReadableByteChannel channel) -> {
-            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
-            NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());
-            return nodeRequestHandler.handle(nodeRequest);
-        };
     }
 }

@@ -1,6 +1,5 @@
 package com.devtritus.deusbase.node.server;
 
-import com.devtritus.deusbase.api.RequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,19 +8,17 @@ public class NodeServer {
 
     private final String host;
     private final int port;
-    private RequestHandler entryPoint;
+    private HttpRequestHandler httpRequestHandler;
     private Runnable successCallback;
 
-    public NodeServer(String host, int port, RequestHandler entryPoint, Runnable successCallback) {
+    public NodeServer(String host, int port, HttpRequestHandler httpRequestHandler, Runnable successCallback) {
         this.host = host;
         this.port = port;
-        this.entryPoint = entryPoint;
+        this.httpRequestHandler = httpRequestHandler;
         this.successCallback = successCallback;
     }
 
     public void start() {
-        HttpRequestHandler httpRequestHandler = new HttpRequestHandler(entryPoint);
-
         try {
             new JettyServer(httpRequestHandler).start(host, port, () -> {
                 successCallback.run();

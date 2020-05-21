@@ -5,9 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class RouterRequestHandler implements NodeRequestHandler {
@@ -17,7 +15,7 @@ public class RouterRequestHandler implements NodeRequestHandler {
     private final static int MAX_RETRIES_COUNT = 3;
     private final static int HEALTH_CHECK_PERIOD = 10;
 
-    private final Map<String, RouteParams> routes = new HashMap<>();
+    private final ConcurrentMap<String, RouteParams> routes = new ConcurrentHashMap<>();
     private final ScheduledExecutorService healthCheckExecutor = Executors.newSingleThreadScheduledExecutor();
     private final List<ShardParams> shardParams;
     private final int step;
@@ -50,7 +48,9 @@ public class RouterRequestHandler implements NodeRequestHandler {
             RouteParams masterRoute = createOrGetRouter(masterUrl);
             try {
                 logger.debug("Send WRITE command '{} {}' by route {}", command, Arrays.toString(args), masterRoute);
-                return sendRequest(masterRoute, command, args, masterUrl);
+                NodeResponse response = sendRequest(masterRoute, command, args, masterUrl);
+                masterRoute.incrementRequestsCount();
+                return response;
             } catch (ServiceUnavailableException e) {
                 logger.error("Node at url {} is unavailable", masterUrl, e);
                 throw e;
@@ -72,7 +72,9 @@ public class RouterRequestHandler implements NodeRequestHandler {
                 if(route.isOnline()) {
                     try {
                         logger.debug("Send READ command '{} {}' by route {}", command, Arrays.toString(args), route);
-                        return sendRequest(route, command, args, url);
+                        NodeResponse response = sendRequest(route, command, args, url);
+                        route.incrementRequestsCount();
+                        return response;
                     } catch (IOException e) {
                         if(route.isOnline()) {
                             route.setOnline(false);

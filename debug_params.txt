@@ -1,0 +1,37 @@
+1. Settings are used during development:
+
+1.1 Program arguments:
+
+terminal *empty*
+terminal(load_data) --mode=actors_loader --actors_file=data.tsv --row_count=200000 --url=http://localhost:4001
+node(router) --debug --mode=router --scheme=router --generate_folders --cluster_config=debug_router_config.json
+
+shard_1:
+master_1 --mode=master --port=4002 --scheme=master_1 --generate_folders
+slave_1_1 --mode=slave --master_address=http://localhost:4002 --port=4003 --scheme=slave_1_2 --generate_folders
+slave_1_2 --mode=slave --master_address=http://localhost:4002 --port=4004 --scheme=slave_1_2 --generate_folders
+
+shard_2:
+master_2 --mode=master --port=4005 --scheme=master_2 --generate_folders
+slave_2_1 --mode=slave --master_address=http://localhost:4005 --port=4006 --scheme=slave_2_1 --generate_folders
+slave_2_2 --mode=slave --master_address=http://localhost:4005 --port=4007 --scheme=slave_2_2 --generate_folders
+
+1.2 Router config:
+
+[
+  {
+    "master": { "host": "localhost", "port": "4002" },
+    "slaves": [
+      { "host": "localhost", "port": "4003" },
+      { "host": "localhost", "port": "4004" }
+    ]
+  },
+  {
+    "master": { "host": "localhost", "port": "4005" },
+    "slaves": [
+      { "host": "localhost", "port": "4006" },
+      { "host": "localhost", "port": "4007" }
+    ]
+  }
+]
+
