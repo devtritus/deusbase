@@ -45,7 +45,6 @@ class HttpRequestHandler extends AbstractHandler {
 
         NodeResponse response;
         try {
-            //TODO: handle exception
             Future<NodeResponse> future = executorService.submit(() -> requestHandler.handle(command, channel));
             response = future.get();
 
@@ -53,7 +52,7 @@ class HttpRequestHandler extends AbstractHandler {
         } catch (Exception e) {
             response = new NodeResponse();
             response.setCode(ResponseStatus.SERVER_ERROR.getCode());
-            response.setData("error", e.toString());
+            response.setData("error", e.getMessage());
 
             httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 

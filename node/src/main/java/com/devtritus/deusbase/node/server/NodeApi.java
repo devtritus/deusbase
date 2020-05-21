@@ -1,6 +1,7 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.Api;
+import com.devtritus.deusbase.api.ServiceUnavailableException;
 import com.devtritus.deusbase.node.storage.ValueStorage;
 import com.devtritus.deusbase.node.tree.*;
 
@@ -20,7 +21,7 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> read(String key) {
-        List<Long> addresses = tree.searchByKey(key);
+        List<Long> addresses = getTree().searchByKey(key);
 
         if(addresses != null) {
             Map<Long, String> addressToValueMap = storage.read(addresses);
@@ -37,7 +38,7 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> search(String key) {
-        Map<String, List<Long>> fetchResult = tree.fetch(key);
+        Map<String, List<Long>> fetchResult = getTree().fetch(key);
 
         List<Long> allAddresses = fetchResult.values().stream()
                 .flatMap(List::stream)
@@ -69,14 +70,14 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> create(String key, String value) {
-        List<Long> addresses = tree.searchByKey(key);
+        List<Long> addresses = getTree().searchByKey(key);
         long address = storage.write(value);
 
         if (addresses != null) { //if addresses is not null then addresses collection must contains at least one element
             addresses.add(address);
-            tree.add(key, addresses);
+            getTree().add(key, addresses);
         } else {
-            tree.add(key, new ArrayList<>(Collections.singletonList(address)));
+            getTree().add(key, new ArrayList<>(Collections.singletonList(address)));
         }
 
         return Collections.singletonMap(key, Collections.singletonList(value));
@@ -84,12 +85,12 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> update(String key, int valueIndex, String value) {
-        List<Long> addresses = tree.searchByKey(key);
+        List<Long> addresses = getTree().searchByKey(key);
 
         if(addresses != null) {
             long address = storage.write(value);
             addresses.set(valueIndex, address);
-            tree.add(key, addresses);
+            getTree().add(key, addresses);
         } else {
             create(key, value);
         }
@@ -99,10 +100,10 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> delete(String key) {
-        List<Long> addresses = tree.searchByKey(key);
+        List<Long> addresses = getTree().searchByKey(key);
 
         if (addresses != null) {
-            tree.deleteKey(key);
+            getTree().deleteKey(key);
         }
 
         return Collections.singletonMap(key, null);
@@ -110,14 +111,14 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> delete(String key, int valueIndex) {
-        List<Long> addresses = tree.searchByKey(key);
+        List<Long> addresses = getTree().searchByKey(key);
 
         if (addresses != null) {
             if (addresses.size() == 1) {
-                tree.deleteKey(key);
+                getTree().deleteKey(key);
             } else {
                 addresses.remove(valueIndex);
-                tree.add(key, addresses);
+                getTree().add(key, addresses);
             }
         }
 
@@ -126,6 +127,13 @@ public class NodeApi implements Api<String, String> {
 
     public void setTree(BTree<String, List<Long>> tree) {
         this.tree = tree;
+    }
+
+    BTree<String, List<Long>> getTree() {
+        if(tree == null) {
+            throw new ServiceUnavailableException("Node is not initialized");
+        }
+        return tree;
     }
 
     public void setStorage(ValueStorage storage) {

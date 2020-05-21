@@ -66,15 +66,15 @@ class Router {
         }
 
         RouterRequestHandler routerRequestHandler = new RouterRequestHandler(shardParams);
-        routerRequestHandler.runHealthCheck();
 
-        NodeServer nodeServer = new NodeServer(host, port, proxyRequestHandler(routerRequestHandler), Router::successCallback);
+        NodeServer nodeServer = new NodeServer(host, port, proxyRequestHandler(routerRequestHandler), () -> successCallback(routerRequestHandler));
         nodeServer.start();
     }
 
-    private static void successCallback() {
+    private static void successCallback(RouterRequestHandler routerRequestHandler) {
         Utils.printFromFile("banner.txt");
         logger.info("Mode - router");
+        routerRequestHandler.runHealthCheck();
     }
 
     private RequestHandler proxyRequestHandler(NodeRequestHandler nodeRequestHandler) {

@@ -11,13 +11,16 @@ import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
 
 public class Main {
-    static {
-        Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
 
     public static void main(String[] args) {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
+
+        Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        if(programArgs.contains("debug")) {
+            root.setLevel(Level.DEBUG);
+        } else {
+            root.setLevel(Level.INFO);
+        }
 
         NodeMode mode = NodeMode.fromText(programArgs.getOrDefault(MODE, DEFAULT_NODE_MODE));
         if(mode == NodeMode.ROUTER) {

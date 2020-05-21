@@ -27,7 +27,7 @@ public class RouterRequestHandler implements NodeRequestHandler {
         step = MAX_CYCLE_SIZE / shardParams.size();
     }
 
-    public NodeResponse handle(NodeRequest request) throws UnhandledCommandException {
+    public NodeResponse handle(NodeRequest request) {
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
 
@@ -43,14 +43,19 @@ public class RouterRequestHandler implements NodeRequestHandler {
 
         int shardId = determineShardId(key);
         ShardParams shardParam = shardParams.get(shardId);
+        logger.debug("Select shard {}", shardId);
 
         if(command.getType() == CommandType.WRITE) {
             String masterUrl = shardParam.master.getHttpUrl();
             RouteParams masterRoute = createOrGetRouter(masterUrl);
             try {
-                return sendRequest(masterRoute, command, args);
+                logger.debug("Send WRITE command '{} {}' by route {}", command, Arrays.toString(args), masterRoute);
+                return sendRequest(masterRoute, command, args, masterUrl);
+            } catch (ServiceUnavailableException e) {
+                logger.error("Node at url {} is unavailable", masterUrl, e);
+                throw e;
             } catch (IOException e) {
-                throw new RuntimeException(String.format("Cannot handle request %s %s, master %s is offline",
+                throw new ServiceUnavailableException(String.format("Cannot handle command '%s %s', master %s is offline",
                         command, Arrays.toString(args), masterUrl));
             }
         } else if(command.getType() == CommandType.READ) {
@@ -66,7 +71,8 @@ public class RouterRequestHandler implements NodeRequestHandler {
                 RouteParams route = createOrGetRouter(url);
                 if(route.isOnline()) {
                     try {
-                        return sendRequest(route, command, args);
+                        logger.debug("Send READ command '{} {}' by route {}", command, Arrays.toString(args), route);
+                        return sendRequest(route, command, args, url);
                     } catch (IOException e) {
                         if(route.isOnline()) {
                             route.setOnline(false);
@@ -76,7 +82,7 @@ public class RouterRequestHandler implements NodeRequestHandler {
                 }
             }
 
-            throw new RuntimeException(String.format("Cannot handle request %s %s, nodes %s are offline",
+            throw new ServiceUnavailableException(String.format("Cannot handle command '%s %s', nodes %s are offline",
                     command, Arrays.toString(args), urls));
 
         } else {
@@ -116,11 +122,18 @@ public class RouterRequestHandler implements NodeRequestHandler {
         return shardId;
     }
 
-    private NodeResponse sendRequest(RouteParams route, Command command, String[] args) throws IOException {
+    private NodeResponse sendRequest(RouteParams route, Command command, String[] args, String url) throws IOException {
         int retriesCount = 0;
         while(true) {
             try {
-                return route.getClient().request(command, args);
+                NodeResponse response = route.getClient().request(command, args);
+
+                //wrap server error
+                if(response.getCode() == ResponseStatus.SERVER_ERROR.getCode()) {
+                    response.setData("error", "Error message from " + url + ": " + response.getData().get("error").get(0));
+                }
+
+                return response;
             } catch (IOException e) {
                 retriesCount++;
                 logger.error("Cannot send request by client {}", route, e);
