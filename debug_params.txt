@@ -8,7 +8,7 @@ node(router) --debug --mode=router --scheme=router --generate_folders --cluster_
 
 shard_1:
 master_1 --mode=master --port=4002 --scheme=master_1 --generate_folders
-slave_1_1 --mode=slave --master_address=http://localhost:4002 --port=4003 --scheme=slave_1_2 --generate_folders
+slave_1_1 --mode=slave --master_address=http://localhost:4002 --port=4003 --scheme=slave_1_1 --generate_folders
 slave_1_2 --mode=slave --master_address=http://localhost:4002 --port=4004 --scheme=slave_1_2 --generate_folders
 
 shard_2:

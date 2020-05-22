@@ -2,9 +2,11 @@ package com.devtritus.deusbase.terminal;
 
 import com.devtritus.deusbase.api.Command;
 import com.devtritus.deusbase.api.NodeClient;
+import com.devtritus.deusbase.api.NodeResponse;
 import com.devtritus.deusbase.api.ProgramArgs;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Scanner;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
@@ -37,7 +39,15 @@ class ActorsLoader {
                 args[0] = tokens[1];
                 args[1] = tokens[4];
 
-                nodeClient.request(Command.CREATE, args);
+                if(programArgs.contains("check")) {
+                    NodeResponse response = nodeClient.request(Command.READ, args[0]);
+                    List<String> values = response.getData().get(args[0]);
+                    if(values == null || !values.contains(args[1])) {
+                        throw new RuntimeException("Read error: " + args[0]);
+                    }
+                } else {
+                    nodeClient.request(Command.CREATE, args);
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

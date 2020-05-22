@@ -74,34 +74,37 @@ public class MasterNode implements MasterApi {
 
         NodeClient client = new NodeClient(slaveAddress);
 
-        int journalSize = journal.size();
-        int position = 0;
-        if(slaveState == SlaveState.INIT) {
-            doFullNodeCopy(client);
-            logger.info("Init slave");
-            position = journalSize;
-        } else if(journalSize > 0 && slaveState == SlaveState.CONNECT) {
-            Long nextSlaveBatchId = Long.parseLong(slaveArgs[3]) + 1;
-            Long lastBatchId = journal.getLastBatchId();
-            long firstBatchId = lastBatchId - journalSize + 1;
-            if(firstBatchId <= nextSlaveBatchId && nextSlaveBatchId <= lastBatchId) {
-                position = (int) (nextSlaveBatchId - firstBatchId);
-                try {
-                    position = sendBatch(client, position);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
+        synchronized(journal) {
+            int journalSize = journal.size();
+            int position = 0;
+            if (slaveState == SlaveState.INIT) {
                 doFullNodeCopy(client);
+                logger.info("Init slave");
                 position = journalSize;
-                logger.info("Init forgotten slave");
+            } else if (journalSize > 0 && slaveState == SlaveState.CONNECT) {
+                Long nextSlaveBatchId = Long.parseLong(slaveArgs[3]) + 1;
+                Long lastBatchId = journal.getLastBatchId();
+                long firstBatchId = lastBatchId - journalSize + 1;
+                if (firstBatchId <= nextSlaveBatchId && nextSlaveBatchId <= lastBatchId) {
+                    position = (int) (nextSlaveBatchId - firstBatchId);
+                    try {
+                        position = sendBatch(client, position);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                } else {
+                    doFullNodeCopy(client);
+                    position = journalSize;
+                    logger.info("Init forgotten slave");
+                }
             }
+
+            slave.setPosition(position);
+            slaves.put(slaveUuid, slave);
+
+            tryToRemoveBatches();
         }
 
-        slave.setPosition(position);
-        slaves.put(slaveUuid, slave);
-
-        tryToRemoveBatches();
 
         slave.setClient(client);
         slave.setOnline(true);
@@ -119,37 +122,39 @@ public class MasterNode implements MasterApi {
     }
 
     private void uploadBatch() {
-        if(uploadBatchCounter++ < UPLOAD_BATCH_COUNTER_LIMIT && journal.size() < MAX_NUMBER_OF_BATCHES_TO_UPLOAD) {
-            return;
-        }
-
-        uploadBatchCounter = 0;
-
-        if (journal.isEmpty()) {
-            logger.debug("Journal is empty");
-            return;
-        }
-
-        List<SlaveParams> onlineSlaves = slaves.values().stream()
-                .filter(SlaveParams::isOnline)
-                .collect(Collectors.toList());
-
-        if (onlineSlaves.isEmpty()) {
-            logger.debug("There is no online slaves");
-            return;
-        }
-
-        for (SlaveParams slave : onlineSlaves) {
-            try {
-                int nextPosition = sendBatch(slave.getClient(), slave.getPosition());
-                slave.setPosition(nextPosition);
-            } catch (IOException e) {
-                logger.error("Batch was not sent to {}", slave.getClient().toString(), e);
-                slave.setOnline(false);
+        synchronized (journal) {
+            if (uploadBatchCounter++ < UPLOAD_BATCH_COUNTER_LIMIT && journal.size() < MAX_NUMBER_OF_BATCHES_TO_UPLOAD) {
+                return;
             }
-        }
 
-        tryToRemoveBatches();
+            uploadBatchCounter = 0;
+
+            if (journal.isEmpty()) {
+                logger.debug("Journal is empty");
+                return;
+            }
+
+            List<SlaveParams> onlineSlaves = slaves.values().stream()
+                    .filter(SlaveParams::isOnline)
+                    .collect(Collectors.toList());
+
+            if (onlineSlaves.isEmpty()) {
+                logger.debug("There is no online slaves");
+                return;
+            }
+
+            for (SlaveParams slave : onlineSlaves) {
+                try {
+                    int nextPosition = sendBatch(slave.getClient(), slave.getPosition());
+                    slave.setPosition(nextPosition);
+                } catch (IOException e) {
+                    logger.error("Batch was not sent to {}", slave.getClient().toString(), e);
+                    slave.setOnline(false);
+                }
+            }
+
+            tryToRemoveBatches();
+        }
 
         writeSlavesToConfig(slaves.values());
     }

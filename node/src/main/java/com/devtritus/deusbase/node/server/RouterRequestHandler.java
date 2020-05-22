@@ -117,7 +117,7 @@ public class RouterRequestHandler implements NodeRequestHandler {
         for(int i = 0; i < shardParams.size(); i++) {
             int nextStep = i * step;
             if(remainder < nextStep) {
-                shardId = nextStep;
+                shardId = i;
             }
         }
 

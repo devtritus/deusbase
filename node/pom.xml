@@ -56,6 +56,8 @@
                 </configuration>
             </plugin>
         </plugins>
+
+<!--
         <resources>
             <resource>
                 <directory>${basedir}/src/main/resources</directory>
@@ -64,5 +66,8 @@
                 </excludes>
             </resource>
         </resources>
+
+TODO: how to exclude resource only during building of jar
+-->
     </build>
 </project>
