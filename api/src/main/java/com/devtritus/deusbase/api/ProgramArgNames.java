@@ -21,4 +21,6 @@ public interface ProgramArgNames {
     String FLUSH_CONTEXT_PATH = "flush_context";
     String CLUSTER_CONFIG_PATH = "cluster_config";
     String ACTORS_FILE_PATH = "actors_file";
+    String JETTY_MAX_THREADS = "max_threads";
+    String JETTY_ACCEPT_QUEUE_SIZE = "accept_queue_size";
 }

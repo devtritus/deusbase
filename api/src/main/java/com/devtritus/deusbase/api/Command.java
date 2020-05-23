@@ -15,7 +15,8 @@ public enum Command {
     COPY_STORAGE(9, "copy_storage", CommandType.WRITE, 0, 0),
     SYNC_COMPLETE(10, "sync_complete", CommandType.WRITE, 0, 0),
     HEARTBEAT(11, "heartbeat", CommandType.READ, 0, 0),
-    WRITE_PROPERTY(12, "write_property", CommandType.WRITE, 2, 2);
+    WRITE_PROPERTY(12, "write_property", CommandType.WRITE, 2, 2),
+    EXECUTE_REQUESTS(13, "execute_requests", CommandType.WRITE, 0, 0);
 
     private final int id;
     private final String text;
@@ -23,7 +24,7 @@ public enum Command {
     private final int minTokensNumber;
     private final int maxTokensNumber;
 
-    public final static EnumSet<Command> externalCommands = EnumSet.of(READ, SEARCH, CREATE, DELETE, UPDATE);
+    public final static EnumSet<Command> externalCommands = EnumSet.of(READ, SEARCH, CREATE, DELETE, UPDATE, EXECUTE_REQUESTS);
 
     Command(int id, String text, CommandType type, int minTokensNumber, int maxTokensNumber) {
         this.id = id;

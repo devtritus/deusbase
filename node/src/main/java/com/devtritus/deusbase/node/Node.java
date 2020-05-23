@@ -76,8 +76,8 @@ class Node {
 
             RequestJournal journal = RequestJournal.init(journalPath, journalBatchSize, journalMinSizeToTruncate);
             MasterRequestHandler requestHandler = new MasterRequestHandler(journal, flushContext);
-            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler, Executors.newSingleThreadExecutor()); //use single-thread executor to ensure thread safe
-            NodeServer nodeServer = new NodeServer(host, port, httpRequestHandler, () -> successCallback(mode));
+            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler);
+            NodeServer nodeServer = new NodeServer(host, port, programArgs, httpRequestHandler, () -> successCallback(mode));
             MasterNode masterNode = new MasterNode(env, journal, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);
@@ -90,8 +90,8 @@ class Node {
             String masterAddress = programArgs.get(MASTER_ADDRESS);
 
             SlaveRequestHandler requestHandler = new SlaveRequestHandler(env);
-            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler, Executors.newSingleThreadExecutor()); //use single-thread executor to ensure thread safe
-            NodeServer nodeServer = new NodeServer(host, port, httpRequestHandler, () -> successCallback(mode));
+            HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler);
+            NodeServer nodeServer = new NodeServer(host, port, programArgs, httpRequestHandler, () -> successCallback(mode));
             SlaveNode slaveNode = new SlaveNode(env, nodeApiInitializer);
 
             requestHandler.setNextHandler(crudRequestHandler);

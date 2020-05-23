@@ -12,12 +12,10 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.concurrent.Executors;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 import static com.devtritus.deusbase.node.env.NodeSettings.*;
@@ -66,17 +64,10 @@ class Router {
             throw new RuntimeException("Broken config", e);
         }
 
-        RouterRequestHandler routerRequestHandler = new RouterRequestHandler(shardParams);
+        RouterRequestHandler requestHandler = new RouterRequestHandler(shardParams);
+        HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler);
 
-        RequestHandler requestHandler = (command, channel) -> {
-            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
-            NodeRequest nodeRequest = new NodeRequest(command, requestBody.getArgs());
-            return routerRequestHandler.handle(nodeRequest);
-        };
-
-        HttpRequestHandler httpRequestHandler = new HttpRequestHandler(requestHandler, Executors.newCachedThreadPool());
-
-        NodeServer nodeServer = new NodeServer(host, port, httpRequestHandler, () -> successCallback(routerRequestHandler));
+        NodeServer nodeServer = new NodeServer(host, port, programArgs, httpRequestHandler, () -> successCallback(requestHandler));
         nodeServer.start();
     }
 

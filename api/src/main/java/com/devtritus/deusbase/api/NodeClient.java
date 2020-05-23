@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 public class NodeClient {
     private final static Logger logger = LoggerFactory.getLogger(NodeClient.class);
@@ -47,7 +48,16 @@ public class NodeClient {
     public NodeResponse request(Command command, String... args) throws IOException {
         RequestBody requestBody = new RequestBody();
         requestBody.setArgs(args);
-        String jsonBody = objectMapper.writeValueAsString(requestBody);
+
+        return jsonRequest(command, requestBody);
+    }
+
+    public NodeResponse executeRequests(List<NodeRequest> requests) throws IOException {
+        return jsonRequest(Command.EXECUTE_REQUESTS, requests);
+    }
+
+    private NodeResponse jsonRequest(Command command, Object body) throws IOException {
+        String jsonBody = objectMapper.writeValueAsString(body);
         StringEntity entity = new StringEntity(jsonBody, ContentType.APPLICATION_JSON);
 
         return doPost(command, entity);

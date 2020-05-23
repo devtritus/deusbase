@@ -20,4 +20,7 @@ public interface NodeSettings {
     int DEFAULT_JOURNAL_MIN_SIZE_TO_TRUNCATE = 8 * 1024 * 1024;
 
     String DEFAULT_FLUSH_CONTEXT_PATH = "flush_context.json";
+
+    int DEFAULT_JETTY_MAX_THREADS = 20;
+    int DEFAULT_JETTY_ACCEPT_QUEUE_SIZE = 100;
 }

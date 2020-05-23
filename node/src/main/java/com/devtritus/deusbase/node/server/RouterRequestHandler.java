@@ -4,16 +4,17 @@ import com.devtritus.deusbase.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-public class RouterRequestHandler implements NodeRequestHandler {
+public class RouterRequestHandler implements RequestHandler {
     private final static Logger logger = LoggerFactory.getLogger(RouterRequestHandler.class);
 
     private final static int MAX_CYCLE_SIZE = 10000;
     private final static int MAX_RETRIES_COUNT = 3;
-    private final static int HEALTH_CHECK_PERIOD = 10;
+    private final static int HEALTH_CHECK_PERIOD = 10; //s
 
     private final ConcurrentMap<String, RouteParams> routes = new ConcurrentHashMap<>();
     private final ScheduledExecutorService healthCheckExecutor = Executors.newSingleThreadScheduledExecutor();
@@ -25,7 +26,57 @@ public class RouterRequestHandler implements NodeRequestHandler {
         step = MAX_CYCLE_SIZE / shardParams.size();
     }
 
-    public NodeResponse handle(NodeRequest request) {
+    @Override
+    public NodeResponse handle(Command command, ReadableByteChannel channel) {
+        if(!Command.externalCommands.contains(command)) {
+            throw new UnhandledCommandException(command.toString());
+        }
+
+        if(command == Command.EXECUTE_REQUESTS) {
+            return handleRequestList(channel);
+        } else {
+            RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
+            NodeRequest request = new NodeRequest(command, requestBody.getArgs());
+            return handleSingleRequest(request);
+        }
+    }
+
+    private NodeResponse handleRequestList(ReadableByteChannel channel) {
+        List<NodeRequest> requests = JsonDataConverter.readList(channel, NodeRequest.class);
+        Map<String, List<NodeRequest>> masterUrlToRequestsMap = new HashMap<>();
+        for(ShardParams shardParams : shardParams) {
+            masterUrlToRequestsMap.put(shardParams.master.getHttpUrl(), new ArrayList<>());
+        }
+
+        for(NodeRequest request : requests) {
+            String key = request.getArgs()[0];
+            int shardId = determineShardId(key);
+            ShardParams shardParam = shardParams.get(shardId);
+            masterUrlToRequestsMap.get(shardParam.master.getHttpUrl()).add(request);
+        }
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        masterUrlToRequestsMap.forEach((masterUrl, requests1) -> {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                NodeClient client = createOrGetRouter(masterUrl).getClient();
+                try {
+                    client.executeRequests(requests1);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            futures.add(future);
+        });
+
+        CompletableFuture<Void> compositeFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+        compositeFuture.join();
+
+        return NodeResponse.ok();
+    }
+
+    private NodeResponse handleSingleRequest(NodeRequest request) {
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
 
@@ -96,6 +147,28 @@ public class RouterRequestHandler implements NodeRequestHandler {
         healthCheckExecutor.scheduleAtFixedRate(this::healthCheck, 0, HEALTH_CHECK_PERIOD, TimeUnit.SECONDS);
     }
 
+    private NodeResponse sendRequest(RouteParams route, Command command, String[] args, String url) throws IOException {
+        int retriesCount = 0;
+        while(true) {
+            try {
+                NodeResponse response = route.getClient().request(command, args);
+
+                //wrap server error
+                if(response.getCode() == ResponseStatus.SERVER_ERROR.getCode()) {
+                    response.setData("error", "Error message from " + url + ": " + response.getData().get("error").get(0));
+                }
+
+                return response;
+            } catch (IOException e) {
+                retriesCount++;
+                logger.error("Cannot send request by client {}", route, e);
+                if(retriesCount > MAX_RETRIES_COUNT) {
+                    throw e;
+                }
+            }
+        }
+    }
+
     private RouteParams createOrGetRouter(String url) {
         RouteParams route = routes.get(url);
         if(route == null) {
@@ -122,28 +195,6 @@ public class RouterRequestHandler implements NodeRequestHandler {
         }
 
         return shardId;
-    }
-
-    private NodeResponse sendRequest(RouteParams route, Command command, String[] args, String url) throws IOException {
-        int retriesCount = 0;
-        while(true) {
-            try {
-                NodeResponse response = route.getClient().request(command, args);
-
-                //wrap server error
-                if(response.getCode() == ResponseStatus.SERVER_ERROR.getCode()) {
-                    response.setData("error", "Error message from " + url + ": " + response.getData().get("error").get(0));
-                }
-
-                return response;
-            } catch (IOException e) {
-                retriesCount++;
-                logger.error("Cannot send request by client {}", route, e);
-                if(retriesCount > MAX_RETRIES_COUNT) {
-                    throw e;
-                }
-            }
-        }
     }
 
     private void healthCheck() {

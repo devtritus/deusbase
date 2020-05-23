@@ -123,13 +123,15 @@ class Journal {
         try (SeekableByteChannel channel = Files.newByteChannel(path, StandardOpenOption.WRITE, StandardOpenOption.READ)) {
             long batchStart = batchPositions.get(end - 1);
             long batchEnd = readLong(channel, batchStart);
-            long fileSize = channel.size();
             if(batchEnd != -1) {
                 updateHeader(channel, batchEnd);
                 truncate(channel);
                 batchPositions.subList(0, actualEnd).clear();
-            } else if(fileSize > batchStart + LONG_SIZE) {
-                channel.truncate(batchStart + LONG_SIZE);
+            } else {
+                channel.truncate(MIN_FILE_SIZE);
+                writeLong(channel, -1, HEADER_SIZE);
+                batchPositions.clear();
+                batchPositions.add((long)HEADER_SIZE);
             }
         } catch(Exception e) {
             throw new RuntimeException(e);

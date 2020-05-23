@@ -11,7 +11,7 @@ public class Main {
     private final static Logger logger = LoggerFactory.getLogger(Main.class);
     private final static String DEFAULT_CLIENT_URL = "http://localhost:4001";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ProgramArgs programArgs = ProgramArgsParser.parse(args);
 
         final String url = programArgs.getOrDefault(URL, DEFAULT_CLIENT_URL);

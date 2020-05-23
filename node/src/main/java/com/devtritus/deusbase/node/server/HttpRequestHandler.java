@@ -19,11 +19,9 @@ public class HttpRequestHandler extends AbstractHandler {
     private final static Logger logger = LoggerFactory.getLogger(HttpRequestHandler.class);
 
     private final RequestHandler requestHandler;
-    private final ExecutorService executorService;
 
-    public HttpRequestHandler(RequestHandler requestHandler, ExecutorService executorService) {
+    public HttpRequestHandler(RequestHandler requestHandler) {
         this.requestHandler = requestHandler;
-        this.executorService = executorService;
     }
 
     @Override
@@ -45,14 +43,13 @@ public class HttpRequestHandler extends AbstractHandler {
 
         NodeResponse response;
         try {
-            Future<NodeResponse> future = executorService.submit(() -> requestHandler.handle(command, channel));
-            response = future.get();
+            response = requestHandler.handle(command, channel);
 
             httpServletResponse.setStatus(HttpServletResponse.SC_OK);
         } catch (Exception e) {
             response = new NodeResponse();
             response.setCode(ResponseStatus.SERVER_ERROR.getCode());
-            response.setData("error", e.getMessage());
+            response.setData("error", e.toString());
 
             httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
