@@ -73,8 +73,10 @@ public class MasterRequestHandler implements RequestHandler {
 
         if(command.getType() == CommandType.WRITE) {
             flushContext.remove(nodeRequest);
-            synchronized (journal) {
-                journal.putRequest(nodeRequest);
+            if(masterApi.hasSlaves()) {
+                synchronized (journal) {
+                    journal.putRequest(nodeRequest);
+                }
             }
         }
 

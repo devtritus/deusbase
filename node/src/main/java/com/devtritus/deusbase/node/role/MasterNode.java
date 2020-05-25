@@ -121,6 +121,11 @@ public class MasterNode implements MasterApi {
         return Collections.singletonList(masterUuid);
     }
 
+    @Override
+    public boolean hasSlaves() {
+        return slaves.size() > 0;
+    }
+
     private void uploadBatch() {
         synchronized (journal) {
             if (uploadBatchCounter++ < UPLOAD_BATCH_COUNTER_LIMIT && journal.size() < MAX_NUMBER_OF_BATCHES_TO_UPLOAD) {

@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
@@ -62,6 +63,16 @@ class Router {
             shardParams = new ObjectMapper().readValue(path.toFile(), new TypeReference<List<ShardParams>>(){});
         } catch (IOException e) {
             throw new RuntimeException("Broken config", e);
+        }
+
+        for(int i = 0; i < shardParams.size(); i++) {
+            if(shardParams.get(i).master == null) {
+                throw new IllegalStateException(String.format("Shard %s must have a master url", i));
+            }
+
+            if(shardParams.get(i).slaves == null) {
+                shardParams.get(i).slaves = Collections.emptyList();
+            }
         }
 
         RouterRequestHandler requestHandler = new RouterRequestHandler(shardParams);

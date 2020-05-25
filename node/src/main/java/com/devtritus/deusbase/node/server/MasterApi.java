@@ -4,4 +4,5 @@ import java.util.List;
 
 public interface MasterApi {
     List<String> receiveSlaveHandshake(String[] args);
+    boolean hasSlaves();
 }
