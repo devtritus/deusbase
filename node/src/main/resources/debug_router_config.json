@@ -1,17 +1,6 @@
 [
   {
-    "master": { "host": "localhost", "port": "4002" },
-    "slaves": [
-      { "host": "localhost", "port": "4003" },
-      { "host": "localhost", "port": "4004" }
-    ]
-  },
-  {
-    "master": { "host": "localhost", "port": "4005" },
-    "slaves": [
-      { "host": "localhost", "port": "4006" },
-      { "host": "localhost", "port": "4007" }
-    ]
+    "master": { "host": "localhost", "port": "4002" }
   }
 ]
 

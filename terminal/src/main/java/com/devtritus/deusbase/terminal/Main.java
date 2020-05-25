@@ -25,6 +25,8 @@ public class Main {
 
         if(mode == TerminalMode.ACTORS_LOADER) {
             ActorsLoader.load(url, programArgs);
+        } else if(programArgs.contains("dataset")) {
+            DatasetCreator.create();
         } else {
             logger.info("Attach terminal to {}", url);
             new Terminal(System.in, System.out, mode, url).run();
