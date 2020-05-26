@@ -15,7 +15,7 @@ import java.util.Scanner;
 
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 
-class ActorsLoader {
+class DatasetLoader {
     private final static int DEFAULT_ROW_COUNT = 10_000_000;
     private final static int REQUEST_BATCH_SIZE = 5000;
 
@@ -30,18 +30,18 @@ class ActorsLoader {
 
         boolean checkMode = programArgs.contains("check");
 
-        String actorsFilePath = programArgs.get(ACTORS_FILE_PATH);
+        String datasetFilePath = programArgs.get(DATASET_FILE_PATH);
 
         NodeClient nodeClient = new NodeClient(url);
 
         if(checkMode) {
             System.out.println("DATASET CHECKING");
             System.out.println();
-            System.out.format("Number of rows for checking: %s\n", rowCount);
+            System.out.format("Expected number of rows for checking: %s\n", rowCount);
         } else {
             System.out.println("DATASET LOADING");
             System.out.println();
-            System.out.format("Number of rows for loading: %s\n", rowCount);
+            System.out.format("Expected number of rows for loading: %s\n", rowCount);
         }
 
         LocalDateTime startTime = LocalDateTime.now();
@@ -56,7 +56,7 @@ class ActorsLoader {
         System.out.println("Start time: " + startTime.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)));
         System.out.println();
 
-        try(Scanner scanner = new Scanner(new File(actorsFilePath), StandardCharsets.UTF_8.name())) {
+        try(Scanner scanner = new Scanner(new File(datasetFilePath), StandardCharsets.UTF_8.name())) {
             scanner.nextLine();
 
             List<NodeRequest> nodeRequests = new ArrayList<>();
@@ -64,23 +64,27 @@ class ActorsLoader {
             int batchCounter = 0;
             int i = 0;
 
-            while(i++ < rowCount) {
-                boolean hasNextLine = scanner.hasNextLine() && i < rowCount;
+            boolean hasNextLine = true;
+            while(hasNextLine && i++ < rowCount) {
+                 hasNextLine = scanner.hasNextLine() && i < rowCount;
 
-                String[] args = null;
+                String[] args = new String[2];
                 if(hasNextLine) {
                     String line = scanner.nextLine();
                     String[] tokens = line.split("\t");
-                    args = new String[2];
-                    args[0] = tokens[1];
-                    args[1] = tokens[4];
+                    args[0] = tokens[0];
+                    if(tokens.length == 1) {
+                        args[1] = "no data";
+                    } else {
+                        args[1] = tokens[1];
+                    }
                 }
 
                 if(checkMode && hasNextLine) {
                     NodeResponse response = nodeClient.request(Command.READ, args[0]);
                     List<String> values = response.getData().get(args[0]);
                     if(values == null || !values.contains(args[1])) {
-                        throw new RuntimeException("Read error: " + args[0]);
+                        throw new RuntimeException("Checking failed. Entry by " + args[0] + " was not found");
                     }
                 } else if(!checkMode) {
                     if(hasNextLine) {
@@ -95,10 +99,14 @@ class ActorsLoader {
                     }
                 }
             }
+
+            if(i < rowCount) {
+                System.out.println("End of file are reached. Row count: " + i);
+            }
         }
 
         if(!checkMode) {
-            System.out.print("\n\n");
+            System.out.print("\n");
         } else {
             System.out.println("All data exists");
         }

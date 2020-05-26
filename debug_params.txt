@@ -3,7 +3,7 @@
 1.1 Program arguments:
 
 terminal *empty*
-terminal(load_data) --mode=actors_loader --actors_file=data.tsv --row_count=200000 --url=http://localhost:4001
+terminal(load_dataset) --mode=dataset --dataset_file=names.imdb.tsv --row_count=100000 --url=http://localhost:4001
 node(router) --debug --mode=router --scheme=router --generate_folders --cluster_config=debug_router_config.json
 
 shard_1:

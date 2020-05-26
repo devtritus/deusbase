@@ -20,7 +20,7 @@ public interface ProgramArgNames {
     String JOURNAL_MIN_SIZE_TO_TRUNCATE = "journal_min_size_to_truncate";
     String FLUSH_CONTEXT_PATH = "flush_context";
     String CLUSTER_CONFIG_PATH = "cluster_config";
-    String ACTORS_FILE_PATH = "actors_file";
+    String DATASET_FILE_PATH = "dataset_file";
     String JETTY_MAX_THREADS = "max_threads";
     String JETTY_ACCEPT_QUEUE_SIZE = "accept_queue_size";
 }

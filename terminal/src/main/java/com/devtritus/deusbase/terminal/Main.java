@@ -23,8 +23,8 @@ public class Main {
             mode = TerminalMode.PROD;
         }
 
-        if(mode == TerminalMode.ACTORS_LOADER) {
-            ActorsLoader.load(url, programArgs);
+        if(mode == TerminalMode.DATASET) {
+            DatasetLoader.load(url, programArgs);
         } else {
             logger.info("Attach terminal to {}", url);
             new Terminal(System.in, System.out, mode, url).run();

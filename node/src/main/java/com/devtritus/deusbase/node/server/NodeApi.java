@@ -1,6 +1,7 @@
 package com.devtritus.deusbase.node.server;
 
 import com.devtritus.deusbase.api.Api;
+import com.devtritus.deusbase.api.BadRequestException;
 import com.devtritus.deusbase.api.ServiceUnavailableException;
 import com.devtritus.deusbase.node.storage.ValueStorage;
 import com.devtritus.deusbase.node.tree.*;
@@ -9,6 +10,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class NodeApi implements Api<String, String> {
+    private final static String KEY_PARAM_NAME = "Key";
+    private final static String VALUE_PARAM_NAME = "Value";
+
     private BTree<String, List<Long>> tree;
     private ValueStorage storage;
 
@@ -21,6 +25,8 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> read(String key) {
+        assertNotEmpty(key, KEY_PARAM_NAME);
+
         List<Long> addresses = getTree().searchByKey(key);
 
         if(addresses != null) {
@@ -38,6 +44,8 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> search(String key) {
+        assertNotEmpty(key, KEY_PARAM_NAME);
+
         Map<String, List<Long>> fetchResult = getTree().fetch(key);
 
         List<Long> allAddresses = fetchResult.values().stream()
@@ -70,6 +78,9 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> create(String key, String value) {
+        assertNotEmpty(key, KEY_PARAM_NAME);
+        assertNotEmpty(value, VALUE_PARAM_NAME);
+
         List<Long> addresses = getTree().searchByKey(key);
         long address = storage.write(value);
 
@@ -85,6 +96,10 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> update(String key, int valueIndex, String value) {
+        assertNotEmpty(key, KEY_PARAM_NAME);
+        assertNotEmpty(value, VALUE_PARAM_NAME);
+        assertIndexIsPositive(valueIndex);
+
         List<Long> addresses = getTree().searchByKey(key);
 
         if(addresses != null) {
@@ -100,6 +115,8 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> delete(String key) {
+        assertNotEmpty(key, KEY_PARAM_NAME);
+
         List<Long> addresses = getTree().searchByKey(key);
 
         if (addresses != null) {
@@ -111,6 +128,9 @@ public class NodeApi implements Api<String, String> {
 
     @Override
     public Map<String, List<String>> delete(String key, int valueIndex) {
+        assertNotEmpty(key, KEY_PARAM_NAME);
+        assertIndexIsPositive(valueIndex);
+
         List<Long> addresses = getTree().searchByKey(key);
 
         if (addresses != null) {
@@ -138,5 +158,21 @@ public class NodeApi implements Api<String, String> {
 
     public void setStorage(ValueStorage storage) {
         this.storage = storage;
+    }
+
+    private void assertNotEmpty(String value, String valueName) {
+        if(value == null) {
+            throw new BadRequestException(valueName + " cannot be null");
+        }
+
+        if(value.trim().isEmpty()) {
+            throw new BadRequestException(valueName + " cannot be empty");
+        }
+    }
+
+    private void assertIndexIsPositive(int index) {
+        if(index < 0) {
+            throw new BadRequestException("Index is negative " + index);
+        }
     }
 }

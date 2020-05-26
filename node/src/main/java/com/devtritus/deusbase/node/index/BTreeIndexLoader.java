@@ -26,7 +26,7 @@ public class BTreeIndexLoader {
 
     public static BTreeIndexLoader initIndex(int m, Path path) throws IOException {
         if(m > 255) {
-            throw new IllegalArgumentException("Size of keys can not be more then byte(255). m: " + m);
+            throw new IllegalArgumentException("Size of keys cannot be more then byte(255). m: " + m);
         }
 
         int blockSize = calculateBlockSize(m);

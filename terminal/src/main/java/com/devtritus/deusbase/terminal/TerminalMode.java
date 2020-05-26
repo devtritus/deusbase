@@ -3,7 +3,7 @@ package com.devtritus.deusbase.terminal;
 public enum TerminalMode {
     PROD,
     DEBUG,
-    ACTORS_LOADER;
+    DATASET;
 
     public static TerminalMode fromText(String text) {
         for(TerminalMode nodeMode : TerminalMode.values()) {

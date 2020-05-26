@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
 public class HttpRequestHandler extends AbstractHandler {
     private final static Logger logger = LoggerFactory.getLogger(HttpRequestHandler.class);
@@ -51,9 +49,12 @@ public class HttpRequestHandler extends AbstractHandler {
             response.setCode(ResponseStatus.SERVER_ERROR.getCode());
             response.setData("error", e.toString());
 
-            httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
-            logger.error("Internal server error", e);
+            if(e instanceof BadRequestException) {
+                httpServletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            } else {
+                httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
+            logger.error("Server error", e);
         }
 
         byte[] byteResponse = JsonDataConverter.convertObjectToJsonBytes(response);
