@@ -56,13 +56,13 @@ class DatasetLoader {
         System.out.println("Start time: " + startTime.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)));
         System.out.println();
 
+        int i = 0;
         try(Scanner scanner = new Scanner(new File(datasetFilePath), StandardCharsets.UTF_8.name())) {
             scanner.nextLine();
 
             List<NodeRequest> nodeRequests = new ArrayList<>();
             int requestBatchCounter = 0;
             int batchCounter = 0;
-            int i = 0;
 
             boolean hasNextLine = true;
             while(hasNextLine && i++ < rowCount) {
@@ -91,7 +91,7 @@ class DatasetLoader {
                         nodeRequests.add(new NodeRequest(Command.CREATE, args));
                         requestBatchCounter++;
                     }
-                    if(requestBatchCounter > REQUEST_BATCH_SIZE || !hasNextLine) {
+                    if(requestBatchCounter == REQUEST_BATCH_SIZE || !hasNextLine) {
                         nodeClient.executeRequests(nodeRequests);
                         requestBatchCounter = 0;
                         nodeRequests.clear();
@@ -99,16 +99,16 @@ class DatasetLoader {
                     }
                 }
             }
-
-            if(i < rowCount) {
-                System.out.println("End of file are reached. Row count: " + i);
-            }
         }
 
         if(!checkMode) {
             System.out.print("\n");
         } else {
             System.out.println("All data exists");
+        }
+
+        if(i < rowCount) {
+            System.out.println("End of file are reached. Row count: " + (i + 1));
         }
 
         System.out.println();
