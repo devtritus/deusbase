@@ -37,25 +37,10 @@ class Router {
         final NodeEnvironment env = new NodeEnvironment();
         env.setUp(programArgs);
 
-        Path path;
-        if(programArgs.contains(CLUSTER_CONFIG_PATH)) {
-            String configPath = programArgs.get(CLUSTER_CONFIG_PATH);
-            URL url = Router.class.getClassLoader().getResource(configPath);
-            try {
-                path = Paths.get(url.toURI());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            if(!Files.exists(path)) {
-                throw new RuntimeException("Shard config was not found by path " + configPath);
-            }
-        } else {
-            try {
-                path = env.getFile("router_config.json");
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException("Shard config was not found", e);
-            }
+        String configPath = programArgs.getOrDefault(CLUSTER_CONFIG_PATH, DEFAULT_CLUSTER_CONFIG_PATH);
+        Path path = Paths.get(configPath);
+        if(!Files.exists(path)) {
+            throw new RuntimeException("Shard config was not found by path " + configPath);
         }
 
         List<ShardParams> shardParams;

@@ -16,16 +16,16 @@ import java.util.Scanner;
 import static com.devtritus.deusbase.api.ProgramArgNames.*;
 
 class DatasetLoader {
-    private final static int DEFAULT_ROW_COUNT = 10_000_000;
     private final static int REQUEST_BATCH_SIZE = 5000;
 
     static void load(String url, ProgramArgs programArgs) throws Exception {
 
         int rowCount;
-        if(programArgs.contains(ROW_COUNT)) {
+        boolean hasLimit = programArgs.contains(ROW_COUNT);
+        if(hasLimit) {
             rowCount = programArgs.getInteger(ROW_COUNT);
         } else {
-            rowCount = DEFAULT_ROW_COUNT;
+            rowCount = Integer.MAX_VALUE;
         }
 
         boolean checkMode = programArgs.contains("check");
@@ -37,11 +37,15 @@ class DatasetLoader {
         if(checkMode) {
             System.out.println("DATASET CHECKING");
             System.out.println();
-            System.out.format("Expected number of rows for checking: %s\n", rowCount);
+            if(hasLimit) {
+                System.out.format("Expected number of rows for checking: %s\n", rowCount);
+            }
         } else {
             System.out.println("DATASET LOADING");
             System.out.println();
-            System.out.format("Expected number of rows for loading: %s\n", rowCount);
+            if(hasLimit) {
+                System.out.format("Expected number of rows for loading: %s\n", rowCount);
+            }
         }
 
         LocalDateTime startTime = LocalDateTime.now();

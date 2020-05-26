@@ -166,7 +166,7 @@ public class NodeEnvironment {
     public Path getFile(String name) throws FileNotFoundException {
         Path path = appendToPath(nodePath, name);
 
-        if(Files.exists(path)) {
+        if(!Files.exists(path)) {
             throw new FileNotFoundException(path.toAbsolutePath().normalize().toString());
         }
 

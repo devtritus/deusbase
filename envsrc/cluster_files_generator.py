@@ -13,7 +13,7 @@ terminal_name = 'terminal'
 router_folder_name = output_folder_name + '/' + router_name
 terminal_folder_name = output_folder_name + '/' + terminal_name
 run_script_name = 'run.sh'
-java_prefix = 'java -XX:+HeapDumpOnOutOfMemoryError -Xmx1024m -verbose:gc -jar '
+java_prefix = 'java -XX:+HeapDumpOnOutOfMemoryError -Xmx1024m -jar '
 node_jar_name_with_dependencies = 'deusbase.node-1.0-jar-with-dependencies.jar'
 terminal_jar_name_with_dependencies = 'deusbase.terminal-1.0-jar-with-dependencies.jar'
 node_jar_name = 'deusbase.node-1.0.jar'
@@ -64,9 +64,9 @@ def main(argv):
 
         router = data['router']
 
-        create_run_script(node_jar_name, router_folder_name, { '-mode': 'router', '-host': router['host'], '-port': router['port'] })
+        create_run_script(node_jar_name, router_folder_name, { '--mode': 'router', '--host': router['host'], '--port': router['port'] })
 
-        create_run_script(terminal_jar_name, terminal_folder_name, { '-url': create_http_address(router) })
+        create_run_script(terminal_jar_name, terminal_folder_name, { '--url': create_http_address(router) })
 
         shard_list = data['shard_list']
 
@@ -91,7 +91,7 @@ def main(argv):
             shutil.copyfile(node_target_folder, master_folder_name + '/' + node_jar_name)
 
             master = shard['master']
-            create_run_script(node_jar_name, master_folder_name, { '-shard': shard_name, '-node': 'master', '-mode': 'master', '-host': master['host'], '-port': master['port'] })
+            create_run_script(node_jar_name, master_folder_name, { '--shard': shard_name, '--node': 'master', '--mode': 'master', '--host': master['host'], '--port': master['port'] })
 
             if do_zip:
                 zip_dir_and_delete(shard_folder_name, master_node_name)
@@ -104,7 +104,7 @@ def main(argv):
                 os.mkdir(slave_folder_name)
                 shutil.copyfile(node_target_folder, slave_folder_name + '/' + node_jar_name)
 
-                create_run_script(node_jar_name, slave_folder_name, { '-shard': shard_name, '-node': slave_node_name, '-mode': 'slave', '-host': slave['host'], '-port': slave['port'], '-master_address': create_http_address(master) })
+                create_run_script(node_jar_name, slave_folder_name, { '--shard': shard_name, '--node': slave_node_name, '--mode': 'slave', '--host': slave['host'], '--port': slave['port'], '--master_address': create_http_address(master) })
 
                 if do_zip:
                     zip_dir_and_delete(shard_folder_name, slave_node_name)
