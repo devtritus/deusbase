@@ -84,6 +84,7 @@ If response contains server_error code then error message can be found in `respo
 |CREATE|/create|`{ args: ["Jean Marais", "Fantomas"] }`|Create key and value in the database.|
 |DELETE|/delete|`{ args: ["Jean Marais", "0"] }`|Delete value by key. Index is used if there are many values by one key. Index can be get from sequence of values that return by key intended to delete during READ operation.|
 |UPDATE|/update|`{ args: ["Jean Marais", "0", Le Masque de fer] }`|Update value by key. Index are needed for update a concrete value if many values are available by the key. The index can be get from a sequence of the values that are returned by the key intended to delete during READ operation.|
+|EXECUTE_REQUESTS|/execute_requests|`[{ command: "create", args: ["Jean Marais", "Fantomas"] },...]`|Execute a list of requests. The way to creating/updating many entries by batch|
 
 ## Options
 
