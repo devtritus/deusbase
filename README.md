@@ -5,9 +5,10 @@
 Deusbase is distributed key-value storage with easy CRUD HTTP API and B-Tree index under the hood. Database can store multiple values by one key. Database consists from nodes.
 There are 3 types of the node:
   - Master - can do all write/read operations and lead replication journal if slave nodes exist. This node can run as standalone database and clients can use direct access to it without deploying all cluster. 
-  - Slave - allows only read operations. The Destination of a slave node is to process read operations while his master node processes write operations. The master replicate data to its slaves that it writes. 
+  - Slave - allows only read operations. The Destination of a slave node is to process read operations while his master node processes write operations.
   - Router - a proxy node that can redirects request to another master or slave node depend on hash function within it, type of request and cluster configuration.
 
+The master use eventual consistency model to replicate data to its slaves.
 In common case database is a cluster that include some shards. Every shard must include one master node and none or many slave nodes. To distribute data across shard one or more routers are used. 
 
  ## How to start
@@ -48,7 +49,41 @@ In common case database is a cluster that include some shards. Every shard must 
   ```
   After data is loaded you can test ability of the database.
 
-## API
+## HTTP API
+#### Request format
+```
+POST http://{address}:{port}/{endpoint} HTTP/1.1
+Content-Type: application/json
+
+{ args: [ "Jean Marais", ... ] }
+```
+#### Response format
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{ 
+  code: 0
+  data: {
+    "Jean Marais": [ "Le Masque de fer", "Fantomas" ],
+    ...
+  } 
+}
+```
+Supported HTTP codes: ok(200), bad_request(400), internal_server_error(500).  
+Supported database codes: ok(0), not_found(1), server_error(10).
+
+If response contains server_error code then error message can be found in `response.data['error']`.
+
+#### Requests
+
+|Command|Endpoint|Request body|Description|
+|---------------|---|---|---|
+|READ|/read|`{ args: ["Jean Marais"] }`|Find values by exact match of key.|
+|SEARCH|/search|`{ args: ["Jean Ma"] }`|Find key-values pair by first symbols. Case-sensitive.|
+|CREATE|/create|`{ args: ["Jean Marais", "Fantomas"] }`|Create key and value in the database.|
+|DELETE|/delete|`{ args: ["Jean Marais", "0"] }`|Delete value by key. Index is used if there are many values by one key. Index can be get from sequence of values that return by key intended to delete during READ operation.|
+|UPDATE|/update|`{ args: ["Jean Marais", "0", Le Masque de fer] }`|Update value by key. Index are needed for update a concrete value if many values are available by the key. The index can be get from a sequence of the values that are returned by the key intended to delete during READ operation.|
 
 ## Node settings
 
