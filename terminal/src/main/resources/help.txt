@@ -2,7 +2,7 @@ Available commands:
 
     read   - retrieve entries by specified key. Syntax: read "key"
 
-    search - search for entries by the first letters of the key. It is a case-insensitive command. Syntax: search "symbols"
+    search - search for entries by the first letters of the key. It is a case-sensitive command. Syntax: search "symbols"
 
     create - create an entry in the database. Syntax: create "key" "value"
 
