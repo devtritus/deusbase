@@ -23,5 +23,5 @@ public interface NodeSettings {
 
     int DEFAULT_JETTY_MAX_THREADS = 20;
     int DEFAULT_JETTY_ACCEPT_QUEUE_SIZE = 100;
-    String DEFAULT_CLUSTER_CONFIG_PATH = "router_config.json";
+    String DEFAULT_ROUTER_CONFIG_PATH = "router_config.json";
 }

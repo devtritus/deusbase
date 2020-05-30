@@ -9,9 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +35,7 @@ class Router {
         final NodeEnvironment env = new NodeEnvironment();
         env.setUp(programArgs);
 
-        String configPath = programArgs.getOrDefault(CLUSTER_CONFIG_PATH, DEFAULT_CLUSTER_CONFIG_PATH);
+        String configPath = programArgs.getOrDefault(ROUTER_CONFIG_PATH, DEFAULT_ROUTER_CONFIG_PATH);
         Path path = Paths.get(configPath);
         if(!Files.exists(path)) {
             throw new RuntimeException("Shard config was not found by path " + configPath);

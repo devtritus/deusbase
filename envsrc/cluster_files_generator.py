@@ -59,7 +59,7 @@ def main(argv):
     shutil.copyfile(terminal_target_folder, terminal_folder_name + '/' + terminal_jar_name)
     shutil.copyfile(node_target_folder, router_folder_name + '/' + node_jar_name)
 
-    with open('cluster_config.json') as json_file:
+    with open('router_config.json') as json_file:
         data = json.load(json_file)
 
         router = data['router']

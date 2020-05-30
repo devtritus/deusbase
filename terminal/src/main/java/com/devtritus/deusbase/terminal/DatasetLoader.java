@@ -2,7 +2,7 @@ package com.devtritus.deusbase.terminal;
 
 import com.devtritus.deusbase.api.*;
 
-import java.io.File;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -19,18 +19,17 @@ class DatasetLoader {
     private final static int REQUEST_BATCH_SIZE = 5000;
 
     static void load(String url, ProgramArgs programArgs) throws Exception {
+        String datasetFilePath = programArgs.get(DATASET_FILE_PATH);
 
         int rowCount;
         boolean hasLimit = programArgs.contains(ROW_COUNT);
         if(hasLimit) {
             rowCount = programArgs.getInteger(ROW_COUNT);
         } else {
-            rowCount = Integer.MAX_VALUE;
+            rowCount = countLines(datasetFilePath);
         }
 
         boolean checkMode = programArgs.contains("check");
-
-        String datasetFilePath = programArgs.get(DATASET_FILE_PATH);
 
         NodeClient nodeClient = new NodeClient(url);
 
@@ -121,5 +120,41 @@ class DatasetLoader {
         Duration duration = Duration.between(startTime, endTime);
         System.out.println("End time: " + endTime.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)));
         System.out.println("Time spent: " + LocalTime.MIDNIGHT.plus(duration).format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+    }
+
+    private static int countLines(String filename) throws IOException {
+        InputStream is = new BufferedInputStream(new FileInputStream(filename));
+        try {
+            byte[] c = new byte[1024];
+
+            int readChars = is.read(c);
+            if (readChars == -1) {
+                return 0;
+            }
+
+            int count = 0;
+            while (readChars == 1024) {
+                for (int i=0; i<1024;) {
+                    if (c[i++] == '\n') {
+                        ++count;
+                    }
+                }
+                readChars = is.read(c);
+            }
+
+            while (readChars != -1) {
+                System.out.println(readChars);
+                for (int i=0; i<readChars; ++i) {
+                    if (c[i] == '\n') {
+                        ++count;
+                    }
+                }
+                readChars = is.read(c);
+            }
+
+            return count == 0 ? 1 : count;
+        } finally {
+            is.close();
+        }
     }
 }
