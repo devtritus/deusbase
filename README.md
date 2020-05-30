@@ -48,7 +48,7 @@ In common case database is a cluster that include some shards. Every shard must 
 
   For testing goals you can download specially prepared dataset from [imdb-names](https://sites.google.com/view/imdb-names/). Extract .tsv file to *deusbase_env* directory, after go to *terminal* folder and execute command
   ```
-  ./run.sh --mode=dataset --dataset_file=../../names.imdb.tsv --row_count=500000 --url=http://localhost:4005
+  ./run.sh --mode=dataset --dataset_file=../../names.imdb.tsv --row_count=500000
   ```
   This command load 500000 names. You can remove `--row_count` argument to load all dataset. After data is loaded you can run the terminal and test ability of the database.
 
