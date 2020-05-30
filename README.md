@@ -9,7 +9,9 @@ There are 3 types of the node:
   - Router - a proxy node that can redirects request to another master or slave node depend on hash function within it, type of request and cluster configuration.
 
 The master use eventual consistency model to replicate data to its slaves.
-In common case database is a cluster that include some shards. Every shard must include one master node and none or many slave nodes. To distribute data across shard one or more routers are used. 
+In common case database is a cluster that include some shards. Every shard must include one master node and none or many slave nodes. To distribute data across shard one or more routers are used.  
+
+![scheme](https://i.imgur.com/SYD9fuz.png)
 
  ## How to start
  
