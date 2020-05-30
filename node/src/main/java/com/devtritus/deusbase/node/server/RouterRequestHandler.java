@@ -33,15 +33,49 @@ public class RouterRequestHandler implements RequestHandler {
         }
 
         if(command == Command.EXECUTE_REQUESTS) {
-            return handleRequestList(channel);
+            return requestList(channel);
         } else {
             RequestBody requestBody = JsonDataConverter.readNodeRequest(channel, RequestBody.class);
             NodeRequest request = new NodeRequest(command, requestBody.getArgs());
-            return handleSingleRequest(request);
+            if(command == Command.SEARCH) {
+                return requestToAll(request);
+            } else {
+                return requestSingle(request);
+            }
         }
     }
 
-    private NodeResponse handleRequestList(ReadableByteChannel channel) {
+    private NodeResponse requestToAll(final NodeRequest request) {
+        List<CompletableFuture<NodeResponse>> futures = new ArrayList<>();
+        for(int i = 0; i < shardParams.size(); i++) {
+            final int shardId = i;
+            CompletableFuture<NodeResponse> future =
+                    CompletableFuture.supplyAsync(() -> requestSingle(shardId, request, shardParams.get(shardId)));
+            futures.add(future);
+        }
+
+        CompletableFuture<Void> compositeFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+        compositeFuture.join();
+        NodeResponse aggregatedResponse = NodeResponse.ok();
+        aggregatedResponse.setData(new HashMap<>());
+        for(CompletableFuture<NodeResponse> future : futures) {
+            try {
+                NodeResponse nodeResponse = future.get();
+                if(nodeResponse.getCode() == ResponseStatus.OK.getCode()) {
+                    aggregatedResponse.getData().putAll(nodeResponse.getData());
+                } else {
+                    logger.error("Unexpected code: {}, data: {}", nodeResponse.getCode(), nodeResponse.getData());
+                }
+            } catch(Exception e) {
+                logger.error("Error occurred", e);
+            }
+        }
+
+        return aggregatedResponse;
+    }
+
+    private NodeResponse requestList(ReadableByteChannel channel) {
         List<NodeRequest> requests = JsonDataConverter.readList(channel, NodeRequest.class);
         Map<String, List<NodeRequest>> masterUrlToRequestsMap = new HashMap<>();
         for(ShardParams shardParams : shardParams) {
@@ -56,11 +90,11 @@ public class RouterRequestHandler implements RequestHandler {
         }
 
         List<CompletableFuture<Void>> futures = new ArrayList<>();
-        masterUrlToRequestsMap.forEach((masterUrl, requests1) -> {
+        masterUrlToRequestsMap.forEach((masterUrl, request) -> {
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 NodeClient client = createOrGetRouter(masterUrl).getClient();
                 try {
-                    client.executeRequests(requests1);
+                    client.executeRequests(request);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -76,7 +110,7 @@ public class RouterRequestHandler implements RequestHandler {
         return NodeResponse.ok();
     }
 
-    private NodeResponse handleSingleRequest(NodeRequest request) {
+    private NodeResponse requestSingle(NodeRequest request) {
         final Command command = request.getCommand();
         final String[] args = request.getArgs();
 
@@ -92,6 +126,13 @@ public class RouterRequestHandler implements RequestHandler {
 
         int shardId = determineShardId(key);
         ShardParams shardParam = shardParams.get(shardId);
+
+        return requestSingle(shardId, request, shardParam);
+    }
+
+    private NodeResponse requestSingle(int shardId, NodeRequest request, ShardParams shardParam) {
+        final Command command = request.getCommand();
+        final String[] args = request.getArgs();
         logger.debug("Select shard {}", shardId);
 
         if(command.getType() == CommandType.WRITE) {
