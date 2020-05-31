@@ -117,6 +117,42 @@ The options in the table below can be added to the end of the run script command
 |url|terminal|"http://localhost:4001"|Address of node to connect.|
 
 ## Performance tests
+#### Hardware
+
+The test was performed on two laptops inside LAN through Wi-Fi
+||**Shard 1**|**Shard 2**|
+|---|---|---|
+|**CPU**|Intel Core i7-8550U CPU @ 1.80GHz|Intel Core i5-4200M CPU @ 2.50GHz|
+|**Disk**|*SSD* Samsung SM961|*HDD* WDC WD10JPVX-08J|
+
+#### Cluster config
+
+```
+{
+  "router": { "host": "192.168.1.51", "port": "4001" },
+  "shard_list": [
+    {
+      "master": { "host": "192.168.1.50", "port": "4002" }
+    },
+    {
+      "master": { "host": "192.168.1.51", "port": "4002" }
+    }
+  ]
+}
+```
+
+#### Results
+
+![create_chart](https://i.imgur.com/61qk92u.png)
+100000 requests, throughput 352 req/sec, average request time 2ms
+
+![read_chart](https://i.imgur.com/LIv1NkV.png)
+100000 requests, throughput 330 req/sec, average request time 3ms
+
+![search_chart](https://i.imgur.com/uu3FmPW.png)
+10000 requests, throughput 62 req/sec, average request time 16ms
+
+*tested by JMeter*
 
 ## Problems
 
