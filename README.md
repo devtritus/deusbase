@@ -141,18 +141,35 @@ The test was performed on two laptops inside LAN through Wi-Fi
 }
 ```
 
-#### Results
+#### Test for a user(thread)
 
 ![create_chart](https://i.imgur.com/61qk92u.png)
-100000 requests, throughput 352 req/sec, average request time 2ms
+1 user * 100000 requests, throughput 352 req/sec, average request time 2ms
 
 ![read_chart](https://i.imgur.com/LIv1NkV.png)
-100000 requests, throughput 330 req/sec, average request time 3ms
+1 user * 100000 requests, throughput 330 req/sec, average request time 3ms
 
 ![search_chart](https://i.imgur.com/uu3FmPW.png)
-10000 requests, throughput 62 req/sec, average request time 16ms
+1 user * 10000 requests, throughput 62 req/sec, average request time 16ms
+
+#### Test for 10 users(threads)
+
+![create_chart](https://i.imgur.com/iG4oUrB.png)
+10 users * 10000 requests, throughput 1180 req/sec, average request time 8ms
+
+![read_chart](https://i.imgur.com/num9oiG.png)
+10 users * 10000 requests, throughput 1398 req/sec, average request time 6ms
+
+![search_chart](https://i.imgur.com/tkvT2So.png)
+10 users * 10000 requests, throughput 270 req/sec, average request time 35ms
 
 *tested by JMeter*
+
+#### Results
+
+The cluster works match faster if we have many clients because the router can handle clients in parallel. It allow to load idled resources.
+
+#### Performance test conclusion
 
 ## Problems
 
