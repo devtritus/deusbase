@@ -169,8 +169,6 @@ The test was performed on two laptops inside LAN through Wi-Fi
 
 The cluster works match faster if we have many clients because the router can handle clients in parallel. It allow to load idled resources.
 
-#### Performance test conclusion
-
 ## Problems
 
 - The node index doesn't have a procedure to clean unused blocks on the disk so the size of the index file will always grow even if data was deleted.
