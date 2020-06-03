@@ -173,7 +173,8 @@ The cluster works match faster if we have many clients because the router can ha
 
 - The node index doesn't have a procedure to clean unused blocks on the disk so the size of the index file will always grow even if data was deleted.
 - The nodes in the cluster can't migrate their data to another node. At the moment there is no way to change the cluster configuration after any data was added to.
-- Database doesn't support any security protocols 
+- The Database doesn't support any security protocols
+- The Database only supports string keys and values, but it is possible to make values as byte sequence. To do this, you need to extend the database API.
 
 ## Used dependencies
 
