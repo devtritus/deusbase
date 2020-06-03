@@ -50,7 +50,7 @@ In common case database is a cluster that include some shards. Every shard must 
   ```
   ./run.sh --mode=dataset --dataset_file=../../names.imdb.tsv --row_count=500000
   ```
-  This command load 500000 names. You can remove `--row_count` argument to load all dataset. After data is loaded you can run the terminal and test ability of the database.
+  This command load 500000 names. You can remove `--row_count` argument to load all dataset. After data is loaded you can run the terminal and test ability of the database. Now you can run the terminal `./run.sh` and execute inside the terminal a command `read John Belushi` for instance.
 
 ## HTTP API
 #### Request format
