@@ -175,7 +175,7 @@ The test was performed on two laptops inside LAN through Wi-Fi
 
 #### Results
 
-The cluster works match faster if we have many clients because the router can handle clients in parallel. It allow to load idled resources.
+The cluster works match faster if we have many clients because the router can handle clients in parallel. It allow to load idled resources.  
 Redis ~x2 faster than Deusbase for these tests.
 
 ## Problems
