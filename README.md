@@ -163,11 +163,20 @@ The test was performed on two laptops inside LAN through Wi-Fi
 ![search_chart](https://i.imgur.com/tkvT2So.png)
 10 users * 10000 requests, throughput 270 req/sec, average request time 35ms
 
+#### Test for 10 users(threads) for single Redis node
+
+![create_chart](https://i.imgur.com/MBn2kSf.png)
+10 users * 10000 requests, throughput 2074 req/sec, average request time 4ms
+
+![read_chart](https://i.imgur.com/9Llg3sF.png)
+10 users * 10000 requests, throughput 2867 req/sec, average request time 3ms
+
 *tested by JMeter*
 
 #### Results
 
 The cluster works match faster if we have many clients because the router can handle clients in parallel. It allow to load idled resources.
+Redis ~x2 faster than Deusbase for these tests.
 
 ## Problems
 
