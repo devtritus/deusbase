@@ -183,7 +183,8 @@ Redis ~x2 faster than Deusbase for these tests.
 - The node index doesn't have a procedure to clean unused blocks on the disk so the size of the index file will always grow even if data was deleted.
 - The nodes in the cluster can't migrate their data to another node. At the moment there is no way to change the cluster configuration after any data was added to.
 - The Database doesn't support any security protocols
-- The Database only supports string keys and values, but it is possible to make values as byte sequence. To do this, you need to extend the database API.
+- The Database only supports string keys and values, but it is possible to make values as byte sequence. To do this, you need to extend the database API
+- If a master are lost then its shard will be available only in read-only mode until the master will becomes online.
 
 ## Used dependencies
 
