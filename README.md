@@ -194,3 +194,8 @@ Redis ~x2 faster than Deusbase for these tests.
 
 ## Conclusion
 As the result we got a distributed database with a quite fast data access. Master-slave replication works through the batch loading and allow minimize time of nodes syncronization. It is enough to resolve many problems of the data storage. During development I loaded to database a dataset with 22 millions entries and got a good reading speed. The database is single threaded inside but it don't degrade the speed of the execution the requests. Some problems don't allow to use this database in the production, but it's enough to understand features of key-value storage. I tried to use a minimum number of dependencies so I get a good experience of the low level coding. Wide experience was got in the bytes transfering operations, evolution of architecture, MVP approach, I/O operations and encapsulation of algorithms from physical representation of storing.
+
+## References
+[Курс Базы данных (2012) - Илья Тетерин](https://www.lektorium.tv/course/22894)  
+[Курс Базы данных. Слайды](http://ya-pulser.github.io/static/dbcourse.2012/index.html)  
+[B-tree Wiki](https://en.wikipedia.org/wiki/B-tree)
