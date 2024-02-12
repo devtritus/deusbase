@@ -2,21 +2,20 @@
 
 ## Overview
 
-**De**vtrit**usbase** is distributed key-value storage with easy CRUD HTTP API and B-Tree index under the hood. Database can store multiple values by one key. Database consists from nodes.
-There are 3 types of the node:
-  - Master - can do all write/read operations and lead replication journal if slave nodes exist. This node can run as standalone database and clients can use direct access to it without deploying all cluster. 
-  - Slave - allows only read operations. The Destination of a slave node is to process read operations while his master node processes write operations.
-  - Router - a proxy node that can redirects request to another master or slave node depend on hash function within it, type of request and cluster configuration.
+**Deusbase** is a distributed key-value storage featuring an easy-to-use CRUD HTTP API and a B-Tree index. The database can store multiple values for a single key and is comprised of nodes. There are three types of nodes:
+  - **Master**: Capable of performing all write/read operations and leading the replication journal if slave nodes exist. This node can operate as a standalone database, allowing clients direct access without deploying the entire cluster.
+  - **Slave**: Supports read operations only. The purpose of a slave node is to process read operations while its master node handles write operations.
+  - **Router**: Acts as a proxy node that redirects requests to either a master or slave node based on the hash function, request type, and cluster configuration.
 
-The master use eventual consistency model to replicate data to its slaves.
-In common case database is a cluster that include some shards. Every shard must include one master node and none or many slave nodes. To distribute data across shard one or more routers are used.  
+The master node utilizes an eventual consistency model to replicate data to its slaves.
+Typically, the database functions as a cluster that includes several shards. Each shard must have one master node and may have none or many slave nodes. To distribute data across shards, one or more routers are used.  
 <p align="center">
   <img src="https://i.imgur.com/SYD9fuz.png">
 </p>
 
- ## How to start
+ ## How to Start
  
-#### Required environment
+#### Required Environment
 
   - Linux
   - Java 8
@@ -25,107 +24,109 @@ In common case database is a cluster that include some shards. Every shard must 
   
 #### Building
 
-  Download repository `git clone https://github.com/devtritus/deusbase.git`.  
-  Invoke `mvn install` within *deusbase* folder. After building the project folder *deusbase_env* will appear near by deusbase folder.
+  Download the repository using `git clone https://github.com/devtritus/deusbase.git`.  
+  Run `mvn install` within the *deusbase* folder. After building, the project folder *deusbase_env* will appear adjacent to the deusbase folder.
   
 #### Configuring
 
-  *deusbase_env* folder contains config file with the name *cluster_config.json*. The config allows to set up nodes in the cluster and their addresses.
-  After set up cluster you need to generate files of that cluster. To do that, execute command:
+  The *deusbase_env* folder contains a config file named *cluster_config.json*. This config file allows you to set up nodes in the cluster and their addresses.
+  After setting up the cluster, you need to generate files for that cluster. Execute the command:
   ```
   python3 cluster_files_generator.py
   ```
   to generate local cluster files.
-  If you want to deploy the database on a real cluster, add `--zip` key to the end of the command. It archive every node files to specific archive.
-  *output* directory will be generated within *deusbase_env*. Structure of folders in *output* folder the same as specify in *cluster_config.json*.
+  If you wish to deploy the database on a real cluster, add the `--zip` option at the end of the command to archive each node's files into specific archives.
+  An *output* directory will be generated within *deusbase_env*. The structure of folders in the *output* folder is the same as specified in *cluster_config.json*.
   
-#### Test it
+#### Testing It
 
-  Every node folder contains *run.sh* script. To run a node, just execute `./run.sh` within the folder. To start cluster, execute run script for every node and for router.
-  Besides them *output* directory contains terminal. By default terminal connects to router and can execute database commands on the cluster. To get a description of commands see [help.txt](https://github.com/devtritus/deusbase/blob/master/terminal/src/main/resources/help.txt) or type command `help` in the terminal. Now you can use all database functions through the terminal.
+  Each node folder contains a *run.sh* script. To run a node, execute `./run.sh` within the folder. To start the cluster, execute the run script for every node and for the router.
+  In addition, the *output* directory contains a terminal. By default, the terminal connects to the router and can execute database commands on the cluster. For a description of commands, see [help.txt](https://github.com/devtritus/deusbase/blob/master/terminal/src/main/resources/help.txt) or type the command `help` in the terminal. Now you can use all database functions through the terminal.
   
-#### Add data
+#### Adding Data
 
-  For testing goals you can download specially prepared dataset from [imdb-names](https://sites.google.com/view/imdb-names/). Extract .tsv file to *deusbase_env* directory, after go to *terminal* folder and execute command
+  For testing purposes, you can download a specially prepared dataset from [imdb-names](https://sites.google.com/view/imdb-names/). Extract the .tsv file to the *deusbase_env* directory, then go to the *terminal* folder and execute the command
   ```
   ./run.sh --mode=dataset --dataset_file=../../names.imdb.tsv --row_count=500000
   ```
-  This command load 500000 names. You can remove `--row_count` argument to load all dataset. After data is loaded you can run the terminal and test ability of the database. Now you can run the terminal `./run.sh` and execute inside the terminal a command `read John Belushi` for instance.
+  This command loads 500,000 names. You can omit the `--row_count` argument to load the entire dataset. After the data is loaded, you can run the terminal with `./run.sh` and execute, for example, the command `read John Belushi` inside the terminal.
 
 ## HTTP API
-#### Request format
+#### Request Format
 ```
 POST http://{address}:{port}/{endpoint} HTTP/1.1
 Content-Type: application/json
 
-{ args: [ "Jean Marais", ... ] }
+{ "args": [ "Jean Marais", ... ] }
 ```
-#### Response format
+#### Response Format
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json
 
 { 
-  code: 0
-  data: {
-    "Jean Marais": [ "Le Masque de fer", "Fantomas" ],
+  "code": 0,
+  "data": {
+    "Jean Marais": [ "Le Masque de fer", "Fantômas" ],
     ...
   } 
 }
 ```
-Supported HTTP codes: ok(200), bad_request(400), internal_server_error(500).  
-Supported database codes: ok(0), not_found(1), server_error(10).
+Supported HTTP codes: ok (200), bad_request (400), internal_server_error (500).  
+Supported database codes: ok (0), not_found (1), server_error (10).
 
-If response contains server_error code then error message can be found in `response.data['error']`.
+If the response contains the server_error code, then the error message can be found in `response.data['error']`.
 
 #### Requests
 
-|Command|Endpoint|Request body|Description|
+|Command|Endpoint|Request Body|Description|
 |---|---|---|---|
-|READ|/read|`{ args: ["Jean Marais"] }`|Find values by exact match of key.|
-|SEARCH|/search|`{ args: ["Jean Ma"] }`|Find key-values pair by first symbols. Case-sensitive.|
-|CREATE|/create|`{ args: ["Jean Marais", "Fantomas"] }`|Create key and value in the database.|
-|DELETE|/delete|`{ args: ["Jean Marais", "0"] }`|Delete value by key. Index is used if there are many values by one key. Index can be get from sequence of values that return by key intended to delete during READ operation.|
-|UPDATE|/update|`{ args: ["Jean Marais", "0", Le Masque de fer] }`|Update value by key. Index are needed for update a concrete value if many values are available by the key. The index can be get from a sequence of the values that are returned by the key intended to delete during READ operation.|
-|EXECUTE_REQUESTS|/execute_requests|`[{ command: "create", args: ["Jean Marais", "Fantomas"] },...]`|Execute a list of requests. The way to creating/updating many entries by batch|
+|READ|/read|`{ "args": ["Jean Marais"] }`|Finds values by exact match of the key
+
+.|
+|SEARCH|/search|`{ "args": ["Jean Ma"] }`|Finds key-value pairs by first symbols. Case-sensitive.|
+|CREATE|/create|`{ "args": ["Jean Marais", "Fantomas"] }`|Creates a key and value in the database.|
+|DELETE|/delete|`{ "args": ["Jean Marais", "0"] }`|Deletes a value by key. An index is used if there are multiple values for one key. The index can be obtained from the sequence of values returned by the key intended for deletion during the READ operation.|
+|UPDATE|/update|`{ "args": ["Jean Marais", "0", "Le Masque de fer"] }`|Updates a value by key. An index is needed to update a specific value if multiple values exist for the key. The index can be obtained from a sequence of values returned by the key intended for deletion during the READ operation.|
+|EXECUTE_REQUESTS|/execute_requests|`[{ "command": "create", "args": ["Jean Marais", "Fantomas"] },...]`|Executes a list of requests. A way to create/update many entries in batch|
 
 ## Options
 
-The options in the table below can be added to the end of the run script command as program arguments. Some options already exist within *@run.sh* script. To see details, open run.sh in the text editor. The examples of program arguments: `--generate_folders`, `--url=locahost:4005`,`-node=slave`
+The options in the table below can be added to the end of the run script command as program arguments. Some options already exist within the *@run.sh* script. To see details, open *run.sh* in a text editor. Examples of program arguments include `--generate_folders`, `--url=localhost:4005`, `-node=slave`.
 
 
 |Name|Support|Default|Description|
 |:---:|:---:|:---:|---|
-|host|node|"localhost"|Address of node.|
-|port|node|4001|Port of node.|
-|mode|node|"master"|Select a role of node. Available roles: master, slave, router.|
-|root_path|node|"./"|Path to root folder of the node.|
-|max_threads|node|20|Count of Jetty threads.|
-|accept_queue_size|node|100|Size of Jetty queue.|
-|shard|node|optional|Subfolder for shard if cluster starts locally.|
-|node|node|optional|Subfolder for node if cluster starts locally.|
-|scheme|node|"default"| Name of scheme folder that contains node files.|
-|generate_folders|node|no value|Generate folders if they aren't exist.|
-|tree_m|master, slave|100|Count of children in b-tree node.|
-|tree_cache_limit|master, slave|5000|Capacity of b-tree cache. Count of cached nodes.|
-|journal|master|"journal.bin"|Path to replication journal.|
-|journal_batch_size|master|512 * 1024 bytes|Size of single replication batch.|
-|journal_min_size_to_truncate|master|8 * 1024 * 1024 bytes|Limit after that journal will be truncated.|
-|flush_context|master|"flush_context.json"|Path to a temp storage that store request while it doesn't put to journal.|
-|master_address|slave|required|Address of master node.|
-|router_config|router|"router_config.json"|Path to router config.|
-|url|terminal|"http://localhost:4001"|Address of node to connect.|
+|host|node|"localhost"|Address of the node.|
+|port|node|4001|Port of the node.|
+|mode|node|"master"|Selects the role of the node. Available roles: master, slave, router.|
+|root_path|node|"./"|Path to the root folder of the node.|
+|max_threads|node|20|Number of Jetty threads.|
+|accept_queue_size|node|100|Size of the Jetty queue.|
+|shard|node|optional|Subfolder for the shard if the cluster starts locally.|
+|node|node|optional|Subfolder for the node if the cluster starts locally.|
+|scheme|node|"default"|Name of the scheme folder that contains node files.|
+|generate_folders|node|no value|Generates folders if they don't exist.|
+|tree_m|master, slave|100|Number of children in a B-tree node.|
+|tree_cache_limit|master, slave|5000|Capacity of the B-tree cache. Number of cached nodes.|
+|journal|master|"journal.bin"|Path to the replication journal.|
+|journal_batch_size|master|512 * 1024 bytes|Size of a single replication batch.|
+|journal_min_size_to_truncate|master|8 * 1024 * 1024 bytes|Limit after which the journal will be truncated.|
+|flush_context|master|"flush_context.json"|Path to a temp storage that stores requests while they are not yet put into the journal.|
+|master_address|slave|required|Address of the master node.|
+|router_config|router|"router_config.json"|Path to the router config.|
+|url|terminal|"http://localhost:4001"|Address of the node to connect.|
 
-## Performance tests
+## Performance Tests
 #### Hardware
 
-The test was performed on two laptops inside LAN through Wi-Fi
+The test was performed on two laptops inside a LAN through Wi-Fi.
 ||**Shard 1**|**Shard 2**|
 |---|---|---|
 |**CPU**|Intel Core i7-8550U CPU @ 1.80GHz|Intel Core i5-4200M CPU @ 2.50GHz|
 |**Disk**|*SSD* Samsung SM961|*HDD* WDC WD10JPVX-08J|
 
-#### Cluster config
+#### Cluster Config
 
 ```
 {
@@ -141,52 +142,54 @@ The test was performed on two laptops inside LAN through Wi-Fi
 }
 ```
 
-#### Test for a user(thread)
+#### Test for a Single User (Thread)
 
 ![create_chart](https://i.imgur.com/61qk92u.png)
-1 user * 100000 requests, throughput 352 req/sec, average request time 2ms
+1 user * 100,000 requests, throughput 352 req/sec, average request time 2ms
 
 ![read_chart](https://i.imgur.com/LIv1NkV.png)
-1 user * 100000 requests, throughput 330 req/sec, average request time 3ms
+1 user * 100,000 requests, throughput 330 req/sec, average request time 3ms
 
-![search_chart](https://i.imgur.com/uu3FmPW.png)
-1 user * 10000 requests, throughput 62 req/sec, average request time 16ms
+![search
 
-#### Test for 10 users(threads)
+_chart](https://i.imgur.com/uu3FmPW.png)
+1 user * 10,000 requests, throughput 62 req/sec, average request time 16ms
+
+#### Test for 10 Users (Threads)
 
 ![create_chart](https://i.imgur.com/iG4oUrB.png)
-10 users * 10000 requests, throughput 1180 req/sec, average request time 8ms
+10 users * 10,000 requests, throughput 1180 req/sec, average request time 8ms
 
 ![read_chart](https://i.imgur.com/num9oiG.png)
-10 users * 10000 requests, throughput 1398 req/sec, average request time 6ms
+10 users * 10,000 requests, throughput 1398 req/sec, average request time 6ms
 
 ![search_chart](https://i.imgur.com/tkvT2So.png)
-10 users * 10000 requests, throughput 270 req/sec, average request time 35ms
+10 users * 10,000 requests, throughput 270 req/sec, average request time 35ms
 
-#### Test for 10 users(threads) for single Redis node
+#### Test for 10 Users (Threads) for a Single Redis Node
 
 ![create_chart](https://i.imgur.com/MBn2kSf.png)
-10 users * 10000 requests, throughput 2074 req/sec, average request time 4ms
+10 users * 10,000 requests, throughput 2074 req/sec, average request time 4ms
 
 ![read_chart](https://i.imgur.com/9Llg3sF.png)
-10 users * 10000 requests, throughput 2867 req/sec, average request time 3ms
+10 users * 10,000 requests, throughput 2867 req/sec, average request time 3ms
 
-*tested by JMeter*
+*Tested by JMeter*
 
 #### Results
 
-The cluster works match faster if we have many clients because the router can handle clients in parallel. It allow to load idled resources.  
-Redis ~x2 faster than Deusbase for these tests.
+The cluster operates much faster with many clients because the router can handle clients in parallel, allowing it to load idle resources.  
+Redis is approximately twice as fast as Deusbase for these tests.
 
 ## Problems
 
-- The node index doesn't have a procedure to clean unused blocks on the disk so the size of the index file will always grow even if data was deleted.
-- The nodes in the cluster can't migrate their data to another node. At the moment there is no way to change the cluster configuration after any data was added to.
-- The Database doesn't support any security protocols
-- The Database only supports string keys and values, but it is possible to make values as byte sequence. To do this, you need to extend the database API
-- If a master are lost then its shard will be available only in read-only mode until the master will becomes online.
+- The node index lacks a procedure to clean unused blocks on the disk, so the index file's size will always grow, even if data is deleted.
+- Nodes in the cluster cannot migrate their data to another node. Currently, there is no way to change the cluster configuration after data has been added.
+- The database does not support any security protocols.
+- The database only supports string keys and values, but it is possible to make values a byte sequence. To do this, you need to extend the database API.
+- If a master node is lost, its shard will be available only in read-only mode until the master comes online again.
 
-## Used dependencies
+## Used Dependencies
 
 - Jetty Server 9.4.25
 - Apache HTTPClient 4.5.10
@@ -194,9 +197,9 @@ Redis ~x2 faster than Deusbase for these tests.
 - Logback 1.2.3
 
 ## Conclusion
-As the result we got a distributed database with a quite fast data access. Master-slave replication works through the batch loading and allow minimize time of nodes syncronization. It is enough to resolve many problems of the data storage. During development I loaded to database a dataset with 22 millions entries and got a good reading speed. The database is single threaded inside but it don't degrade the speed of the execution the requests. Some problems don't allow to use this database in the production, but it's enough to understand features of key-value storage. I tried to use a minimum number of dependencies so I get a good experience of the low level coding. Wide experience was got in the bytes transfering operations, evolution of architecture, MVP approach, I/O operations and encapsulation of algorithms from physical representation of storing.
+As a result, we have developed a distributed database with quite fast data access. Master-slave replication works through batch loading and minimizes the time required for node synchronization. It is sufficient to solve many data storage problems. During development, I loaded a dataset with 22 million entries into the database and achieved a good reading speed. The database is single-threaded internally, but this does not degrade the performance of request execution. Some issues prevent the use of this database in production, but it is sufficient to understand the features of key-value storage. I tried to use a minimum number of dependencies, gaining valuable experience in low-level coding. Extensive experience was gained in byte transfer operations, architecture evolution, MVP approach, I/O operations, and the encapsulation of algorithms from the physical representation of storage.
 
 ## References
-- [Курс Базы данных (2012) - Илья Тетерин](https://www.lektorium.tv/course/22894)  
-- [Курс Базы данных. Слайды](http://ya-pulser.github.io/static/dbcourse.2012/index.html)  
+- [Database Course (2012) by Ilya Teterin](https://www.lektorium.tv/course/22894)  
+- [Database Course. Slides](http://ya-pulser.github.io/static/dbcourse.2012/index.html)  
 - [B-tree Wiki](https://en.wikipedia.org/wiki/B-tree)
